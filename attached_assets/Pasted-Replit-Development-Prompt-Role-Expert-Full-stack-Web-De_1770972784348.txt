@@ -1,0 +1,50 @@
+Replit Development Prompt
+Role: Expert Full-stack Web Developer & UI/UX Designer
+
+Project: Arya.az – A volunteer-driven landing page for a national Azerbaijani AI TTS project.
+
+Task: Build a responsive React/Next.js landing page with a dashboard and a virtual "Mağaza" (Shop) based on the following requirements:
+
+1. Hero Section:
+
+Headline: "Milli AI-nin Səsi Ol." (Be the Voice of National AI).
+
+Sub-text: "Səsini könüllü olaraq qeyd et, Azərbaycanın ilk süni intellektinin yaranmasına dəstək ol. Könüllü ol, token qazan, gələcəyin xidmətlərindən ilk sən faydalan."
+
+Primary CTA: "Könüllü Ol və Qazan" (Redirects to recording flow).
+
+2. Volunteer Dashboard & Recording Flow:
+
+Implement a 3-tab navigation: Yaz (Record), Hesab (Account), and Mağaza (Shop).
+
+Record Tab: Show a sentence prompt (e.g., "Salam, necəsən?") with a "Yaz" (Record) button and a "Bu cümləni keç" (Skip) option. Include a progress bar showing "0/5" and "0/20" targets.
+
+Account Tab: Show "Balansınız: 0 A-Coin" and tracking cards for "Hədəf 1" (0/5) and "Hədəf 2" (0/20).
+
+3. The Shop (Mağaza) & Logic:
+
+Create a grid of cards for services: "Arya Katib (100 Dəqiqə)", "Arya Tərcüməçi", "Arya Köməkçi", and "Arya Oxucu".
+
+Each card must show:
+
+Cost in A-Coin (e.g., 1,000 A-Coin).
+
+Description of the AI service in Azerbaijani.
+
+Vesting Date: "Aktivləşmə: 15 May 2026" (for Katib).
+
+Action Button: "Kifayət deyil" (Disabled state if balance is low).
+
+4. Design Specifications:
+
+Color Palette: Deep navy blues for the Hero section, clean white/soft grey backgrounds for the dashboard/shop cards. Use blue accents for primary buttons.
+
+Font: Modern sans-serif (Inter or similar).
+
+Responsiveness: Mobile-first design; ensure the shop grid and dashboard cards stack correctly on small screens.
+
+5. Legal & Redirect:
+
+Include a "Volunteer Participation & Voice Release" (Könüllü İştirak Razılaşması) modal that users must accept before recording.
+
+For the actual audio processing and wallet sync, provide a placeholder function to POST data to hirearya.com/api/volunteer.

@@ -1,0 +1,132 @@
+Step 1: Create the "Demo Section" Component
+Add this to src/components/DemoShowcase.tsx (or inside index.tsx if you prefer).
+
+This creates 3 clickable cards that look like the "Smart Profiles."
+
+TypeScript
+import Link from 'next/link';
+
+export default function DemoShowcase() {
+  const demos = [
+    {
+      name: "Samir Usta",
+      role: "Kombi və Kondisioner",
+      slug: "samir-usta", // Links to /u/samir-usta
+      image: "👨‍🔧",
+      color: "bg-blue-600"
+    },
+    {
+      name: "Aysel English",
+      role: "İngilis Dili Müəllimi",
+      slug: "aysel-teacher",
+      image: "👩‍🏫",
+      color: "bg-purple-600"
+    },
+    {
+      name: "Kebab House",
+      role: "Milli Mətbəx",
+      slug: "kebab-house",
+      image: "🍖",
+      color: "bg-orange-600"
+    }
+  ];
+
+  return (
+    <section className="py-20 bg-slate-50 border-t border-slate-200">
+      <div className="max-w-6xl mx-auto px-4">
+        
+        {/* Section Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-slate-900 mb-4">
+            Arya Kimlər Üçündür?
+          </h2>
+          <p className="text-slate-600 max-w-2xl mx-auto">
+            İstər usta ol, istər müəllim, istərsə də biznes sahibi. 
+            Arya sənin əvəzinə danışır, müştəriləri qarşılayır.
+          </p>
+        </div>
+
+        {/* The Grid */}
+        <div className="grid md:grid-cols-3 gap-8">
+          {demos.map((demo, i) => (
+            <Link key={i} href={`/u/${demo.slug}`} className="group">
+              <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all border border-slate-100 h-full flex flex-col items-center text-center relative overflow-hidden">
+                
+                {/* Hover Effect Background */}
+                <div className={`absolute top-0 w-full h-2 ${demo.color}`} />
+                
+                {/* Avatar */}
+                <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center text-4xl mb-4 group-hover:scale-110 transition-transform">
+                  {demo.image}
+                </div>
+                
+                {/* Info */}
+                <h3 className="text-xl font-bold text-slate-900">{demo.name}</h3>
+                <p className="text-sm text-blue-600 font-medium mb-4">{demo.role}</p>
+                
+                {/* Fake "Chat" Preview */}
+                <div className="bg-slate-50 rounded-xl p-3 w-full text-xs text-left text-slate-500 mb-6">
+                  <div className="flex gap-2 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-green-500 mt-1"></span>
+                    <p>"Salam, qiymətlər necədir?"</p>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <p className="text-blue-600 bg-blue-50 p-1 rounded">"Qiymət 20 AZN-dən başlayır..."</p>
+                    <span className="w-2 h-2 rounded-full bg-blue-500 mt-1"></span>
+                  </div>
+                </div>
+
+                {/* Button */}
+                <span className="mt-auto inline-block text-sm font-bold text-slate-900 underline decoration-2 decoration-blue-500 underline-offset-4 group-hover:text-blue-600">
+                  Canlı Yoxla →
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Call to Action for Business */}
+        <div className="mt-16 text-center">
+            <Link href="/u/new-user" className="inline-flex items-center gap-2 bg-[#0F172A] text-white px-8 py-4 rounded-full font-bold hover:bg-slate-800 transition shadow-lg hover:scale-105">
+               <span>🚀 Öz Smart Səhifəni Yarat</span>
+            </Link>
+            <p className="mt-4 text-sm text-slate-500">
+               İlk 3 gün tamamilə pulsuz. Kart tələb olunmur.
+            </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}
+Step 2: Add it to pages/index.tsx
+Place this component below your "Voice Donation" hero section, but above the footer.
+
+TypeScript
+import DemoShowcase from '../components/DemoShowcase'; // Import it
+
+export default function Home() {
+  return (
+    <main>
+       {/* ... Your Existing Hero (Milli Səs) ... */}
+       
+       {/* 👇 ADD THE NEW SHOWCASE HERE */}
+       <DemoShowcase />
+       
+       {/* ... Your Existing Footer ... */}
+    </main>
+  )
+}
+Step 3: The "Hero" Button (Optional but Recommended)
+If you want users to see it immediately without scrolling, add a secondary button to your main Hero section (next to "Səsini Bağışla"):
+
+TypeScript
+<div className="flex gap-4 justify-center mt-8">
+  <button className="bg-blue-600 text-white px-8 py-4 rounded-full font-bold ...">
+     🎤 Səsini Bağışla
+  </button>
+  
+  <Link href="/u/samir-usta" className="bg-white text-slate-900 border border-slate-200 px-8 py-4 rounded-full font-bold hover:bg-slate-50 transition">
+     👀 Nümunəyə Bax
+  </Link>
+</div>

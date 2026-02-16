@@ -1,0 +1,34 @@
+Based on our conversation and the features we have built and verified, here is the exact 20 AZN Value Proposition you are offering to clients (Handymen, Tutors, Small Businesses).
+
+You are not selling a "chatbot." You are selling a "Digital Administrator" that sets itself up in 30 seconds.
+
+The "Arya Pro" Package (20 AZN/Month)
+1. Zero-Effort Setup (The "Hook")
+This is your biggest competitive advantage. The client does not need to type or configure anything manually.
+
+Industry Templates: They select "Plumbing," "Beauty," or "Real Estate," and the system instantly loads 4-10 standard Q&A pairs for that job.
+
+Auto-Scan Technology: They can upload a photo of their Price List or Menu, and Arya extracts the text to learn their prices instantly.
+
+2GIS / Web Integration: They enter their business name or website URL, and Arya pulls their address, phone number, and working hours automatically.
+
+2. The "Smart Profile" (The Product)
+They get a hosted, professional landing page (arya.az/u/biznes-adi) that acts as their digital business card.
+
+24/7 AI Receptionist: It answers questions about prices, location, and services instantly, even at 3 AM.
+
+Trilingual Support: The AI speaks fluent Azerbaijani (for locals), Russian (for city center/premium), and English (for tourists/expats).
+
+Voice-Enabled: Clients can speak to it using the microphone, and it answers back (powered by your "Milli Səs" voice data).
+
+3. Lead Management (The ROI)
+Lead Trapping: The AI filters "tire kickers" from real clients. It captures the customer's phone number and intention (e.g., "I need a boiler fix") before passing it to the business.
+
+No App Needed: It works directly in the browser, making it easy to share on Instagram Stories or WhatsApp Status.
+
+4. The Business Model
+3-Day Free Trial: They can build and test their profile completely free before paying.
+
+Stripe Subscription: Automatic monthly billing of ~19-20 AZN after the trial ends.
+
+In summary: For 20 Manat, you are giving them a trilingual secretary that knows their business details automatically and works 24/7 without a salary.

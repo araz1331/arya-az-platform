@@ -1,0 +1,55 @@
+I need to build the complete `Arya.az` platform. This is a "National Voice AI" project where users donate their voice to train the first Azerbaijani AI in exchange for future service tokens.
+
+Please build a full-stack React application (Vite + Express + SQLite) with the following specifications:
+
+### 1. The Architecture (Dual Strategy)
+* **Landing Page (Mission):** A patriotic, high-performance "Manifesto" page.
+    * **Headline:** "Milli AI-nin Səsi Ol." (Be the Voice of the National AI).
+    * **Call to Action:** "Könüllü Ol və Qazan" (Volunteer & Earn) -> Scrolls to the Recorder Widget.
+* **The Application (The Engine):** A single-page app (SPA) that handles recording, accounts, and rewards.
+
+### 2. The Core Features (The "Volunteer Widget")
+* **The "5+15" Milestone System:**
+    * **Goal 1:** Record 5 sentences -> Unlock **200 Tokens**.
+    * **Goal 2:** Record +15 sentences (Total 20) -> Unlock **+800 Tokens** (Total 1,000).
+    * **Visual:** Progress bar "0/5 (Başlanğıc) -> 5/20 (Bonus)".
+* **Sentence Logic (Phonetic Balance):**
+    * Load sentences from a local JSON file (`sentences_az.json`).
+    * Rotate categories: 1. Chat, 2. News, 3. Question, 4. Numbers, 5. Hard Words.
+    * **Emotion Support:** If metadata says `emotion: "angry"`, show a red border and context: *"Təsəvvür edin: ..."*
+
+### 3. The Token Economy (A-Coins)
+* **Dynamic Rewards (Halving Logic):**
+    * Check total user count in DB.
+    * If Users < 1,000: Reward = **1,000 Tokens** (Early Bird).
+    * If Users > 1,000: Reward = **500 Tokens**.
+* **The Shop (Voucher System):**
+    * Allow users to "Pre-Order" services.
+    * **Item:** "Arya Secretary (100 Mins)" = Cost: **1,000 Tokens**.
+    * **Action:** Deduct tokens -> Save "Voucher" in DB -> Show "Active on May 15, 2026".
+
+### 4. Security & Quality Control (The "Fortress")
+* **Geo-Fencing Middleware (Crucial):**
+    * Use `geoip-lite` or similar.
+    * **Rule:** IF URL is `/az` AND IP Country != 'AZ' -> **Block Access** (Return 403: "Access Restricted to Azerbaijan").
+    * Allow a specific "Admin IP" to bypass this.
+* **Audio Validation (The "Bouncer"):**
+    * **Duration:** If `duration < (word_count * 0.3s)`, reject ("Too fast").
+    * **Silence:** Analyze audio amplitude. If average volume < threshold, reject ("Too quiet").
+    * **Format:** Force `audio/webm;codecs=opus` (High Quality) -> Backend must save as `.wav` or upload raw blob.
+
+### 5. Technical Stack & Storage (Future-Proof)
+* **Database:** SQLite (`users`, `recordings`, `transactions`, `vouchers`).
+* **Storage (The "Lake"):**
+    * **Do NOT save to local disk.**
+    * Use `aws-sdk` to upload directly to **Cloudflare R2** (S3 Compatible).
+    * Bucket: `arya-voice-data`.
+    * Filename: `{country}_{user_id}_{timestamp}_{sentence_id}.wav`.
+* **Export:** Create a hidden endpoint to generate a `metadata.csv` (filename | text | speaker_id) for AI training.
+
+### 6. UI/Design
+* **Theme:** Modern, Trustworthy, Patriotic (Deep Blue & White).
+* **Mobile First:** Big buttons for thumb interaction.
+* **Animations:** Confetti on finishing milestones.
+
+Please generate the complete project structure, the React components, and the Express backend logic to handle this flow.

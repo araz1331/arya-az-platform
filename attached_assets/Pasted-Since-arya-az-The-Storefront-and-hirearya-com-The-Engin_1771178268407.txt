@@ -1,0 +1,142 @@
+Since arya.az (The Storefront) and hirearya.com (The Engine) are separate, you need to establish the "Proxy Protocol." arya.az will use its backend to securely forward requests to hirearya, ensuring your API keys remain hidden and your architecture clean.
+
+Here are the exact API endpoints hirearya exposes for arya.az to consume.
+
+Authentication (The Handshake)
+arya.az should send a secret key in the headers of every request to prove it is authorized to use the engine.
+
+Header: x-api-key: YOUR_HIREARYA_SECRET_KEY
+
+1. Onboarding Services (The Setup)
+A. Industry Templates
+Purpose: Get the list of pre-written Q&A sets (Plumber, Beauty, etc.).
+
+Endpoint: GET https://hirearya.com/api/templates
+
+Response:
+
+JSON
+[
+  {
+    "id": "plumbing",
+    "name": "Santexnika və Kombi",
+    "icon": "🔧",
+    "system_prompt": "You are a helpful plumber..."
+  },
+  ...
+]
+B. OCR / Photo Scan
+Purpose: Upload a menu/price list and get raw text back.
+
+Endpoint: POST https://hirearya.com/api/scan/image
+
+Headers: Content-Type: multipart/form-data
+
+Body: file (The image binary)
+
+Response:
+
+JSON
+{
+  "success": true,
+  "raw_text": "Kombi yuma 20 AZN, Detal dəyişimi 15 AZN...",
+  "structured_data": { "Kombi yuma": "20" } // Optional if your AI processes it
+}
+C. 2GIS Location Search
+Purpose: Find business details by name/URL.
+
+Endpoint: POST https://hirearya.com/api/location/search
+
+Body:
+
+JSON
+{ "query": "Mado Nizami" }
+Response:
+
+JSON
+{
+  "name": "Mado Restaurant",
+  "address": "Nizami St, 14, Baku",
+  "phone": "+994 55 123 45 67",
+  "coordinates": { "lat": 40.37, "lng": 49.84 }
+}
+2. The Intelligence (The Chat)
+D. Smart Chat (Text & Voice)
+Purpose: The core interaction. arya.az sends the user's input + the profile's context (since arya.az owns the profile data). hirearya returns the AI response.
+
+Endpoint: POST https://hirearya.com/api/chat/completion
+
+Body:
+
+JSON
+{
+  "message": "Salam, kombi neçəyədir?", // User input
+  "audio_url": "...", // Optional: if voice message
+  "context": {
+    "system_instruction": "You are Samir Usta. Prices: Kombi 20 AZN...",
+    "history": [] // Last 5 messages for context
+  }
+}
+Response:
+
+JSON
+{
+  "reply_text": "Salam! Kombi yuma xidməti 20 AZN təşkil edir.",
+  "reply_audio_url": "https://hirearya.com/audio/response_123.mp3", // Voice Output
+  "lead_detected": false // If true, arya.az should save a lead
+}
+3. The Money (Stripe)
+E. Create Checkout Session
+Purpose: Generate a payment link for the "Pro" upgrade.
+
+Endpoint: POST https://hirearya.com/api/stripe/create-session
+
+Body:
+
+JSON
+{
+  "customer_email": "user@example.com",
+  "reference_id": "arya_user_123", // arya.az User ID (so you know who paid)
+  "plan": "monthly_pro"
+}
+Response:
+
+JSON
+{
+  "checkout_url": "https://checkout.stripe.com/c/pay/..."
+}
+How to Implement the Proxy (In arya.az Backend)
+Since arya.az has its own Express backend, do not call hirearya from the React frontend directly (to avoid exposing keys). Create a bridge in your arya.az server.js or routes/api.js:
+
+JavaScript
+// arya.az Backend (Express)
+
+const HIREARYA_URL = 'https://hirearya.com/api';
+const API_KEY = process.env.HIREARYA_SECRET_KEY;
+
+// Example: Proxy the Scan Request
+app.post('/api/proxy/scan', upload.single('file'), async (req, res) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', req.file.buffer, req.file.originalname);
+
+    const response = await fetch(`${HIREARYA_URL}/scan/image`, {
+      method: 'POST',
+      headers: { 'x-api-key': API_KEY },
+      body: formData
+    });
+
+    const data = await response.json();
+    res.json(data); // Send result back to arya.az Frontend
+  } catch (error) {
+    res.status(500).json({ error: "Scan failed" });
+  }
+});
+Summary of Work for You:
+Backend: Add the proxy routes above to arya.az's backend.
+
+Frontend: Update the "Wizard" (from my previous message) to call your new proxy endpoints (e.g., /api/proxy/scan) instead of hirearya directly.
+
+Database: When the user clicks "Save" on the wizard, save the profile to arya.az's PostgreSQL database, not hirearya's. hirearya is just the calculator; arya.az is the ledger.
+
+Go build the bridge.

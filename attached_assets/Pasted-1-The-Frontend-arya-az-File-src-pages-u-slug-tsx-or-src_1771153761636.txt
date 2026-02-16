@@ -1,0 +1,65 @@
+1. The Frontend (arya.az)
+File: src/pages/u/[slug].tsx (or src/pages/p/[slug].tsx)
+
+You need to update this file to include the visual "Welcome" card for new users.
+
+Paste this code inside your component function in arya.az:
+
+TypeScript
+// 1. Detect if this is the demo account
+const isDemoAccount = slug === 'new-user';
+
+// 2. Define the Custom Overlay
+const TutorialOverlay = () => (
+  <div 
+    className="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300" 
+    onClick={() => setShowTutorial(false)}
+  >
+    <div 
+      className="bg-white text-slate-900 p-8 rounded-3xl max-w-sm text-center shadow-2xl relative"
+      onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the card itself
+    >
+      <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+        👋
+      </div>
+      <h2 className="text-2xl font-bold mb-2">Xoş Gəldiniz!</h2>
+      <p className="text-slate-600 mb-6 leading-relaxed">
+        Bu sizin <b>Demo Səhifənizdir</b>. 
+        Aşağıdakı <b>mikrofon düyməsini</b> sıxın və Arya ilə danışın.
+      </p>
+      
+      <div className="space-y-3 text-left text-sm bg-slate-50 p-4 rounded-xl mb-6 border border-slate-100">
+        <div className="flex items-center gap-3">
+          <span className="text-xl">🎤</span> 
+          <span className="text-slate-700">"Sən nə edə bilərsən?"</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xl">📞</span> 
+          <span className="text-slate-700">"Müştəriləri necə qarşılayırsan?"</span>
+        </div>
+      </div>
+
+      <button 
+        className="w-full bg-[#2563EB] text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-500/30"
+        onClick={() => setShowTutorial(false)}
+      >
+        Aydındır, Başlayaq
+      </button>
+    </div>
+
+    {/* Hand pointing down (Only show on desktop) */}
+    <div className="absolute bottom-24 animate-bounce text-white/90 hidden md:block font-medium">
+      👇 Mikrofon aşağıdadır
+    </div>
+  </div>
+);
+
+// 3. Update your Return statement to show it
+return (
+  <div className="...">
+    {/* Show overlay ONLY if showTutorial is true AND it's the demo account */}
+    {showTutorial && isDemoAccount && <TutorialOverlay />}
+    
+    {/* ... rest of your page ... */}
+  </div>
+);

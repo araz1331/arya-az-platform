@@ -1,0 +1,3523 @@
+[
+  {
+    "id": "anchor_01",
+    "text": "Salam, mənim adım Aryadır.",
+    "category": "anchor",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "anchor_02",
+    "text": "Səsiniz gəlir, davam edin.",
+    "category": "anchor",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "anchor_03",
+    "text": "Azərbaycan dili gözəl dildir.",
+    "category": "anchor",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_01",
+    "text": "Salam, necəsən, bu gün nə edəcəksən?",
+    "category": "chat",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_02",
+    "text": "Mənə bir fincan çay gətirə bilərsən?",
+    "category": "chat",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_03",
+    "text": "Axşam bazara getməliyik, nə deyirsən?",
+    "category": "chat",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_04",
+    "text": "Sabah görüşərik, yaxşı gecələr diləyirəm.",
+    "category": "chat",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_05",
+    "text": "Dünən axşam çox maraqlı bir film baxdıq.",
+    "category": "chat",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_06",
+    "text": "Hava soyuqdur, paltonunu geyinməyi unutma.",
+    "category": "chat",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_07",
+    "text": "Uşaqlar bayırda oynayırlar, onları çağır.",
+    "category": "chat",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_08",
+    "text": "Gəl bir az gəzməyə çıxaq, hava gözəldir.",
+    "category": "chat",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_09",
+    "text": "Qonşumuz yeni ev aldı, keçən həftə köçdülər.",
+    "category": "chat",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_10",
+    "text": "Bu kitabı oxumağı çoxdan istəyirdim.",
+    "category": "chat",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_11",
+    "text": "Maşını təmir etdirmək lazımdır, səsi gəlir.",
+    "category": "chat",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_12",
+    "text": "Sən haqlısan, mən bununla tamamilə razıyam.",
+    "category": "chat",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_13",
+    "text": "Gecə çox gec yatdım, indi yorğunam.",
+    "category": "chat",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_14",
+    "text": "Dostum xaricdən qayıdıb, onu görməliyik.",
+    "category": "chat",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_15",
+    "text": "Bu gün işdə çox çətin bir gün oldu.",
+    "category": "chat",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_16",
+    "text": "Yenə tıxac var, evə gec çatacağam.",
+    "category": "chat",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_17",
+    "text": "Həyətdəki güllər açılıb, çox gözəl görünür.",
+    "category": "chat",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_18",
+    "text": "Sənin üçün bir hədiyyə aldım, bəyənəcəksən.",
+    "category": "chat",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_19",
+    "text": "Bu yay dənizə getmək istəyirəm, gəlirsən?",
+    "category": "chat",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_20",
+    "text": "Mağazadan çörək almağı unutma, xahiş edirəm.",
+    "category": "chat",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_21",
+    "text": "Dünən dostlarımla parkda gəzdim, çox yaxşı oldu.",
+    "category": "chat",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_22",
+    "text": "Yeni telefon aldım, çox sürətli işləyir.",
+    "category": "chat",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_23",
+    "text": "Axşam yeməyinə nə hazırlayaq, fikrin varmı?",
+    "category": "chat",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_24",
+    "text": "Avtobus çox gecikdi, piyada getdim.",
+    "category": "chat",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_25",
+    "text": "Mən səninlə razıyam, bu yaxşı fikirdir.",
+    "category": "chat",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_26",
+    "text": "Pəncərəni aç, otağa təmiz hava gəlsin.",
+    "category": "chat",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "chat_27",
+    "text": "Bu həftə sonu evdə dincəlmək istəyirəm.",
+    "category": "chat",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_01",
+    "text": "Azərbaycan Respublikası regionda sürətlə inkişaf edən ölkədir.",
+    "category": "news",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_02",
+    "text": "Bakıda keçirilən beynəlxalq konfrans böyük marağa səbəb oldu.",
+    "category": "news",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_03",
+    "text": "Yeni texnologiya mərkəzi gələn il fəaliyyətə başlayacaq.",
+    "category": "news",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_04",
+    "text": "Ölkədə süni intellekt sahəsində mühüm addımlar atılır.",
+    "category": "news",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_05",
+    "text": "Milli valyutanın məzənnəsi sabit qalmaqdadır.",
+    "category": "news",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_06",
+    "text": "Yeni avtomobil zavodu gələn il istismara veriləcək.",
+    "category": "news",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_07",
+    "text": "Azərbaycan turizm sektorunda sürətli artım qeydə alınıb.",
+    "category": "news",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_08",
+    "text": "Bakı şəhərində yeni metro xətti layihələndirilir.",
+    "category": "news",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_09",
+    "text": "Kənd təsərrüfatı sahəsində ixrac rekord həddə çatıb.",
+    "category": "news",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_10",
+    "text": "Təhsil sahəsində yeni islahatlar həyata keçirilir.",
+    "category": "news",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_11",
+    "text": "Alternativ enerji mənbələrindən istifadə genişləndirilir.",
+    "category": "news",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_12",
+    "text": "Ölkə prezidenti yeni fərman imzalayıb.",
+    "category": "news",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_13",
+    "text": "Xarici investisiyaların həcmi əhəmiyyətli dərəcədə artıb.",
+    "category": "news",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_14",
+    "text": "Mədəniyyət nazirliyi yeni layihələr elan edib.",
+    "category": "news",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_15",
+    "text": "Neft qiymətlərinin dəyişməsi iqtisadiyyata təsir göstərir.",
+    "category": "news",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_16",
+    "text": "Gənclər arasında sahibkarlıq fəaliyyəti genişlənir.",
+    "category": "news",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_17",
+    "text": "Beynəlxalq idman yarışlarında Azərbaycan idmançıları uğur qazanıb.",
+    "category": "news",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_18",
+    "text": "Yeni qanun layihəsi parlamentdə müzakirə olunacaq.",
+    "category": "news",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_19",
+    "text": "Rəqəmsal transformasiya prosesi bütün sahələrə yayılır.",
+    "category": "news",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_20",
+    "text": "Səhiyyə sistemi modernləşdirilir və yeni xəstəxanalar tikilir.",
+    "category": "news",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_21",
+    "text": "Dövlət büdcəsindən təhsilə ayrılan vəsait artırılıb.",
+    "category": "news",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_22",
+    "text": "Yeni hava limanı tikintisi başa çatmaq üzrədir.",
+    "category": "news",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_23",
+    "text": "İxrac məhsullarının çeşidi genişləndirilir.",
+    "category": "news",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_24",
+    "text": "Yerli istehsal məhsullarına tələbat artmaqdadır.",
+    "category": "news",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_25",
+    "text": "Ölkədə rəqəmsal ödəniş sistemləri sürətlə yayılır.",
+    "category": "news",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_26",
+    "text": "Ekologiya sahəsində yeni qanunvericilik qəbul edilib.",
+    "category": "news",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "news_27",
+    "text": "Beynəlxalq əməkdaşlıq çərçivəsində yeni müqavilələr imzalanıb.",
+    "category": "news",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_01",
+    "text": "Bu layihə haqqında ətraflı məlumat ala bilərəm?",
+    "category": "question",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_02",
+    "text": "Ən yaxın metro stansiyası haradadır?",
+    "category": "question",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_03",
+    "text": "Sizcə bu problem necə həll oluna bilər?",
+    "category": "question",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_04",
+    "text": "Nə üçün bu qədər gec gəldin?",
+    "category": "question",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_05",
+    "text": "Sabah iclasda hansı mövzular müzakirə olunacaq?",
+    "category": "question",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_06",
+    "text": "Bu sənədi kim hazırlayıb və nə vaxt təsdiqlənib?",
+    "category": "question",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_07",
+    "text": "Bu məhsulun qiyməti nə qədərdir?",
+    "category": "question",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_08",
+    "text": "Hara gedirsən, mən də gələ bilərəm?",
+    "category": "question",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_09",
+    "text": "Hansı universitetdə oxuyursan, neçənci kursdasan?",
+    "category": "question",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_10",
+    "text": "Bu işi nə vaxta qədər bitirməliyik?",
+    "category": "question",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_11",
+    "text": "Xahiş edirəm, mənə yolu göstərə bilərsən?",
+    "category": "question",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_12",
+    "text": "Bu hadisə nə vaxt baş verib?",
+    "category": "question",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_13",
+    "text": "Bu gün axşam nə yeyəcəyik?",
+    "category": "question",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_14",
+    "text": "Bilet qiymətləri artıbmı, bilirsən?",
+    "category": "question",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_15",
+    "text": "Bu proqramı necə yükləmək olar?",
+    "category": "question",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_16",
+    "text": "Bayramı necə keçirəcəksən, planların var?",
+    "category": "question",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_17",
+    "text": "Əslində sənin bu haqda fikrin nədir?",
+    "category": "question",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_18",
+    "text": "Sabah hava necə olacaq, bilirsən?",
+    "category": "question",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_19",
+    "text": "Bu kitabı haradan ala bilərəm?",
+    "category": "question",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_20",
+    "text": "Saat neçədə görüşəcəyik?",
+    "category": "question",
+    "wordCount": 3,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_21",
+    "text": "Yeni layihə nə vaxt başlayacaq?",
+    "category": "question",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_22",
+    "text": "Bu sözün mənası nədir, izah edə bilərsən?",
+    "category": "question",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_23",
+    "text": "Nahar vaxtı harada yemək yeyəcəyik?",
+    "category": "question",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_24",
+    "text": "Bu qədər tez necə bitirdin?",
+    "category": "question",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_25",
+    "text": "Hansı filmi izləməyi tövsiyə edirsən?",
+    "category": "question",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_26",
+    "text": "Uşaqların məktəbi saat neçədə qurtarır?",
+    "category": "question",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "question_27",
+    "text": "Bu gün nə üçün belə yorğun görünürsən?",
+    "category": "question",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_01",
+    "text": "Bu ilin birinci rübündə iqtisadiyyat üç faiz artıb.",
+    "category": "numbers",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_02",
+    "text": "Saat on ikidir, nahar vaxtıdır.",
+    "category": "numbers",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_03",
+    "text": "Yeddi yüz əlli üç nəfər bu yarışda iştirak edib.",
+    "category": "numbers",
+    "wordCount": 9,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_04",
+    "text": "İki min iyirmi altıncı ildə çox şey dəyişəcək.",
+    "category": "numbers",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_05",
+    "text": "Bu binanın hündürlüyü yüz otuz beş metrdir.",
+    "category": "numbers",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_06",
+    "text": "Bakının əhalisi iki milyondan çoxdur.",
+    "category": "numbers",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_07",
+    "text": "Üç yüz altmış beş gün bir ili təşkil edir.",
+    "category": "numbers",
+    "wordCount": 9,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_08",
+    "text": "On iki ay ərzində dörd fəsil keçir.",
+    "category": "numbers",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_09",
+    "text": "Məsafə doqquz yüz əlli kilometrdir.",
+    "category": "numbers",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_10",
+    "text": "Bu layihənin büdcəsi beş milyon manatdır.",
+    "category": "numbers",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_11",
+    "text": "Sinfimizdə iyirmi dörd şagird var.",
+    "category": "numbers",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_12",
+    "text": "Saat səkkizdə işə başlayırıq, beşdə qurtarırıq.",
+    "category": "numbers",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_13",
+    "text": "Bu yolun uzunluğu qırx iki kilometrdir.",
+    "category": "numbers",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_14",
+    "text": "Altı nəfərlik ailə üçün dörd otaqlı ev lazımdır.",
+    "category": "numbers",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_15",
+    "text": "İyirmi birinci əsrdə texnologiya sürətlə inkişaf edir.",
+    "category": "numbers",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_16",
+    "text": "Əlli iki həftə bir ili təşkil edir.",
+    "category": "numbers",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_17",
+    "text": "Bu universitetdə on beş min tələbə təhsil alır.",
+    "category": "numbers",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_18",
+    "text": "Hər gün səkkiz stəkan su içmək tövsiyə olunur.",
+    "category": "numbers",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_19",
+    "text": "Min doqquz yüz doxsan birinci ildə müstəqillik qazandıq.",
+    "category": "numbers",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_20",
+    "text": "Uçuş müddəti üç saat qırx dəqiqədir.",
+    "category": "numbers",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_21",
+    "text": "Dünyada yeddi milyard insanın yaşadığı hesab olunur.",
+    "category": "numbers",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_22",
+    "text": "Bir həftədə yeddi gün və yüz altmış səkkiz saat var.",
+    "category": "numbers",
+    "wordCount": 10,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_23",
+    "text": "Bu kitabda dörd yüz səhifə var.",
+    "category": "numbers",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_24",
+    "text": "On beş dərəcə şaxta gözlənilir.",
+    "category": "numbers",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_25",
+    "text": "İki yüz nəfərlik zal tamamilə doludur.",
+    "category": "numbers",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_26",
+    "text": "Hər il on milyon turist Bakıya gəlir.",
+    "category": "numbers",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "numbers_27",
+    "text": "Təyyarə saat altıda qalxacaq.",
+    "category": "numbers",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_01",
+    "text": "Musiqini dayandır.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_02",
+    "text": "İşığı yandır.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_03",
+    "text": "Həcmi artır.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_04",
+    "text": "Havanın temperaturunu göstər.",
+    "category": "commands",
+    "wordCount": 3,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_05",
+    "text": "Sabah üçün zəng qur.",
+    "category": "commands",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_06",
+    "text": "Ekranı söndür.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_07",
+    "text": "Naviqasiyanı başlat.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_08",
+    "text": "Xəbərləri oxu.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_09",
+    "text": "Saat neçədir?",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_10",
+    "text": "Kondisioneri yandır.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_11",
+    "text": "Televizoru söndür.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_12",
+    "text": "Musiqini dəyişdir.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_13",
+    "text": "Əlaqə siyahısını aç.",
+    "category": "commands",
+    "wordCount": 3,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_14",
+    "text": "Mesaj göndər.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_15",
+    "text": "Günün proqramını göstər.",
+    "category": "commands",
+    "wordCount": 3,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_16",
+    "text": "Ev telefonuna zəng et.",
+    "category": "commands",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_17",
+    "text": "Pərdələri bağla.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_18",
+    "text": "Radionu yandır.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_19",
+    "text": "İnterneti söndür.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_20",
+    "text": "Fotoaparatı aç.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_21",
+    "text": "Qapını kilidlə.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_22",
+    "text": "Xəritəni göstər.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_23",
+    "text": "Alarmı söndür.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_24",
+    "text": "Yeni qeyd yarat.",
+    "category": "commands",
+    "wordCount": 3,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_25",
+    "text": "Taymeri on dəqiqəyə qur.",
+    "category": "commands",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_26",
+    "text": "Səs yazısını başlat.",
+    "category": "commands",
+    "wordCount": 3,
+    "emotion": "neutral"
+  },
+  {
+    "id": "commands_27",
+    "text": "Kalkulyatoru aç.",
+    "category": "commands",
+    "wordCount": 2,
+    "emotion": "neutral"
+  },
+  {
+    "id": "emotions_01",
+    "text": "Bu gün çox xoşbəxtəm, hər şey yaxşı gedir!",
+    "category": "emotions",
+    "wordCount": 8,
+    "emotion": "happy"
+  },
+  {
+    "id": "emotions_02",
+    "text": "Kədərləndim, dostum uzağa köçüb.",
+    "category": "emotions",
+    "wordCount": 4,
+    "emotion": "sad"
+  },
+  {
+    "id": "emotions_03",
+    "text": "Niyə heç kim mənə xəbər vermədi, çox hirslənirəm!",
+    "category": "emotions",
+    "wordCount": 8,
+    "emotion": "angry"
+  },
+  {
+    "id": "emotions_04",
+    "text": "Uşağım ilk addımını atdı, gözlərim doldu!",
+    "category": "emotions",
+    "wordCount": 6,
+    "emotion": "happy"
+  },
+  {
+    "id": "emotions_05",
+    "text": "Yağışlı havalarda həmişə darıxıram.",
+    "category": "emotions",
+    "wordCount": 4,
+    "emotion": "sad"
+  },
+  {
+    "id": "emotions_06",
+    "text": "Bu qədər haqsızlığa dözə bilmirəm!",
+    "category": "emotions",
+    "wordCount": 5,
+    "emotion": "angry"
+  },
+  {
+    "id": "emotions_07",
+    "text": "Doğum günümdə bütün dostlarım gəldi, çox sevindim!",
+    "category": "emotions",
+    "wordCount": 7,
+    "emotion": "happy"
+  },
+  {
+    "id": "emotions_08",
+    "text": "Sevdiyim insanı itirmək çox ağırdır.",
+    "category": "emotions",
+    "wordCount": 5,
+    "emotion": "sad"
+  },
+  {
+    "id": "emotions_09",
+    "text": "Yenə eyni səhvi təkrarlayırsan, bezdim artıq!",
+    "category": "emotions",
+    "wordCount": 6,
+    "emotion": "angry"
+  },
+  {
+    "id": "emotions_10",
+    "text": "Müsabiqəni qazandıq, hamımız çox sevinirik!",
+    "category": "emotions",
+    "wordCount": 5,
+    "emotion": "happy"
+  },
+  {
+    "id": "emotions_11",
+    "text": "Tənhalıq bəzən çox ağır olur.",
+    "category": "emotions",
+    "wordCount": 5,
+    "emotion": "sad"
+  },
+  {
+    "id": "emotions_12",
+    "text": "Sözünü tut, hər dəfə vəd verib pozursan!",
+    "category": "emotions",
+    "wordCount": 7,
+    "emotion": "angry"
+  },
+  {
+    "id": "emotions_13",
+    "text": "Ailənin bir yerdə olması ən gözəl hissdir.",
+    "category": "emotions",
+    "wordCount": 7,
+    "emotion": "happy"
+  },
+  {
+    "id": "emotions_14",
+    "text": "Onu xatırlayanda ürəyim sızlayır.",
+    "category": "emotions",
+    "wordCount": 4,
+    "emotion": "sad"
+  },
+  {
+    "id": "emotions_15",
+    "text": "Bu münasibət məni çox qəzəbləndirir!",
+    "category": "emotions",
+    "wordCount": 5,
+    "emotion": "angry"
+  },
+  {
+    "id": "emotions_16",
+    "text": "Nəhayət diplom aldım, arzuma çatdım!",
+    "category": "emotions",
+    "wordCount": 5,
+    "emotion": "happy"
+  },
+  {
+    "id": "emotions_17",
+    "text": "Heç kim məni anlamır, çox pisdir.",
+    "category": "emotions",
+    "wordCount": 6,
+    "emotion": "sad"
+  },
+  {
+    "id": "emotions_18",
+    "text": "Belə davranmaq olmaz, bu çox ayıbdır!",
+    "category": "emotions",
+    "wordCount": 6,
+    "emotion": "angry"
+  },
+  {
+    "id": "emotions_19",
+    "text": "Uşaqların gülüşü evin havasını dəyişir.",
+    "category": "emotions",
+    "wordCount": 5,
+    "emotion": "happy"
+  },
+  {
+    "id": "emotions_20",
+    "text": "Yaxın dostumu itirdim, çox kədərliyəm.",
+    "category": "emotions",
+    "wordCount": 5,
+    "emotion": "sad"
+  },
+  {
+    "id": "emotions_21",
+    "text": "Nə qədər xəbərdarlıq etdim, heç kim qulaq asmadı!",
+    "category": "emotions",
+    "wordCount": 8,
+    "emotion": "angry"
+  },
+  {
+    "id": "emotions_22",
+    "text": "Sevdiyim işi tapdım, hər gün sevinclə gedirəm.",
+    "category": "emotions",
+    "wordCount": 7,
+    "emotion": "happy"
+  },
+  {
+    "id": "emotions_23",
+    "text": "Bu xəbər məni çox məyus etdi.",
+    "category": "emotions",
+    "wordCount": 6,
+    "emotion": "sad"
+  },
+  {
+    "id": "emotions_24",
+    "text": "Vaxtında gəlmirsiniz, bu qəbuledilməzdir!",
+    "category": "emotions",
+    "wordCount": 4,
+    "emotion": "angry"
+  },
+  {
+    "id": "emotions_25",
+    "text": "Gözəl bir gün keçirdik, hamı xoşbəxt idi.",
+    "category": "emotions",
+    "wordCount": 7,
+    "emotion": "happy"
+  },
+  {
+    "id": "emotions_26",
+    "text": "Keçmişi düşünəndə gözlərim yaşarır.",
+    "category": "emotions",
+    "wordCount": 4,
+    "emotion": "sad"
+  },
+  {
+    "id": "emotions_27",
+    "text": "Bu vəziyyət məni çox narahat edir, dözə bilmirəm!",
+    "category": "emotions",
+    "wordCount": 8,
+    "emotion": "angry"
+  },
+  {
+    "id": "daily_01",
+    "text": "Hər səhər saat yeddidə dururam.",
+    "category": "daily",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_02",
+    "text": "Səhər yeməyində çay və pendir yeyirəm.",
+    "category": "daily",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_03",
+    "text": "İşə avtobusla gedirəm, yarım saat çəkir.",
+    "category": "daily",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_04",
+    "text": "Nahar fasiləsində həmkarlarımla söhbət edirəm.",
+    "category": "daily",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_05",
+    "text": "Axşamlar kitab oxumağı xoşlayıram.",
+    "category": "daily",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_06",
+    "text": "Yatmazdan əvvəl dişlərimi fırçalayıram.",
+    "category": "daily",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_07",
+    "text": "Həftəsonları bazara gedib ərzaq alıram.",
+    "category": "daily",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_08",
+    "text": "Hər gün yarım saat gəzintiyə çıxıram.",
+    "category": "daily",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_09",
+    "text": "Səhərlər duş qəbul edib geyinirəm.",
+    "category": "daily",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_10",
+    "text": "Axşam yeməyini ailə ilə birlikdə yeyirik.",
+    "category": "daily",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_11",
+    "text": "İş günləri saat altıda oyanıram.",
+    "category": "daily",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_12",
+    "text": "Nahardan sonra bir az istirahət edirəm.",
+    "category": "daily",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_13",
+    "text": "Hər gün xəbərləri izləyirəm.",
+    "category": "daily",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_14",
+    "text": "Həftədə iki dəfə idman zalına gedirəm.",
+    "category": "daily",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_15",
+    "text": "Axşamlar evdə film izləyirik.",
+    "category": "daily",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_16",
+    "text": "Səhər tezdən bağa su verirəm.",
+    "category": "daily",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_17",
+    "text": "Cümə axşamları bazarlıq edirəm.",
+    "category": "daily",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_18",
+    "text": "Hər gün üç öyün yemək yeyirəm.",
+    "category": "daily",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_19",
+    "text": "Axşam saat onda yatağa uzanıram.",
+    "category": "daily",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_20",
+    "text": "İşdən sonra uşaqları məktəbdən götürürəm.",
+    "category": "daily",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_21",
+    "text": "Hər səhər əl-üzümü yuyub hazırlaşıram.",
+    "category": "daily",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_22",
+    "text": "Evə gələndə paltarımı dəyişirəm.",
+    "category": "daily",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_23",
+    "text": "Gecələri pəncərəni açıq qoyuram.",
+    "category": "daily",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_24",
+    "text": "Bazar günləri gec dururam, istirahət edirəm.",
+    "category": "daily",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_25",
+    "text": "Nahar vaxtı iş yoldaşlarımla yeməyə gedirəm.",
+    "category": "daily",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "daily_26",
+    "text": "Hər axşam sabahkı geyimimi hazırlayıram.",
+    "category": "daily",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_01",
+    "text": "Süni intellekt gündəlik həyatımızı dəyişdirir.",
+    "category": "tech",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_02",
+    "text": "Bu proqram təminatı çox sürətli işləyir.",
+    "category": "tech",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_03",
+    "text": "Bulud texnologiyaları məlumatları təhlükəsiz saxlayır.",
+    "category": "tech",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_04",
+    "text": "Yeni smartfon modeli çox güclü prosessora malikdir.",
+    "category": "tech",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_05",
+    "text": "Proqramlaşdırma dillərini öyrənmək çox vacibdir.",
+    "category": "tech",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_06",
+    "text": "Kibertəhlükəsizlik müasir dövrün əsas problemlərindən biridir.",
+    "category": "tech",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_07",
+    "text": "Rəqəmsal marketinq şirkətlərə böyük üstünlük verir.",
+    "category": "tech",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_08",
+    "text": "İnternet sürətinin artması həyatımızı asanlaşdırır.",
+    "category": "tech",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_09",
+    "text": "Bu tətbiq istifadəçilər üçün çox rahatdır.",
+    "category": "tech",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_10",
+    "text": "Verilənlər bazası müasir texnologiyanın əsasıdır.",
+    "category": "tech",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_11",
+    "text": "Blokçeyn texnologiyası maliyyə sektorunu dəyişdirir.",
+    "category": "tech",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_12",
+    "text": "Virtual reallıq təhsildə geniş istifadə olunur.",
+    "category": "tech",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_13",
+    "text": "Elektron ticarət hər il böyüyür.",
+    "category": "tech",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_14",
+    "text": "Avtomatlaşdırma istehsal proseslərini sürətləndirir.",
+    "category": "tech",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_15",
+    "text": "Bu cihaz səsə cavab verir.",
+    "category": "tech",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_16",
+    "text": "Proqram yeniləmələri müntəzəm olaraq edilməlidir.",
+    "category": "tech",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_17",
+    "text": "Məlumat analitikası biznes qərarlarına kömək edir.",
+    "category": "tech",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_18",
+    "text": "Genişləndirilmiş reallıq yeni imkanlar yaradır.",
+    "category": "tech",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_19",
+    "text": "Rəqəmsal transformasiya hər sahədə tətbiq edilir.",
+    "category": "tech",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_20",
+    "text": "Simsiz texnologiyalar sürətlə inkişaf edir.",
+    "category": "tech",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_21",
+    "text": "Süni intellekt tibbdə inqilabi dəyişikliklər edir.",
+    "category": "tech",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_22",
+    "text": "Mobil tətbiqlər gündəlik əməliyyatları asanlaşdırır.",
+    "category": "tech",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_23",
+    "text": "Robotlar sənaye sahəsində geniş istifadə olunur.",
+    "category": "tech",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_24",
+    "text": "Məlumat təhlükəsizliyi prioritet məsələdir.",
+    "category": "tech",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_25",
+    "text": "Bulud xidmətləri biznesə çeviklik verir.",
+    "category": "tech",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "tech_26",
+    "text": "Rəqəmsal avadanlıqlar enerji səmərəliliyini artırır.",
+    "category": "tech",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_01",
+    "text": "Azərbaycan muğamı dünya musiqi irsinin hissəsidir.",
+    "category": "culture",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_02",
+    "text": "Novruz bayramı baharın gəlişini simvolizə edir.",
+    "category": "culture",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_03",
+    "text": "Nizami Gəncəvi böyük Azərbaycan şairidir.",
+    "category": "culture",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_04",
+    "text": "Xalçaçılıq Azərbaycanın qədim sənət növüdür.",
+    "category": "culture",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_05",
+    "text": "İçərişəhər Bakının tarixi mərkəzidir.",
+    "category": "culture",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_06",
+    "text": "Azərbaycan mətbəxi çox zəngin və müxtəlifdir.",
+    "category": "culture",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_07",
+    "text": "Tar Azərbaycanın milli musiqi alətidir.",
+    "category": "culture",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_08",
+    "text": "Qobustan qayaüstü rəsmləri qədim tariximizi əks etdirir.",
+    "category": "culture",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_09",
+    "text": "Aşıq sənəti Azərbaycan mədəniyyətinin ayrılmaz hissəsidir.",
+    "category": "culture",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_10",
+    "text": "Şuşa Azərbaycanın mədəniyyət paytaxtıdır.",
+    "category": "culture",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_11",
+    "text": "Milli teatr yüz ildən çox tarixə malikdir.",
+    "category": "culture",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_12",
+    "text": "Azərbaycan rəqsləri çox ritmik və enerjilidir.",
+    "category": "culture",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_13",
+    "text": "Miniatur sənəti orta əsr mədəniyyətinin nümunəsidir.",
+    "category": "culture",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_14",
+    "text": "Azərbaycan ədəbiyyatı zəngin ənənələrə malikdir.",
+    "category": "culture",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_15",
+    "text": "Atəşgah məbədi qədim tarixi abidədir.",
+    "category": "culture",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_16",
+    "text": "Qarabağ atları dünyada məşhur cinsdir.",
+    "category": "culture",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_17",
+    "text": "Xınayaxdı mərasimi toy ənənələrinin hissəsidir.",
+    "category": "culture",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_18",
+    "text": "Azərbaycan xalq mahnıları çox melodikdir.",
+    "category": "culture",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_19",
+    "text": "Qədim Şamaxı Azərbaycanın ilk paytaxtı olub.",
+    "category": "culture",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_20",
+    "text": "Naxçıvandakı əlyazmalar tarixi dəyər daşıyır.",
+    "category": "culture",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_21",
+    "text": "Milli geyimlər mədəniyyətimizin vacib hissəsidir.",
+    "category": "culture",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_22",
+    "text": "Bakı bulvarı şəhərin ən gözəl yeridir.",
+    "category": "culture",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_23",
+    "text": "Füzuli Azərbaycan şeirinin dahisidir.",
+    "category": "culture",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_24",
+    "text": "Qız Qalası Bakının simvollarından biridir.",
+    "category": "culture",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_25",
+    "text": "Azərbaycan kinosu inkişaf edir.",
+    "category": "culture",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "culture_26",
+    "text": "Dədə Qorqud eposu qədim türk ədəbiyyatının əsəridir.",
+    "category": "culture",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_01",
+    "text": "Bakıya birbaşa uçuş beş saat çəkir.",
+    "category": "travel",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_02",
+    "text": "Otelimiz dəniz kənarında yerləşir.",
+    "category": "travel",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_03",
+    "text": "Viza almaq üçün sənədləri hazırlamalıyıq.",
+    "category": "travel",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_04",
+    "text": "Hava limanında pasport yoxlamasından keçdik.",
+    "category": "travel",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_05",
+    "text": "Bu şəhərdə görmək üçün çox yer var.",
+    "category": "travel",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_06",
+    "text": "Çamadanımı itirdim, çox narahatam.",
+    "category": "travel",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_07",
+    "text": "Turistik gəzintiyə bələdçi ilə çıxdıq.",
+    "category": "travel",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_08",
+    "text": "Otel otağından dəniz mənzərəsi görünür.",
+    "category": "travel",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_09",
+    "text": "Bu ölkənin vizası tələb olunmur.",
+    "category": "travel",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_10",
+    "text": "Təyyarə bileti əvvəlcədən alınmalıdır.",
+    "category": "travel",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_11",
+    "text": "Səyahət zamanı yerli mətbəxi dadmaq gərəkdir.",
+    "category": "travel",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_12",
+    "text": "Dağ kəndlərinə ekskursiya çox maraqlı oldu.",
+    "category": "travel",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_13",
+    "text": "Fotoaparatımı unudmuşam, telefonla çəkəcəyəm.",
+    "category": "travel",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_14",
+    "text": "Gəmi ilə Xəzər dənizində gəzinti etdik.",
+    "category": "travel",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_15",
+    "text": "Bilet qiymətləri yay mövsümündə artır.",
+    "category": "travel",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_16",
+    "text": "Yerli bazar çox rəngarəng və maraqlıdır.",
+    "category": "travel",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_17",
+    "text": "Taksi ilə şəhər mərkəzinə getdik.",
+    "category": "travel",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_18",
+    "text": "Muzeyləri gəzmək səyahətin ən gözəl hissəsidir.",
+    "category": "travel",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_19",
+    "text": "Bu otel çox rahatlıq və xidmət təklif edir.",
+    "category": "travel",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_20",
+    "text": "Dəniz kənarında qum çimərliyində dincəldik.",
+    "category": "travel",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_21",
+    "text": "Səyahət planını əvvəlcədən hazırlamaq lazımdır.",
+    "category": "travel",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_22",
+    "text": "Hava limanı şəhərin mərkəzindən uzaqdadır.",
+    "category": "travel",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_23",
+    "text": "Turistlər üçün xüsusi avtobus marşrutları var.",
+    "category": "travel",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_24",
+    "text": "Bu şəhərdə gəzmək üçün ən yaxşı fəsil yazdır.",
+    "category": "travel",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_25",
+    "text": "Qatar səfəri çox rahat və sərfəlidir.",
+    "category": "travel",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "travel_26",
+    "text": "Pasportumun müddəti bitir, yeniləməliyəm.",
+    "category": "travel",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_01",
+    "text": "Bu gün axşam üçün plov bişirəcəyəm.",
+    "category": "food",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_02",
+    "text": "Dolma Azərbaycan mətbəxinin ən sevimli yeməyidir.",
+    "category": "food",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_03",
+    "text": "Bazardan təzə meyvə və tərəvəz aldım.",
+    "category": "food",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_04",
+    "text": "Çay süfrəsi qonaq qarşılamağın ən gözəl yoludur.",
+    "category": "food",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_05",
+    "text": "Bu restoranda ən dadlı kabab bişirilir.",
+    "category": "food",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_06",
+    "text": "Ləvəngi Lənkəranın məşhur yeməyidir.",
+    "category": "food",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_07",
+    "text": "Ev çörəyi bazardakından daha dadlı olur.",
+    "category": "food",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_08",
+    "text": "Şorbaya bir az duz əlavə etmək lazımdır.",
+    "category": "food",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_09",
+    "text": "Toyuq soyutması yay aylarında çox xoş gəlir.",
+    "category": "food",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_10",
+    "text": "Paxlava bayram süfrəsinin əvəzolunmaz şirniyyatıdır.",
+    "category": "food",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_11",
+    "text": "Qutab tez hazırlanır və çox dadlıdır.",
+    "category": "food",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_12",
+    "text": "Aş daha yaxşı olsun deyə kərə yağı qoyun.",
+    "category": "food",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_13",
+    "text": "Pomidor-xiyar salatı hər yeməyin yanında verilir.",
+    "category": "food",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_14",
+    "text": "Lüləkabab odun közündə daha ləzzətli olur.",
+    "category": "food",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_15",
+    "text": "Dovğa yay aylarında soyuq içilir.",
+    "category": "food",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_16",
+    "text": "Şəkərbura Novruz bayramının əsas şirniyyatıdır.",
+    "category": "food",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_17",
+    "text": "Düşbərəni qaynar suya atıb bişirmək lazımdır.",
+    "category": "food",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_18",
+    "text": "Bu yeməyin reseptini nənəmdən öyrənmişəm.",
+    "category": "food",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_19",
+    "text": "Bal və qaymaq səhər yeməyi üçün idealdır.",
+    "category": "food",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_20",
+    "text": "Manqalda bişən ət çox ləzzətli olur.",
+    "category": "food",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_21",
+    "text": "Limon çayı boğaz ağrısına yaxşı gəlir.",
+    "category": "food",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_22",
+    "text": "Kükü Azərbaycan mətbəxinə xas yeməkdir.",
+    "category": "food",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_23",
+    "text": "Təndir çörəyi təzə bişəndə ən dadlıdır.",
+    "category": "food",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_24",
+    "text": "Düyü aşı ilə qovurma birlikdə verilir.",
+    "category": "food",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_25",
+    "text": "Şərbət təzə meyvələrdən hazırlanır.",
+    "category": "food",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "food_26",
+    "text": "Badımcan yeməkləri yayda çox sevilir.",
+    "category": "food",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_01",
+    "text": "Futbol Azərbaycanda ən populyar idman növüdür.",
+    "category": "sports",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_02",
+    "text": "Bu il olimpiya oyunlarında ölkəmizi təmsil edəcəyik.",
+    "category": "sports",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_03",
+    "text": "Şahmat Azərbaycanda çox inkişaf etmiş idman növüdür.",
+    "category": "sports",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_04",
+    "text": "Güləş milli idman növlərimizdən biridir.",
+    "category": "sports",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_05",
+    "text": "Bakıda Formula yarışları keçirilir.",
+    "category": "sports",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_06",
+    "text": "Voleybol komandamız beynəlxalq yarışlarda uğur qazanıb.",
+    "category": "sports",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_07",
+    "text": "İdmançılarımız dünya çempionatında medal qazandı.",
+    "category": "sports",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_08",
+    "text": "Üzgüçülük sağlamlıq üçün çox faydalıdır.",
+    "category": "sports",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_09",
+    "text": "Basketbol oyunu çox maraqlı keçdi.",
+    "category": "sports",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_10",
+    "text": "Yeni stadion gələn il açılacaq.",
+    "category": "sports",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_11",
+    "text": "Cüdo Azərbaycanda güclü ənənəyə malikdir.",
+    "category": "sports",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_12",
+    "text": "Atletika yarışlarında yeni rekord qeydə alındı.",
+    "category": "sports",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_13",
+    "text": "Boks idmançılarımız olimpiya medalı qazanıb.",
+    "category": "sports",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_14",
+    "text": "Futbol millisinin yeni baş məşqçisi təyin edildi.",
+    "category": "sports",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_15",
+    "text": "İdman zalları şəhərin hər yerində var.",
+    "category": "sports",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_16",
+    "text": "Velosiped sürməyi çox sevirəm.",
+    "category": "sports",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_17",
+    "text": "Tennis kortu yaxınlıqda yerləşir.",
+    "category": "sports",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_18",
+    "text": "Komanda oyunları əməkdaşlıq bacarığını inkişaf etdirir.",
+    "category": "sports",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_19",
+    "text": "İdman hər yaşda faydalıdır.",
+    "category": "sports",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_20",
+    "text": "Qış idman növləri ölkəmizdə inkişaf etdirilir.",
+    "category": "sports",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_21",
+    "text": "Marafon yarışına yüzlərlə idmançı qatıldı.",
+    "category": "sports",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_22",
+    "text": "Gimnastika çeviklik və güc tələb edir.",
+    "category": "sports",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_23",
+    "text": "Azərbaycan karate federasiyası yeni layihələr hazırlayır.",
+    "category": "sports",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_24",
+    "text": "Futbol oyununu stadion tribünasından izlədim.",
+    "category": "sports",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_25",
+    "text": "Sağlam bədən sağlam ruhun temelidir.",
+    "category": "sports",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "sports_26",
+    "text": "İdman mədəniyyəti gənclərdə formalaşdırılmalıdır.",
+    "category": "sports",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_01",
+    "text": "Bu gün hava çox istidi, otuz dərəcə var.",
+    "category": "weather",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_02",
+    "text": "Sabah yağış yağacağı gözlənilir.",
+    "category": "weather",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_03",
+    "text": "Qış aylarında Bakıda güclü külək olur.",
+    "category": "weather",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_04",
+    "text": "Yaz aylarında hava isinməyə başlayır.",
+    "category": "weather",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_05",
+    "text": "Payız fəslində yarpaqlar tökülür.",
+    "category": "weather",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_06",
+    "text": "Dağlarda qar yağıb, mənzərə çox gözəldir.",
+    "category": "weather",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_07",
+    "text": "Bu həftə hava temperaturları aşağı düşəcək.",
+    "category": "weather",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_08",
+    "text": "Yay aylarında dəniz suyu isti olur.",
+    "category": "weather",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_09",
+    "text": "Günəş çox parlaq işıq saçır.",
+    "category": "weather",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_10",
+    "text": "Hava proqnozu sabah üçün buludlu havadır.",
+    "category": "weather",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_11",
+    "text": "Küləkli havada bayıra çıxmaq çətindir.",
+    "category": "weather",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_12",
+    "text": "Dumanlı hava nəqliyyatda problemlər yaradır.",
+    "category": "weather",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_13",
+    "text": "Qar əriyib, çaylar daşqın edir.",
+    "category": "weather",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_14",
+    "text": "Temperatur gündüz iyirmi dərəcə olacaq.",
+    "category": "weather",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_15",
+    "text": "Payızda tez-tez yağış yağır.",
+    "category": "weather",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_16",
+    "text": "İstilik dalğası bir həftə davam edəcək.",
+    "category": "weather",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_17",
+    "text": "Dolu yağdı, əkinlərə ziyan dəydi.",
+    "category": "weather",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_18",
+    "text": "Hava proqnozuna görə sabah günəşli olacaq.",
+    "category": "weather",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_19",
+    "text": "Qışda gündüzlər qısa gecələr uzun olur.",
+    "category": "weather",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_20",
+    "text": "Rütubət bu gün çox yüksəkdir.",
+    "category": "weather",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_21",
+    "text": "Çiskin yağır, çətir götürmək lazımdır.",
+    "category": "weather",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_22",
+    "text": "Bahar fəslində allergiya artır.",
+    "category": "weather",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_23",
+    "text": "Küləyin sürəti saatda əlli kilometrdir.",
+    "category": "weather",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_24",
+    "text": "Havanın kəskin dəyişməsi sağlamlığa təsir edir.",
+    "category": "weather",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_25",
+    "text": "Buzlanma nəqliyyat üçün təhlükə yaradır.",
+    "category": "weather",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "weather_26",
+    "text": "Bu yay ən isti yay olaraq qeydə alınıb.",
+    "category": "weather",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_01",
+    "text": "Hər gün ən azı yarım saat idman edin.",
+    "category": "health",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_02",
+    "text": "Sağlam qidalanma xəstəliklərin qarşısını alır.",
+    "category": "health",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_03",
+    "text": "Həkimə müntəzəm müayinəyə getmək lazımdır.",
+    "category": "health",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_04",
+    "text": "Su içmək orqanizm üçün çox vacibdir.",
+    "category": "health",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_05",
+    "text": "Yuxunun keyfiyyəti sağlamlıq üçün əhəmiyyətlidir.",
+    "category": "health",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_06",
+    "text": "Stress sağlamlığa ciddi zərər verə bilər.",
+    "category": "health",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_07",
+    "text": "Vitaminlər immunitet sistemini gücləndirir.",
+    "category": "health",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_08",
+    "text": "Fiziki aktivlik əhval-ruhiyyəni yaxşılaşdırır.",
+    "category": "health",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_09",
+    "text": "Tütündən istifadə sağlamlığa zərərlidir.",
+    "category": "health",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_10",
+    "text": "Düzgün qidalanma enerjini artırır.",
+    "category": "health",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_11",
+    "text": "Allergiya simptomları yazda güclənir.",
+    "category": "health",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_12",
+    "text": "Göz müayinəsi ildə bir dəfə edilməlidir.",
+    "category": "health",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_13",
+    "text": "Qan təzyiqi müntəzəm olaraq yoxlanmalıdır.",
+    "category": "health",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_14",
+    "text": "Diş sağlamlığı ümumi sağlamlıq üçün vacibdir.",
+    "category": "health",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_15",
+    "text": "Meyvə və tərəvəz hər gün yeyilməlidir.",
+    "category": "health",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_16",
+    "text": "Psixi sağlamlıq fiziki sağlamlıq qədər önəmlidir.",
+    "category": "health",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_17",
+    "text": "Peyvəndlər xəstəliklərin yayılmasının qarşısını alır.",
+    "category": "health",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_18",
+    "text": "Müntəzəm gəzinti ürək sağlamlığına kömək edir.",
+    "category": "health",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_19",
+    "text": "Əl yumaq xəstəliklərdən qorunmanın asan yoludur.",
+    "category": "health",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_20",
+    "text": "Yağlı qidalar mədə üçün zərərlidir.",
+    "category": "health",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_21",
+    "text": "Gündəlik enerji ehtiyacı yaşdan asılıdır.",
+    "category": "health",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_22",
+    "text": "İlk yardım biliklərini hər kəs öyrənməlidir.",
+    "category": "health",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_23",
+    "text": "Sağlam həyat tərzi xəstəlik riskini azaldır.",
+    "category": "health",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_24",
+    "text": "Antibiotikləri həkim məsləhəti olmadan qəbul etməyin.",
+    "category": "health",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_25",
+    "text": "Bədən çəkisini nəzarətdə saxlamaq vacibdir.",
+    "category": "health",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "health_26",
+    "text": "Uzun müddət ekrana baxmaq gözlərə zərərdir.",
+    "category": "health",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_01",
+    "text": "Təhsil insanın ən dəyərli sərvətidir.",
+    "category": "education",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_02",
+    "text": "Universitetdə mühəndislik ixtisası üzrə oxuyuram.",
+    "category": "education",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_03",
+    "text": "Müəllimlərimiz bizdən çox şey öyrədir.",
+    "category": "education",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_04",
+    "text": "Kitabxanada saatlarla dərs hazırlayıram.",
+    "category": "education",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_05",
+    "text": "İmtahanlara yaxşı hazırlaşmaq lazımdır.",
+    "category": "education",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_06",
+    "text": "Bu kurs onlayn olaraq keçirilir.",
+    "category": "education",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_07",
+    "text": "Xarici dil bilmək çox böyük üstünlükdür.",
+    "category": "education",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_08",
+    "text": "Məktəbdə riyaziyyat ən sevdiyim fənn idi.",
+    "category": "education",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_09",
+    "text": "Magistratura proqramına qəbul oldum.",
+    "category": "education",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_10",
+    "text": "Dərslərdə fəal iştirak etmək vacibdir.",
+    "category": "education",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_11",
+    "text": "Elm və texnologiya birlikdə inkişaf edir.",
+    "category": "education",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_12",
+    "text": "Diplom işimi bu il yazacağam.",
+    "category": "education",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_13",
+    "text": "Tələbələr üçün yeni yataqxana tikilir.",
+    "category": "education",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_14",
+    "text": "Təhsil sistemi müasirləşdirilməlidir.",
+    "category": "education",
+    "wordCount": 3,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_15",
+    "text": "Müəllimlərə daha çox dəstək verilməlidir.",
+    "category": "education",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_16",
+    "text": "Peşə təhsili gənclərin gələcəyinə töhfə verir.",
+    "category": "education",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_17",
+    "text": "Kitab oxumaq bilik və bacarıqları artırır.",
+    "category": "education",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_18",
+    "text": "Distant təhsil yeni imkanlar yaradıb.",
+    "category": "education",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_19",
+    "text": "Laboratoriyada təcrübə apardıq.",
+    "category": "education",
+    "wordCount": 3,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_20",
+    "text": "Tələbə mübadiləsi proqramları çox faydalıdır.",
+    "category": "education",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_21",
+    "text": "Təhsil haqqında dövlət siyasəti dəyişir.",
+    "category": "education",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_22",
+    "text": "İbtidai siniflərdə əsas bacarıqlar öyrədilir.",
+    "category": "education",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_23",
+    "text": "Universitetlər arasında əməkdaşlıq gücləndirilir.",
+    "category": "education",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_24",
+    "text": "Bu kursda praktiki biliklər öyrədilir.",
+    "category": "education",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_25",
+    "text": "Təhsil həyat boyu davam edən prosesdir.",
+    "category": "education",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "education_26",
+    "text": "Yaradıcı düşüncə təhsildə təşviq edilməlidir.",
+    "category": "education",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_01",
+    "text": "Şirkətimiz bu il böyük inkişaf göstərib.",
+    "category": "business",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_02",
+    "text": "Yeni iş planı hazırlanmalıdır.",
+    "category": "business",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_03",
+    "text": "İnvestisiya qoyuluşu diqqətlə planlaşdırılmalıdır.",
+    "category": "business",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_04",
+    "text": "Rəqabət bazarında keyfiyyət əsas amildir.",
+    "category": "business",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_05",
+    "text": "Müştəri məmnuniyyəti biznesin əsasıdır.",
+    "category": "business",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_06",
+    "text": "Marketinq strategiyası yenidən nəzərdən keçirilməlidir.",
+    "category": "business",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_07",
+    "text": "Gəlir və xərclər diqqətlə izlənilməlidir.",
+    "category": "business",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_08",
+    "text": "Startap layihəsi uğurla başa çatdı.",
+    "category": "business",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_09",
+    "text": "Komanda işi nəticələri yaxşılaşdırır.",
+    "category": "business",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_10",
+    "text": "İclas bu gün saat üçdə keçiriləcək.",
+    "category": "business",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_11",
+    "text": "Müqavilə şərtləri müzakirə olunmalıdır.",
+    "category": "business",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_12",
+    "text": "Onlayn satışlar sürətlə artmaqdadır.",
+    "category": "business",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_13",
+    "text": "Kadr siyasəti şirkətin uğurunu müəyyən edir.",
+    "category": "business",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_14",
+    "text": "Beynəlxalq bazarlara çıxmaq planlaşdırılır.",
+    "category": "business",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_15",
+    "text": "Maliyyə hesabatı rüblük hazırlanır.",
+    "category": "business",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_16",
+    "text": "Sahibkarlıq fəaliyyəti dəstəklənməlidir.",
+    "category": "business",
+    "wordCount": 3,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_17",
+    "text": "Reklam kampaniyası uğurlu nəticələr verdi.",
+    "category": "business",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_18",
+    "text": "Logistika xərcləri optimallaşdırılmalıdır.",
+    "category": "business",
+    "wordCount": 3,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_19",
+    "text": "Yeni ofis binası kirayə götürdük.",
+    "category": "business",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_20",
+    "text": "İş görüşməsi sabah keçiriləcək.",
+    "category": "business",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_21",
+    "text": "Vergi ödəmələri vaxtında edilməlidir.",
+    "category": "business",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_22",
+    "text": "Rəqəmsal biznes modelləri sürətlə yayılır.",
+    "category": "business",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_23",
+    "text": "Brendin tanınması üçün marketinq vacibdir.",
+    "category": "business",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_24",
+    "text": "Təchizat zənciri düzgün idarə olunmalıdır.",
+    "category": "business",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_25",
+    "text": "İşçilərin motivasiyası performansı artırır.",
+    "category": "business",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "business_26",
+    "text": "Strateji planlaşdırma uzunmüddətli uğurun açarıdır.",
+    "category": "business",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_01",
+    "text": "Meşələr təbiətin ən vacib hissəsidir.",
+    "category": "nature",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_02",
+    "text": "Dağlarda hava çox təmiz və sağlamdır.",
+    "category": "nature",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_03",
+    "text": "Xəzər dənizi dünyanın ən böyük gölüdür.",
+    "category": "nature",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_04",
+    "text": "Çaylar dərələrdən axaraq dənizə tökülür.",
+    "category": "nature",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_05",
+    "text": "Təbiəti qorumaq hər kəsin borcudur.",
+    "category": "nature",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_06",
+    "text": "Bahar aylarında ağaclar çiçək açır.",
+    "category": "nature",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_07",
+    "text": "Meşədə müxtəlif heyvanlar yaşayır.",
+    "category": "nature",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_08",
+    "text": "Günəş batanda göy üzü qızarır.",
+    "category": "nature",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_09",
+    "text": "Dağ çeşməsinin suyu çox soyuq və təmizdir.",
+    "category": "nature",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_10",
+    "text": "Quşlar yazda yuva tikir.",
+    "category": "nature",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_11",
+    "text": "Azərbaycanın təbiəti çox müxtəlif və zəngindir.",
+    "category": "nature",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_12",
+    "text": "Qış aylarında göl buz bağlayır.",
+    "category": "nature",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_13",
+    "text": "Çöl çiçəkləri rəngarəng gözəllik yaradır.",
+    "category": "nature",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_14",
+    "text": "Ağaclar havamızı təmizləyir.",
+    "category": "nature",
+    "wordCount": 3,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_15",
+    "text": "Şəlalənin səsi uzaqdan eşidilir.",
+    "category": "nature",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_16",
+    "text": "Bulaqlar yer altından çıxan təmiz sudur.",
+    "category": "nature",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_17",
+    "text": "Göy qurşağı yağışdan sonra çıxır.",
+    "category": "nature",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_18",
+    "text": "Heyvanlar təbiətin tarazlığını qoruyur.",
+    "category": "nature",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_19",
+    "text": "Dəniz sahilində gün batımı çox gözəldir.",
+    "category": "nature",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_20",
+    "text": "Palıd ağacı yüzlərlə il yaşaya bilər.",
+    "category": "nature",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_21",
+    "text": "Vulkanlar təbiətin güclü hadisələrindən biridir.",
+    "category": "nature",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_22",
+    "text": "Ceyranlar Azərbaycanın nadir heyvanlarındandır.",
+    "category": "nature",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_23",
+    "text": "Torpağın münbitliyi əkinçilik üçün vacibdir.",
+    "category": "nature",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_24",
+    "text": "Milli parklarda nadir bitkilər qorunur.",
+    "category": "nature",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_25",
+    "text": "Dağ gölləri çox sakit və gözəldir.",
+    "category": "nature",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "nature_26",
+    "text": "Ekologiya problemləri bütün dünyanı narahat edir.",
+    "category": "nature",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_01",
+    "text": "Ailəm mənim üçün hər şeydən dəyərlidir.",
+    "category": "family",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_02",
+    "text": "Uşaqlarım hər gün məktəbə gedir.",
+    "category": "family",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_03",
+    "text": "Atam ilə birlikdə balıq tutmağı sevirəm.",
+    "category": "family",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_04",
+    "text": "Anam ən dadlı yeməkləri bişirir.",
+    "category": "family",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_05",
+    "text": "Bacım universitetdə tibb oxuyur.",
+    "category": "family",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_06",
+    "text": "Qardaşım yeni iş tapmışdır.",
+    "category": "family",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_07",
+    "text": "Nənəm bizə hər həftə gəlir.",
+    "category": "family",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_08",
+    "text": "Babam maraqlı hekayələr danışır.",
+    "category": "family",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_09",
+    "text": "Ailə ilə birlikdə vaxt keçirmək xoşdur.",
+    "category": "family",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_10",
+    "text": "Uşaqların təhsili valideynlər üçün önəmlidir.",
+    "category": "family",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_11",
+    "text": "Bayramlarda bütün ailə bir araya gəlir.",
+    "category": "family",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_12",
+    "text": "Əmim xaricdə yaşayır, onu çox darıxırıq.",
+    "category": "family",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_13",
+    "text": "Uşaqlarıma kitab oxumağı öyrədirəm.",
+    "category": "family",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_14",
+    "text": "Ailəvi şam yeməyi ənənəmizdir.",
+    "category": "family",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_15",
+    "text": "Valideynlər uşaqların ilk müəllimidir.",
+    "category": "family",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_16",
+    "text": "Həyat yoldaşımla on ildir evliyik.",
+    "category": "family",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_17",
+    "text": "Kiçik qardaşım yeni doğulub.",
+    "category": "family",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_18",
+    "text": "Ailə münasibətləri hörmət üzərində qurulmalıdır.",
+    "category": "family",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_19",
+    "text": "Uşaqlarla parka getmək ən sevdiyim işdir.",
+    "category": "family",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_20",
+    "text": "Anam ilə bazara gedib ərzaq aldıq.",
+    "category": "family",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_21",
+    "text": "Nəvələr evə sevinc gətirir.",
+    "category": "family",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_22",
+    "text": "Ailə büdcəsini diqqətlə planlaşdırırıq.",
+    "category": "family",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_23",
+    "text": "Qohumlarımızı bayram günlərində ziyarət edirik.",
+    "category": "family",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_24",
+    "text": "Uşaqlar böyüyəndə valideynlər qürur duyur.",
+    "category": "family",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_25",
+    "text": "Ailə dəstəyi çətin günlərdə çox vacibdir.",
+    "category": "family",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "family_26",
+    "text": "Hər kəs ailəsinə vaxt ayırmalıdır.",
+    "category": "family",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_01",
+    "text": "Müstəqilliyimiz əbədi və dönməzdir.",
+    "category": "hard_words",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_02",
+    "text": "Azərbaycanın çoxəsrlik mədəniyyəti bəşəriyyətin zəngin irsidir.",
+    "category": "hard_words",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_03",
+    "text": "Dövlətçiliyimizin möhkəmləndirilməsi vətəndaşın borcudur.",
+    "category": "hard_words",
+    "wordCount": 4,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_04",
+    "text": "Müasirləşmə prosesi bütün sahələrdə sürətləndirilməlidir.",
+    "category": "hard_words",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_05",
+    "text": "Qloballaşma şəraitində milli dəyərlərimizi qorumalıyıq.",
+    "category": "hard_words",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_06",
+    "text": "Multikultural dəyərlər cəmiyyətin əsas dayaqlarındandır.",
+    "category": "hard_words",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_07",
+    "text": "Ekoloji tarazlığın qorunması gələcək nəsillərin məsuliyyətidir.",
+    "category": "hard_words",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_08",
+    "text": "Konstitusiya ölkənin ən ali hüquqi sənədidir.",
+    "category": "hard_words",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_09",
+    "text": "İnfrastrukturun yenilənməsi prioritet vəzifələrdən hesab olunur.",
+    "category": "hard_words",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_10",
+    "text": "Kommunikasiya texnologiyaları həyatımızı köklü şəkildə dəyişdirib.",
+    "category": "hard_words",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_11",
+    "text": "Demokratikləşmə prosesi uzunmüddətli strategiya tələb edir.",
+    "category": "hard_words",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_12",
+    "text": "Humanitar yardım təşkilatları müxtəlif regionlarda fəaliyyət göstərir.",
+    "category": "hard_words",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_13",
+    "text": "Mühəndislik innovasiyaları sənaye sahəsini transformasiya edir.",
+    "category": "hard_words",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_14",
+    "text": "Biotexnologiyalar tibb sahəsində inqilabi nəticələr verir.",
+    "category": "hard_words",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_15",
+    "text": "Beynəlxalq münasibətlərdə diplomatiya xüsusi əhəmiyyət daşıyır.",
+    "category": "hard_words",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_16",
+    "text": "İntellektual mülkiyyət hüquqlarının qorunması vacibdir.",
+    "category": "hard_words",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_17",
+    "text": "Kiberməkanda təhlükəsizliyin təmin edilməsi müasir çağırışdır.",
+    "category": "hard_words",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_18",
+    "text": "Arxeoloji qazıntılar tariximiz haqqında yeni faktlar üzə çıxarır.",
+    "category": "hard_words",
+    "wordCount": 8,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_19",
+    "text": "Psixoloji dəstək xidmətləri cəmiyyətdə genişləndirilməlidir.",
+    "category": "hard_words",
+    "wordCount": 5,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_20",
+    "text": "Epistemologiya biliyin təbiətini araşdıran fəlsəfi sahədir.",
+    "category": "hard_words",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_21",
+    "text": "Sosioloji tədqiqatlar cəmiyyətin problemlərini aşkar edir.",
+    "category": "hard_words",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_22",
+    "text": "Geosiyasi proseslər regional tarazlığa təsir göstərir.",
+    "category": "hard_words",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_23",
+    "text": "Makroiqtisadi göstəricilər ölkənin inkişaf səviyyəsini əks etdirir.",
+    "category": "hard_words",
+    "wordCount": 7,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_24",
+    "text": "Assimilyasiya prosesi mədəni müxtəlifliyi təhdid edir.",
+    "category": "hard_words",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_25",
+    "text": "Dezinformasiya ilə mübarizə müasir cəmiyyətin vəzifəsidir.",
+    "category": "hard_words",
+    "wordCount": 6,
+    "emotion": "neutral"
+  },
+  {
+    "id": "hard_words_26",
+    "text": "Hermenevtika mətnlərin təfsirini araşdıran elmdir.",
+    "category": "hard_words",
+    "wordCount": 5,
+    "emotion": "neutral"
+  }
+]

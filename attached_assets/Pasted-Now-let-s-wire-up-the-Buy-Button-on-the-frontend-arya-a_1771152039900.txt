@@ -1,0 +1,69 @@
+Now, let’s wire up the "Buy Button" on the frontend (arya.az) so users can actually put money in it.
+
+Here is the code to make the Smart Profile page sell itself.
+
+The Frontend Integration (src/pages/u/[slug].tsx)
+We are adding two things:
+
+The handleBuy function (The Logic).
+
+The "Sticky Sales Badge" (The Hook).
+
+Copy-paste this into your component:
+
+TypeScript
+// ... imports
+import { Loader2 } from "lucide-react"; // If using lucide, or just use text
+
+export default function SmartProfile() {
+  // ... existing hooks
+  const [isUpgrading, setIsUpgrading] = useState(false); // New State
+
+  // 1. THE LOGIC
+  const handleBuy = async () => {
+    setIsUpgrading(true);
+    try {
+      // ⚠️ CHANGE THIS to your actual Backend URL (e.g. https://hirearya.replit.app)
+      const BACKEND_URL = "https://your-hirearya-url.replit.app"; 
+      
+      const res = await fetch(`${BACKEND_URL}/api/payment/create-checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: slug }) // Sends 'samir-usta' to backend
+      });
+
+      const data = await res.json();
+      
+      if (data.url) {
+        window.location.href = data.url; // 🚀 Redirect to Stripe
+      } else {
+        alert("Xəta: Ödəniş linki yaradılmadı.");
+      }
+    } catch (error) {
+      console.error("Purchase error:", error);
+      alert("Bağlantı xətası. Zəhmət olmasa yenidən cəhd edin.");
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
+  // ... return (
+  
+    // 2. THE STICKY BADGE (Top Right)
+    // Place this INSIDE the main <div>, at the top
+    <button 
+      onClick={handleBuy}
+      disabled={isUpgrading}
+      className="absolute top-4 right-4 z-50 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-2 border border-white/20 backdrop-blur-md"
+    >
+      {isUpgrading ? (
+        <span>Yüklənir...</span>
+      ) : (
+        <>
+          <span>✨ 3 Gün Pulsuz</span>
+          <span className="bg-white/20 px-1.5 py-0.5 rounded text-[10px]">PRO</span>
+        </>
+      )}
+    </button>
+
+    // ... rest of your UI ...

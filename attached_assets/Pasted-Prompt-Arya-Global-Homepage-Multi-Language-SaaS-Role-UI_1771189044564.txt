@@ -1,0 +1,92 @@
+Prompt: Arya Global Homepage (Multi-Language SaaS)
+Role: UI/UX Designer for a Global AI SaaS.
+Languages: Design must support English (Default), Spanish, Russian, French, Turkish.
+Vibe: International, scalable, "Intercom for the Real World." Clean lines, ample whitespace, trust-building blue/purple gradients.
+
+1. Navigation Bar (The "Global" Feel)
+
+Left: Logo (Arya).
+
+Right:
+
+Links: "Features", "Pricing", "For Agencies".
+
+Language Selector (Critical): A Globe Icon 🌐 with a dropdown: EN | ES | RU | FR | TR.
+
+CTA: "Get Started (Free)".
+
+2. The Global Hero Section
+
+Headline: "The AI Receptionist for the Real World." (or "Your Business Never Sleeps. Neither Should Your Website.")
+
+Subheadline: "Turn your Instagram Bio and Website into a 24/7 sales engine. Speaks 30+ languages. Sets up in 30 seconds."
+
+Visual: A Phone Mockup floating next to a Laptop Mockup.
+
+Phone: Shows the Instagram Bio link opening an Arya profile.
+
+Laptop: Shows the Arya Widget on a salon website.
+
+Effect: They are synchronized.
+
+3. The "Universal Use Cases" (Adapted from your Old Site)
+
+Instruction: Recreate the "Samir Usta / Aysel / Kebab House" 3-Card Layout but translate them to show global versatility.
+
+Card 1 (The Handyman):
+
+Icon: 🔧
+
+Name: "Samir - HVAC Expert" (or "Carlos" for ES, "Pierre" for FR).
+
+Chat Bubble: "Hi! Boiler repair starts at $20. Book now?"
+
+Card 2 (The Tutor):
+
+Icon: 🎓
+
+Name: "Sarah - English Tutor."
+
+Chat Bubble: "I have slots open for Tuesday. Want to join?"
+
+Card 3 (The Restaurant):
+
+Icon: 🍴
+
+Name: "Baku Kebab House."
+
+Chat Bubble: "Yes, we deliver in 30 minutes!"
+
+Interaction: Add a "Live Demo" button under each card that opens a mini-chat simulation in that language.
+
+4. The "Language Engine" Section (New)
+
+Headline: "Fluent in 30 Languages."
+
+Visual: A map of the world. Show the chat bubble translating instantly from "Hello" → "Hola" → "Salam" → "Bonjour".
+
+Copy: "Your customers speak different languages. Arya speaks them all automatically."
+
+5. How It Works (Universal Symbols)
+
+Use icons instead of heavy text so it translates easily.
+
+Step 1: 📸 Scan Menu (Camera Icon).
+
+Step 2: 🎨 Customize (Paintbrush Icon).
+
+Step 3: 🔗 Share Link (Link/Globe Icon).
+
+6. Pricing (Currency Aware)
+
+Switch: Monthly / Yearly.
+
+Currency Display: Show prices in $ (USD) by default, but note that the design must handle € (EUR) or ₺ (TRY) spacing.
+
+Tiers: Free / Pro ($29) / Agency ($199).
+
+7. Footer
+
+Region Links: "Arya USA", "Arya Europe", "Arya Azerbaijan (/az)".
+
+Legal: Privacy, Terms.

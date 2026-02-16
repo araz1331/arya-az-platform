@@ -1,0 +1,136 @@
+File: components/AryaWidget.tsx (or inside your page).
+
+This connects to hirearya. Make sure CORS is enabled on hirearya.
+
+TypeScript
+import { useState, useRef } from 'react';
+
+export default function AryaWidget({ profileId }: { profileId: string }) {
+  const [messages, setMessages] = useState<{role: string, text: string}[]>([]);
+  const [input, setInput] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  // 1. SEND TEXT
+  const sendText = async () => {
+    if (!input.trim()) return;
+    const textToSend = input;
+    setInput(""); 
+    setMessages(prev => [...prev, { role: 'user', text: textToSend }]);
+    await processMessage(null, textToSend);
+  };
+
+  // 2. SEND VOICE
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setMessages(prev => [...prev, { role: 'user', text: '🎤 (Səsli mesaj göndərilir...)' }]);
+        await processMessage(audioBlob, null);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      alert("Microphone Error. Please type.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  // 3. UNIFIED API CALL
+  const processMessage = async (audioBlob: Blob | null, text: string | null) => {
+    setIsLoading(true);
+    const formData = new FormData();
+    formData.append('profileId', profileId);
+    formData.append('sessionId', 'browser-session-id'); // Use uuid or cookie here
+    
+    if (audioBlob) {
+      formData.append('audio', audioBlob, 'voice.webm');
+    } else if (text) {
+      formData.append('textInput', text);
+    }
+
+    try {
+      const res = await fetch('https://api.hirearya.com/api/widget/chat', {
+        method: 'POST',
+        body: formData, // No Content-Type header needed, fetch handles boundary
+      });
+      
+      const data = await res.json();
+      
+      // Update UI with AI Response
+      if (audioBlob) {
+          // Replace placeholder with transcription
+          setMessages(prev => [
+            ...prev.slice(0, -1), 
+            { role: 'user', text: `🎤 "${data.userTranscribed}"` }
+          ]);
+      }
+      
+      setMessages(prev => [...prev, { role: 'assistant', text: data.reply }]);
+      
+    } catch (error) {
+      console.error(error);
+      setMessages(prev => [...prev, { role: 'assistant', text: "⚠️ Xəta baş verdi. Bir daha cəhd edin." }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-[500px] w-full max-w-md border rounded-xl shadow-lg bg-white">
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.map((m, i) => (
+          <div key={i} className={`p-3 rounded-lg max-w-[80%] ${m.role === 'user' ? 'bg-blue-600 text-white self-end ml-auto' : 'bg-gray-100 text-gray-800'}`}>
+            {m.text}
+          </div>
+        ))}
+        {isLoading && <div className="text-gray-400 text-xs p-2">Arya yazır...</div>}
+      </div>
+
+      {/* Input Area */}
+      <div className="p-3 border-t flex gap-2 items-center bg-gray-50 rounded-b-xl">
+        <input 
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Mesaj yazın..."
+          className="flex-1 p-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        
+        {input.length > 0 ? (
+          <button onClick={sendText} className="bg-blue-600 text-white p-2 rounded-full px-4">
+            Send
+          </button>
+        ) : (
+          <button 
+            onMouseDown={startRecording}
+            onMouseUp={stopRecording}
+            onTouchStart={startRecording}
+            onTouchEnd={stopRecording}
+            className={`p-3 rounded-full transition-colors ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-blue-500'} text-white`}
+          >
+            🎤
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}

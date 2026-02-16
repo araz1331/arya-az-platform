@@ -1,0 +1,209 @@
+The Frontend Code: arya.az/pages/u/[slug].tsx
+This code creates the "Smart Link" page. It uses the exact design language from your screenshots so it feels like part of the same platform.
+
+Copy this into your Next.js project:
+
+TypeScript
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import Head from 'next/head';
+
+// --- CONFIG ---
+// ⚠️ CHANGE THIS to your deployed backend URL
+const API_URL = "https://api.hirearya.com"; 
+
+export default function SmartProfile() {
+  const router = useRouter();
+  const { slug } = router.query;
+
+  // State
+  const [profile, setProfile] = useState<any>(null);
+  const [messages, setMessages] = useState<{role: string, text: string}[]>([]);
+  const [input, setInput] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Refs
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 1. FETCH PROFILE
+  useEffect(() => {
+    if (!slug) return;
+    fetch(`${API_URL}/api/widget/profile/${slug}`)
+      .then(res => res.json())
+      .then(data => {
+        setProfile(data);
+        setMessages([{
+          role: 'assistant', 
+          text: `Salam! Mən ${data.display_name}-nın AI köməkçisiyəm. ${data.profession} barədə sualınız var?`
+        }]);
+      })
+      .catch(err => {
+        console.error("Profile Error", err);
+        // Fallback for Demo if backend is empty
+        setProfile({
+            display_name: "Samir Usta",
+            profession: "Kombi və Kondisioner",
+            base_price: "20 AZN",
+            theme_color: "#2563EB", // Electric Blue
+            avatar_url: "/avatar-placeholder.png"
+        });
+      });
+  }, [slug]);
+
+  // Auto-scroll
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // 2. RECORDING LOGIC (The Core Feature)
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setMessages(prev => [...prev, { role: 'user', text: '🎤 (Səs göndərilir...)' }]);
+        await sendMessage(audioBlob, null);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      alert("Mikrofon icazəsi verilməyib.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  // 3. SEND MESSAGE
+  const sendMessage = async (audioBlob: Blob | null, text: string | null) => {
+    setIsLoading(true);
+    const formData = new FormData();
+    formData.append('profileId', profile?.id || 'demo-id'); // Use real ID in prod
+    formData.append('sessionId', 'demo-session');
+    
+    if (audioBlob) formData.append('audio', audioBlob, 'voice.webm');
+    if (text) formData.append('textInput', text);
+
+    try {
+      const res = await fetch(`${API_URL}/api/widget/chat`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (audioBlob) {
+        setMessages(prev => [
+            ...prev.slice(0, -1), 
+            { role: 'user', text: `🎤 "${data.userTranscribed}"` }
+        ]);
+      }
+      setMessages(prev => [...prev, { role: 'assistant', text: data.reply }]);
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'assistant', text: "⚠️ Server xətası." }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!profile) return <div className="h-screen bg-[#0F172A] flex items-center justify-center text-white">Yüklənir...</div>;
+
+  return (
+    <div className="flex flex-col h-screen bg-[#F8FAFC] font-sans">
+      <Head>
+        <title>{profile.display_name} - Arya Link</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+      </Head>
+
+      {/* --- HEADER (Matches your Screenshot Design) --- */}
+      <div className="bg-[#0F172A] text-white p-6 pb-12 rounded-b-[2.5rem] shadow-xl relative z-10">
+        <div className="flex flex-col items-center">
+          <div className="w-24 h-24 rounded-full border-4 border-[#2563EB] bg-gray-200 overflow-hidden mb-3 shadow-lg">
+             {/* Dynamic Avatar or Placeholder */}
+             <img src={profile.avatar_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=Samir"} alt="Avatar" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight">{profile.display_name}</h1>
+          <p className="text-blue-200 text-sm font-medium mb-4">{profile.profession}</p>
+          
+          <div className="flex gap-2 text-xs">
+             <span className="bg-[#1E293B] px-3 py-1 rounded-full border border-gray-700">📍 Bakı, Azərbaycan</span>
+             <span className="bg-[#2563EB] px-3 py-1 rounded-full font-bold">Starts {profile.base_price}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* --- CHAT CONTAINER --- */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 -mt-6 space-y-4 pb-24 z-0">
+        {messages.map((m, i) => (
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`p-4 rounded-2xl max-w-[85%] text-sm shadow-sm leading-relaxed ${
+              m.role === 'user' 
+                ? 'bg-[#2563EB] text-white rounded-br-none' // "Arya Blue"
+                : 'bg-white text-slate-800 border border-slate-100 rounded-bl-none'
+            }`}>
+              {m.text}
+            </div>
+          </div>
+        ))}
+        {isLoading && <div className="text-slate-400 text-xs ml-4 animate-pulse">Arya yazır...</div>}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* --- FOOTER INPUT --- */}
+      <div className="fixed bottom-0 w-full bg-white border-t border-slate-100 p-3 pb-6 safe-area-bottom">
+        <div className="flex gap-2 items-center max-w-md mx-auto">
+          <input 
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Mesaj yazın..."
+            className="flex-1 bg-slate-50 text-slate-900 px-4 py-3 rounded-full focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+            onKeyDown={(e) => e.key === 'Enter' && sendMessage(null, input) && setInput("")}
+          />
+          
+          {input.length > 0 ? (
+            <button 
+                onClick={() => { sendMessage(null, input); setInput(""); }}
+                className="bg-[#2563EB] text-white p-3 rounded-full shadow-lg"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" /></svg>
+            </button>
+          ) : (
+            <button 
+              onMouseDown={startRecording}
+              onMouseUp={stopRecording}
+              onTouchStart={startRecording}
+              onTouchEnd={stopRecording}
+              className={`p-4 rounded-full transition-all shadow-lg flex items-center justify-center ${
+                isRecording ? 'bg-red-500 scale-110 ring-4 ring-red-100' : 'bg-[#2563EB] hover:bg-blue-700'
+              }`}
+            >
+              {isRecording ? (
+                <div className="w-5 h-5 bg-white rounded-sm animate-pulse" />
+              ) : (
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+              )}
+            </button>
+          )}
+        </div>
+        <div className="text-center mt-2 text-[10px] text-slate-400">
+           ⚡ Powered by <span className="font-bold text-[#2563EB]">Arya AI</span>
+        </div>
+      </div>
+    </div>
+  );
+}

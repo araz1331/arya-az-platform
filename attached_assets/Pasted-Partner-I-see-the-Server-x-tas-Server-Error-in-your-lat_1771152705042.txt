@@ -1,0 +1,167 @@
+Partner, I see the "Server xətası" (Server Error) in your latest screenshot. That usually happens when the backend URL isn't 100% correct in the fetch call or the server is sleeping. Don't worry, the code below fixes the link to that page so users can actually find it.
+
+We need to connect your Main Landing Page (The Project) to your Smart Profiles (The Product).
+
+Here is the code to add the "Live Demo Showcase" to arya.az. This matches the clean, white-card aesthetic from your "Necə İşləyir?" section.
+
+Step 1: Create the Showcase Component
+Create a new file: src/components/DemoShowcase.tsx.
+This component creates 3 interactive cards that look exactly like mini-profiles.
+
+TypeScript
+import Link from 'next/link';
+
+export default function DemoShowcase() {
+  const demos = [
+    {
+      name: "Samir Usta",
+      role: "Kombi və Kondisioner",
+      slug: "samir-usta",
+      avatar: "👨‍🔧", // Or use a real image URL
+      color: "bg-blue-600",
+      price: "20 AZN"
+    },
+    {
+      name: "Aysel English",
+      role: "İngilis Dili Müəllimi",
+      slug: "aysel-teacher",
+      avatar: "👩‍🏫",
+      color: "bg-purple-600",
+      price: "15 AZN"
+    },
+    {
+      name: "Kebab House",
+      role: "Milli Mətbəx",
+      slug: "kebab-house",
+      avatar: "🍖",
+      color: "bg-orange-600",
+      price: "Menyu"
+    }
+  ];
+
+  return (
+    <section className="py-24 bg-slate-50 border-t border-slate-200">
+      <div className="max-w-6xl mx-auto px-6">
+        
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+            Arya Kimlər Üçündür?
+          </h2>
+          <p className="text-slate-600 max-w-2xl mx-auto text-lg">
+            İstər usta ol, istər müəllim. Arya sənin əvəzinə danışır, 
+            müştəriləri qarşılayır və vaxtına qənaət edir.
+          </p>
+        </div>
+
+        {/* The Grid */}
+        <div className="grid md:grid-cols-3 gap-8">
+          {demos.map((demo, i) => (
+            <Link key={i} href={`/u/${demo.slug}`} className="group relative block">
+              <div className="bg-white rounded-[2rem] p-6 shadow-sm hover:shadow-2xl transition-all duration-300 border border-slate-100 h-full flex flex-col items-center text-center overflow-hidden transform hover:-translate-y-2">
+                
+                {/* Top Color Strip */}
+                <div className={`absolute top-0 left-0 w-full h-3 ${demo.color}`} />
+                
+                {/* Avatar Badge */}
+                <div className="mt-4 w-24 h-24 rounded-full bg-slate-100 border-4 border-white shadow-md flex items-center justify-center text-5xl mb-4 group-hover:scale-110 transition-transform">
+                  {demo.avatar}
+                </div>
+                
+                {/* Profile Info */}
+                <h3 className="text-xl font-bold text-slate-900 mb-1">{demo.name}</h3>
+                <p className="text-sm text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-full mb-6">
+                  {demo.role}
+                </p>
+                
+                {/* Fake Chat Preview (The "Magic") */}
+                <div className="w-full bg-slate-50 rounded-xl p-4 text-xs text-left text-slate-500 mb-8 border border-slate-100">
+                  <div className="flex gap-2 mb-3">
+                    <span className="w-2 h-2 rounded-full bg-slate-300 mt-1 shrink-0"></span>
+                    <p className="bg-white p-2 rounded-lg rounded-tl-none shadow-sm w-full">
+                      Salam, qiymət neçəyədir?
+                    </p>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <p className={`text-white p-2 rounded-lg rounded-br-none shadow-sm ${demo.color.replace('bg-', 'bg-opacity-90 bg-')}`}>
+                      Salam! {demo.price}-dən başlayır...
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Button */}
+                <span className="mt-auto inline-flex items-center gap-2 text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                  Canlı Yoxla 
+                  <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Bottom CTA */}
+        <div className="mt-20 text-center">
+            <Link 
+              href="/u/new-user" 
+              className="inline-flex items-center gap-3 bg-[#0F172A] text-white px-8 py-4 rounded-full font-bold hover:bg-slate-800 transition shadow-xl hover:scale-105"
+            >
+               <span>🚀 Öz Smart Səhifəni Yarat</span>
+            </Link>
+            <p className="mt-4 text-sm text-slate-500 font-medium">
+               ✨ İlk 3 gün pulsuz • Kart tələb olunmur
+            </p>
+        </div>
+
+      </div>
+    </section>
+  );
+}
+Step 2: Add to Main Page (src/pages/index.tsx)
+We need to inject this component between your "Hero" (Blue section) and "Necə İşləyir?" (How it works).
+
+Open src/pages/index.tsx and update it like this:
+
+TypeScript
+// 1. Import the component
+import DemoShowcase from '../components/DemoShowcase'; 
+import Link from 'next/link'; // Ensure Link is imported
+
+export default function Home() {
+  return (
+    <div className="bg-white">
+      {/* --- HERO SECTION (Your existing Blue Section) --- */}
+      <section className="bg-[#0F172A] text-white pt-32 pb-20 px-6 text-center rounded-b-[3rem]">
+        <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
+          Milli Sİ-nin <span className="text-[#3B82F6]">Səsi Ol.</span>
+        </h1>
+        <p className="text-slate-300 text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+          Hər bir səs yazısı Azərbaycanın texnoloji müstəqilliyinə doğru bir addımdır.
+          İndi qoşul, gələcəyin səsini formalaşdır.
+        </p>
+        
+        {/* 👇 UPDATED HERO BUTTONS (Bridge the Gap) */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <button className="w-full sm:w-auto bg-[#2563EB] hover:bg-blue-600 text-white px-8 py-4 rounded-full font-bold transition shadow-lg shadow-blue-900/50">
+             🎤 Səsini Bağışla
+          </button>
+          
+          <Link href="/u/samir-usta" className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border border-white/20 px-8 py-4 rounded-full font-bold transition backdrop-blur-sm flex items-center gap-2">
+             <span>👀 Nümunəyə Bax</span>
+          </Link>
+        </div>
+
+        {/* Stats (Keep existing stats code here) */}
+        {/* <div className="mt-16 grid grid-cols-3 ..."> ... </div> */}
+      </section>
+
+      {/* 👇 ADD THE NEW SHOWCASE HERE */}
+      <DemoShowcase />
+
+      {/* --- EXISTING SECTIONS (Keep "Necə İşləyir" etc.) --- */}
+      {/* <HowItWorks /> */}
+      {/* <Footer /> */}
+    </div>
+  )
+}
