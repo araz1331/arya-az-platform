@@ -268,10 +268,11 @@ export default function GlobalHome() {
             <GlobalLanguageSelector lang={lang} setLang={setLang} />
             <Button
               onClick={handleGetStarted}
-              className="bg-white text-[hsl(240,30%,10%)] font-semibold text-sm"
+              className="bg-white text-[hsl(240,30%,10%)] font-semibold text-xs sm:text-sm whitespace-nowrap"
               data-testid="button-nav-get-started"
             >
-              {t("navGetStarted")}
+              <span className="hidden sm:inline">{t("navGetStarted")}</span>
+              <span className="sm:hidden">{t("navGetStartedShort")}</span>
             </Button>
           </div>
         </div>
@@ -374,17 +375,17 @@ export default function GlobalHome() {
             <div className="flex items-center justify-center gap-8 sm:gap-16 text-white/40">
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-white" data-testid="text-global-stat-languages">30+</div>
-                <div className="text-xs sm:text-sm">Languages</div>
+                <div className="text-xs sm:text-sm">{t("statsLanguages")}</div>
               </div>
               <div className="w-px h-10 bg-white/20" />
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-white" data-testid="text-global-stat-setup">30s</div>
-                <div className="text-xs sm:text-sm">Setup</div>
+                <div className="text-xs sm:text-sm">{t("statsSetup")}</div>
               </div>
               <div className="w-px h-10 bg-white/20" />
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-white" data-testid="text-global-stat-uptime">24/7</div>
-                <div className="text-xs sm:text-sm">Uptime</div>
+                <div className="text-xs sm:text-sm">{t("statsUptime")}</div>
               </div>
             </div>
           </motion.div>
@@ -458,10 +459,10 @@ export default function GlobalHome() {
               <Button
                 size="lg"
                 onClick={handleFounderCheckout}
-                className="w-full"
+                className="w-full text-sm sm:text-base"
                 data-testid="button-founder-cta"
               >
-                <Lock className="w-4 h-4 mr-2" />
+                <Lock className="w-4 h-4 mr-2 shrink-0" />
                 {t("founderCta")}
               </Button>
               <p className="text-xs text-center text-muted-foreground mt-3" data-testid="text-founder-cta-sub">
@@ -681,11 +682,11 @@ export default function GlobalHome() {
             <h2 className="text-3xl sm:text-4xl font-bold mb-4" data-testid="text-pricing-title">{t("pricingTitle")}</h2>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-8">{t("pricingSubtitle")}</p>
 
-            <div className="inline-flex items-center gap-2 bg-muted rounded-md p-1">
+            <div className="inline-flex items-center gap-1 bg-muted rounded-md p-1">
               <button
                 type="button"
                 onClick={() => setYearly(false)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${!yearly ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${!yearly ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
                 data-testid="button-pricing-monthly"
               >
                 {t("pricingMonthly")}
@@ -693,11 +694,11 @@ export default function GlobalHome() {
               <button
                 type="button"
                 onClick={() => setYearly(true)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${yearly ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
+                className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center gap-1.5 ${yearly ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
                 data-testid="button-pricing-yearly"
               >
                 {t("pricingYearly")}
-                <Badge variant="secondary" className="ml-2 text-xs">{t("pricingSave")}</Badge>
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">{t("pricingSave")}</Badge>
               </button>
             </div>
           </motion.div>
