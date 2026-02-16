@@ -375,6 +375,15 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
     tr: "Bu tarayıcı ses tanımayı desteklemiyor. Google Chrome kullanın.",
   };
 
+  const micMetaBrowserMessages: Record<string, string> = {
+    az: "Instagram/Facebook brauzeri mikrofona icazə vermir. Linki Safari və ya Chrome-da açın — orada mikrofon işləyəcək.",
+    ru: "Браузер Instagram/Facebook не разрешает доступ к микрофону. Откройте ссылку в Safari или Chrome — там микрофон будет работать.",
+    en: "Instagram/Facebook browser blocks microphone access. Open this link in Safari or Chrome — the mic will work there.",
+    es: "El navegador de Instagram/Facebook bloquea el micrófono. Abra este enlace en Safari o Chrome — allí funcionará.",
+    fr: "Le navigateur Instagram/Facebook bloque l'accès au micro. Ouvrez ce lien dans Safari ou Chrome — le micro y fonctionnera.",
+    tr: "Instagram/Facebook tarayıcısı mikrofona izin vermiyor. Bu linki Safari veya Chrome'da açın — mikrofon orada çalışacak.",
+  };
+
   const micNotRecognizedMessages: Record<string, string> = {
     az: "Səs tanınmadı. Yenidən cəhd edin.",
     ru: "Речь не распознана. Попробуйте снова.",
@@ -396,6 +405,14 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
     }
 
     if (!profile) return;
+
+    const ua = navigator.userAgent || "";
+    const isMetaBrowser = /FBAN|FBAV|Instagram|FB_IAB/i.test(ua);
+    if (isMetaBrowser) {
+      setMessages(prev => [...prev, { role: "assistant", text: micMetaBrowserMessages[language] || micMetaBrowserMessages.en }]);
+      return;
+    }
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setMessages(prev => [...prev, { role: "assistant", text: micNotSupportedMessages[language] || micNotSupportedMessages.en }]);

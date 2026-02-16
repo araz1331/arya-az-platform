@@ -169,6 +169,12 @@ export default function EmbedChat({ slug }: { slug: string }) {
     return map[language] || "az-AZ";
   };
 
+  const metaBrowserMessages: Record<string, string> = {
+    az: "Instagram/Facebook brauzeri mikrofona icazə vermir. Linki Safari və ya Chrome-da açın — orada mikrofon işləyəcək.",
+    ru: "Браузер Instagram/Facebook не разрешает доступ к микрофону. Откройте ссылку в Safari или Chrome — там микрофон будет работать.",
+    en: "Instagram/Facebook browser blocks microphone access. Open this link in Safari or Chrome — the mic will work there.",
+  };
+
   const toggleRecording = async () => {
     if (isRecording) {
       if (recognitionRef.current) {
@@ -177,6 +183,14 @@ export default function EmbedChat({ slug }: { slug: string }) {
       setIsRecording(false);
       return;
     }
+
+    const ua = navigator.userAgent || "";
+    const isMetaBrowser = /FBAN|FBAV|Instagram|FB_IAB/i.test(ua);
+    if (isMetaBrowser) {
+      setMessages(prev => [...prev, { role: "assistant", text: metaBrowserMessages[language] || metaBrowserMessages.en }]);
+      return;
+    }
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
     try {

@@ -1318,6 +1318,13 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
       setIsRecording(false);
       return;
     }
+
+    const ua = navigator.userAgent || "";
+    if (/FBAN|FBAV|Instagram|FB_IAB/i.test(ua)) {
+      toast({ title: "Instagram/Facebook browser blocks microphone. Open in Safari or Chrome.", variant: "destructive" });
+      return;
+    }
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
     if (!micPermissionGranted.current) {
