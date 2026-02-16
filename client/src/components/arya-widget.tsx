@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Loader2, ExternalLink, Sparkles, Camera, Languages, ArrowLeft, Upload, MapPin, Crown, Pencil, Eye, Globe, Users, MessageCircle, Clock, ChevronRight, Mic, Code, Copy, Check, Link2, Smartphone, QrCode, Megaphone, Download, Trash2, X, Plus } from "lucide-react";
+import { Send, Loader2, ExternalLink, Sparkles, Camera, Languages, ArrowLeft, Upload, MapPin, Crown, Pencil, Eye, Globe, Users, MessageCircle, Clock, ChevronRight, Mic, Square, Code, Copy, Check, Link2, Smartphone, QrCode, Megaphone, Download, Trash2, X, Plus } from "lucide-react";
 import QRCode from "qrcode";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
@@ -686,6 +686,9 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
   const [smartLinkCopied, setSmartLinkCopied] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const micPermissionGranted = useRef(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const ocrInputRef = useRef<HTMLInputElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -1302,6 +1305,46 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
       e.preventDefault();
       sendText();
     }
+  };
+
+  const getSpeechLang = () => {
+    const map: Record<string, string> = { az: "az-AZ", ru: "ru-RU", en: "en-US" };
+    return map[language] || "az-AZ";
+  };
+
+  const toggleRecording = async () => {
+    if (isRecording) {
+      if (recognitionRef.current) recognitionRef.current.stop();
+      setIsRecording(false);
+      return;
+    }
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    if (!micPermissionGranted.current) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(tr => tr.stop());
+        micPermissionGranted.current = true;
+      } catch { return; }
+    }
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = getSpeechLang();
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.continuous = true;
+      recognition.onresult = (event: any) => {
+        const last = event.results[event.results.length - 1];
+        const transcript = last?.[0]?.transcript;
+        if (transcript) setInput(prev => prev ? prev + " " + transcript : transcript);
+        setIsRecording(false);
+      };
+      recognition.onerror = () => setIsRecording(false);
+      recognition.onend = () => setIsRecording(false);
+      recognitionRef.current = recognition;
+      recognition.start();
+      setIsRecording(true);
+    } catch {}
   };
 
   const [isUpgrading, setIsUpgrading] = useState(false);
@@ -2380,23 +2423,55 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
         data-testid="input-ocr-upload"
       />
 
-      <div className="p-3 border-t flex gap-2 items-center">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={onboarding || editMode ? t.placeholder : t.placeholderChat}
-          disabled={isLoading || isCreating || isTranslating}
-          data-testid="input-chat-message"
-        />
-        <Button
-          size="icon"
-          onClick={sendText}
-          disabled={isLoading || isCreating || isTranslating || !input.trim()}
-          data-testid="button-send-message"
-        >
-          <Send className="w-4 h-4" />
-        </Button>
+      <div className="p-3 border-t">
+        {isRecording && (
+          <div className="flex items-center justify-center gap-2 text-destructive animate-pulse mb-2" data-testid="widget-recording-indicator">
+            <div className="w-2 h-2 rounded-full bg-destructive" />
+            <div className="flex items-end gap-[3px] h-4">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="w-[3px] rounded-full bg-destructive"
+                  style={{ animation: `soundWave 0.8s ease-in-out ${i * 0.12}s infinite alternate` }}
+                />
+              ))}
+            </div>
+            <span className="text-xs font-medium">
+              {{ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening..." }[language] || "Listening..."}
+            </span>
+          </div>
+        )}
+        <div className="flex gap-2 items-center">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={onboarding || editMode ? t.placeholder : t.placeholderChat}
+            disabled={isLoading || isCreating || isTranslating}
+            data-testid="input-chat-message"
+          />
+          {input.trim() ? (
+            <Button
+              size="icon"
+              onClick={sendText}
+              disabled={isLoading || isCreating || isTranslating}
+              data-testid="button-send-message"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          ) : (
+            <Button
+              size="icon"
+              variant={isRecording ? "destructive" : "default"}
+              onClick={toggleRecording}
+              disabled={isLoading || isCreating || isTranslating}
+              data-testid="button-widget-voice"
+              className={isRecording ? "ring-2 ring-destructive/30" : ""}
+            >
+              {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </Button>
+          )}
+        </div>
       </div>
     </Card>
   );
