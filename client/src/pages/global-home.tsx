@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Globe, Wrench, GraduationCap, UtensilsCrossed, Camera, Paintbrush, Link2,
   ChevronDown, ArrowRight, Check, Waves, MessageSquare, Zap, Star, Quote,
-  Settings, Languages, UserPlus, Code, Mic, BarChart3, Volume2, VolumeX
+  Settings, Languages, UserPlus, Code, Mic, BarChart3, Volume2, VolumeX,
+  Flame, ShieldCheck, Crown, AlertTriangle, Lock
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -268,7 +269,7 @@ export default function GlobalHome() {
             <Button
               size="lg"
               onClick={handleGetStarted}
-              className="text-base sm:text-lg px-6 sm:px-10 py-5 sm:py-6 bg-white text-[hsl(240,30%,10%)] border-white/80 font-semibold w-full sm:w-auto"
+              className="bg-white text-[hsl(240,30%,10%)] border-white/80 font-semibold w-full sm:w-auto"
               data-testid="button-hero-get-started"
             >
               {t("heroCta")}
@@ -277,7 +278,7 @@ export default function GlobalHome() {
             <Button
               size="lg"
               variant="outline"
-              className="text-base sm:text-lg px-6 sm:px-10 py-5 sm:py-6 border-white/30 text-white bg-white/5 backdrop-blur-sm w-full sm:w-auto"
+              className="border-white/30 text-white bg-white/5 backdrop-blur-sm w-full sm:w-auto"
               onClick={() => scrollTo("use-cases")}
               data-testid="button-hero-demo"
             >
@@ -336,6 +337,91 @@ export default function GlobalHome() {
             <path d="M0 80V40C360 0 720 60 1080 30C1260 15 1380 40 1440 50V80H0Z" fill="hsl(var(--background))" />
           </svg>
         </div>
+      </section>
+
+      <section className="py-16 sm:py-24 px-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background pointer-events-none" />
+        <motion.div
+          className="max-w-4xl mx-auto relative z-10"
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={stagger}
+        >
+          <motion.div variants={fadeInUp} className="text-center mb-6">
+            <Badge variant="secondary" className="mb-8 text-sm px-4 py-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20">
+              <Flame className="w-3.5 h-3.5 mr-1.5" />
+              {t("founderBadge")}
+            </Badge>
+            <h2 className="text-3xl sm:text-5xl md:text-6xl font-bold leading-tight tracking-tight mb-2" data-testid="text-founder-title">
+              {t("founderTitle1")}
+              <br />
+              <span className="bg-gradient-to-r from-[hsl(260,90%,70%)] to-[hsl(220,90%,75%)] bg-clip-text text-transparent">
+                {t("founderTitle2")}
+              </span>
+            </h2>
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mt-4 leading-relaxed" data-testid="text-founder-subtitle">
+              {t("founderSubtitle")}
+            </p>
+          </motion.div>
+
+          <motion.div variants={fadeInUp}>
+            <Card className="max-w-lg mx-auto p-6 sm:p-8 border-primary/20 shadow-lg shadow-primary/5" data-testid="card-founder-offer">
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Crown className="w-5 h-5 text-primary" />
+                  <h3 className="text-xl font-bold" data-testid="text-founder-pass-title">{t("founderPassTitle")}</h3>
+                </div>
+                <div className="flex items-baseline justify-center gap-2 mt-3">
+                  <span className="text-5xl sm:text-6xl font-bold" data-testid="text-founder-price">{t("founderPrice")}</span>
+                  <span className="text-muted-foreground text-lg">/ {t("founderPriceLabel")}</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1 line-through" data-testid="text-founder-normally">({t("founderNormally")})</p>
+              </div>
+
+              <ul className="space-y-3 mb-8">
+                {[
+                  { icon: ShieldCheck, text: t("founderFeat1") },
+                  { icon: Zap, text: t("founderFeat2") },
+                  { icon: Mic, text: t("founderFeat3") },
+                  { icon: MessageSquare, text: t("founderFeat4") },
+                  { icon: Crown, text: t("founderFeat5") },
+                  { icon: ShieldCheck, text: t("founderFeat6") },
+                ].map((feat, i) => (
+                  <li key={i} className="flex items-center gap-3 text-sm" data-testid={`text-founder-feat-${i}`}>
+                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <Check className="w-3 h-3 text-primary" />
+                    </div>
+                    <span>{feat.text}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Button
+                size="lg"
+                onClick={handleGetStarted}
+                className="w-full"
+                data-testid="button-founder-cta"
+              >
+                <Lock className="w-4 h-4 mr-2" />
+                {t("founderCta")}
+              </Button>
+              <p className="text-xs text-center text-muted-foreground mt-3" data-testid="text-founder-cta-sub">
+                {t("founderCtaSub")}
+              </p>
+            </Card>
+          </motion.div>
+
+          <motion.div variants={fadeInUp} className="mt-8 text-center">
+            <div className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-md px-4 py-2.5" data-testid="text-founder-scarcity">
+              <AlertTriangle className="w-4 h-4 text-orange-500 shrink-0" />
+              <span className="text-sm font-medium">
+                {t("founderStatus")}: <span className="font-bold text-orange-600 dark:text-orange-400">842 / 1,000</span> {t("founderSpotsLeft")}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">{t("founderExpires")}</p>
+          </motion.div>
+        </motion.div>
       </section>
 
       <section id="use-cases" className="py-16 sm:py-24 px-4">
@@ -622,7 +708,7 @@ export default function GlobalHome() {
             <Button
               size="lg"
               onClick={handleGetStarted}
-              className="text-lg px-10 py-6"
+              className=""
               data-testid="button-bottom-get-started"
             >
               {t("heroCta")}
