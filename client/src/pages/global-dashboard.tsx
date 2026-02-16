@@ -30,10 +30,13 @@ interface SmartProfileData {
 }
 
 interface LeadSession {
-  sessionId: string;
-  messageCount: number;
-  lastMessage: string;
-  lastMessageTime: string;
+  session_id: string;
+  message_count: string;
+  first_message: string;
+  last_message: string;
+  user_messages: string;
+  first_user_message: string;
+  first_content_type: string;
 }
 
 function DashLanguageSelector({ lang, setLang }: { lang: GlobalLanguage; setLang: (l: GlobalLanguage) => void }) {
@@ -228,25 +231,22 @@ function LeadsPanel({ profileId, t }: { profileId: string; t: (key: any) => stri
         <Badge variant="secondary" data-testid="badge-leads-count">{leads.length} {t("dashLeadsConversations")}</Badge>
       </div>
       {leads.map((lead, i) => (
-        <Card key={lead.sessionId} className="p-4 hover-elevate cursor-pointer" onClick={() => setSelectedSession(lead.sessionId)} data-testid={`card-lead-${i}`}>
+        <Card key={lead.session_id} className="p-4 hover-elevate cursor-pointer" onClick={() => setSelectedSession(lead.session_id)} data-testid={`card-lead-${i}`}>
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <MessageCircle className="w-4 h-4 text-muted-foreground shrink-0" />
                 <span className="text-sm font-medium truncate" data-testid={`text-lead-session-${i}`}>
-                  {t("dashLeadsSession")} {lead.sessionId.slice(0, 8)}
+                  {lead.first_user_message || `${t("dashLeadsSession")} ${lead.session_id.slice(0, 8)}`}
                 </span>
                 <Badge variant="outline" className="text-xs" data-testid={`badge-lead-messages-${i}`}>
-                  {lead.messageCount} {t("dashLeadsMessages")}
+                  {lead.message_count} {t("dashLeadsMessages")}
                 </Badge>
               </div>
-              <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2" data-testid={`text-lead-preview-${i}`}>
-                {lead.lastMessage}
-              </p>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground whitespace-nowrap" data-testid={`text-lead-time-${i}`}>
-                {new Date(lead.lastMessageTime).toLocaleDateString()}
+                {new Date(lead.last_message).toLocaleDateString()}
               </span>
               <Eye className="w-4 h-4 text-muted-foreground" />
             </div>
