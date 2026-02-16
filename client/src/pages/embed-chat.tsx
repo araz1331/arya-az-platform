@@ -338,61 +338,59 @@ export default function EmbedChat({ slug }: { slug: string }) {
         <div ref={messagesEndRef} />
       </div>
 
-      <div style={{ borderTop: "1px solid #e2e8f0", padding: "10px 12px", display: "flex", gap: 8, alignItems: "center", background: "#fff", flexShrink: 0 }}>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={PLACEHOLDERS[language] || PLACEHOLDERS.az}
-          disabled={isLoading}
-          style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 14, outline: "none" }}
-          data-testid="embed-input-message"
-        />
-        {input.length > 0 ? (
+      <div style={{ borderTop: "1px solid #e2e8f0", padding: "10px 12px", background: "#fff", flexShrink: 0 }}>
+        {isRecording && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginBottom: 6 }} data-testid="embed-recording-indicator">
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s infinite" }} />
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 18 }}>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: 3, borderRadius: 2, background: "#ef4444",
+                    animation: `soundWave 0.8s ease-in-out ${i * 0.12}s infinite alternate`,
+                  }}
+                />
+              ))}
+            </div>
+            <span style={{ fontSize: 10, color: "#ef4444", fontWeight: 500 }}>
+              {{ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening..." }[language] || "Listening..."}
+            </span>
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button
+            onClick={toggleRecording}
+            disabled={isLoading}
+            style={{
+              width: 36, height: 36, minWidth: 36, borderRadius: "50%", border: "none",
+              background: isRecording ? "#ef4444" : "#f1f5f9",
+              color: isRecording ? "#fff" : "#64748b",
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: isRecording ? "0 0 0 3px rgba(239,68,68,0.3)" : "none",
+            }}
+            data-testid="embed-button-voice"
+          >
+            {isRecording ? <Square style={{ width: 14, height: 14 }} /> : <Mic style={{ width: 14, height: 14 }} />}
+          </button>
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={PLACEHOLDERS[language] || PLACEHOLDERS.az}
+            disabled={isLoading}
+            style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 14, outline: "none" }}
+            data-testid="embed-input-message"
+          />
           <button
             onClick={handleSendText}
-            disabled={isLoading}
-            style={{ width: 36, height: 36, borderRadius: 8, border: "none", background: themeColor, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+            disabled={isLoading || !input.trim()}
+            style={{ width: 36, height: 36, borderRadius: 8, border: "none", background: themeColor, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: !input.trim() ? 0.5 : 1 }}
             data-testid="embed-button-send"
           >
             <Send style={{ width: 16, height: 16 }} />
           </button>
-        ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {isRecording && (
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }} data-testid="embed-recording-indicator">
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s infinite" }} />
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 18 }}>
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      style={{
-                        width: 3, borderRadius: 2, background: "#ef4444",
-                        animation: `soundWave 0.8s ease-in-out ${i * 0.12}s infinite alternate`,
-                      }}
-                    />
-                  ))}
-                </div>
-                <span style={{ fontSize: 10, color: "#ef4444", fontWeight: 500 }}>
-                  {{ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening..." }[language] || "Listening..."}
-                </span>
-              </div>
-            )}
-            <button
-              onClick={toggleRecording}
-              disabled={isLoading}
-              style={{
-                width: 36, height: 36, borderRadius: 8, border: "none",
-                background: isRecording ? "#ef4444" : themeColor,
-                color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: isRecording ? "0 0 0 4px rgba(239,68,68,0.3)" : "none",
-              }}
-              data-testid="embed-button-voice"
-            >
-              {isRecording ? <Square style={{ width: 16, height: 16 }} /> : <Mic style={{ width: 16, height: 16 }} />}
-            </button>
-          </div>
-        )}
+        </div>
       </div>
 
       <div style={{ textAlign: "center", padding: "4px 0 8px", fontSize: 10, color: "#94a3b8" }}>

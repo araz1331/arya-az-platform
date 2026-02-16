@@ -976,7 +976,43 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
 
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-3 pb-4 sm:pb-6 z-20 safe-bottom">
         <div className="max-w-md mx-auto">
+          {isRecording && (
+            <div className="flex items-center justify-center gap-2 text-destructive animate-pulse mb-2" data-testid="recording-indicator">
+              <div className="w-2 h-2 rounded-full bg-destructive" />
+              <div className="flex items-end gap-[3px] h-5">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="w-[3px] rounded-full bg-destructive"
+                    style={{
+                      animation: `soundWave 0.8s ease-in-out ${i * 0.12}s infinite alternate`,
+                    }}
+                  />
+                ))}
+              </div>
+              <span className="text-xs font-medium">
+                {{ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening...", es: "Escuchando...", fr: "J'écoute...", tr: "Dinliyorum..." }[language] || "Listening..."}
+              </span>
+            </div>
+          )}
           <div className="flex gap-2 items-center">
+            <button
+              type="button"
+              onClick={toggleRecording}
+              disabled={isLoading}
+              data-testid="button-smart-voice"
+              className={`w-9 h-9 min-w-[36px] rounded-full flex items-center justify-center transition-all ${
+                isRecording
+                  ? "bg-destructive text-destructive-foreground ring-2 ring-destructive/30"
+                  : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+              } ${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              {isRecording ? (
+                <Square className="w-4 h-4" />
+              ) : (
+                <Mic className="w-4 h-4" />
+              )}
+            </button>
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -986,57 +1022,15 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
               className="flex-1"
               data-testid="input-smart-message"
             />
-            {input.length > 0 && (
-              <Button
-                size="icon"
-                onClick={handleSendText}
-                disabled={isLoading}
-                data-testid="button-smart-send"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            )}
+            <Button
+              size="icon"
+              onClick={handleSendText}
+              disabled={isLoading || !input.trim()}
+              data-testid="button-smart-send"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
           </div>
-          {input.length === 0 && (
-            <div className="flex flex-col items-center mt-3 gap-2">
-              {isRecording && (
-                <div className="flex items-center gap-2 text-destructive animate-pulse" data-testid="recording-indicator">
-                  <div className="w-2 h-2 rounded-full bg-destructive" />
-                  <div className="flex items-end gap-[3px] h-5">
-                    {[0, 1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className="w-[3px] rounded-full bg-destructive"
-                        style={{
-                          animation: `soundWave 0.8s ease-in-out ${i * 0.12}s infinite alternate`,
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-xs font-medium">
-                    {{ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening...", es: "Escuchando...", fr: "J'écoute...", tr: "Dinliyorum..." }[language] || "Listening..."}
-                  </span>
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={toggleRecording}
-                disabled={isLoading}
-                data-testid="button-smart-voice"
-                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
-                  isRecording
-                    ? "bg-destructive text-destructive-foreground scale-110 ring-4 ring-destructive/30"
-                    : "bg-primary text-primary-foreground hover:opacity-90"
-                } ${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-              >
-                {isRecording ? (
-                  <Square className="w-6 h-6" />
-                ) : (
-                  <Mic className="w-6 h-6" />
-                )}
-              </button>
-            </div>
-          )}
         </div>
         <p className="text-center mt-2 text-[10px] text-muted-foreground">
           Powered by <span className="font-bold text-primary">Arya AI</span>
