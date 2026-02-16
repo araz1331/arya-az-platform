@@ -121,23 +121,26 @@ Arya.az is a "National Voice AI" platform for Azerbaijan where users donate thei
   - **Translate Ru/En**: Auto-translates knowledge base to Russian & English via Gemini AI (`/api/smart-profile/translate`)
 - Static files served from `/uploads/` directory
 
-## Stripe Integration (PRO Upgrade)
-- No local Stripe — all payment handled by hirearya.com API (no duplication)
-- PRO product: prod_Tz0Oh4WFyNFh0O (owned by hirearya) - 20 AZN/month with 3-day trial
-- Checkout route: `POST /api/proxy/payment/create-checkout` (protected, proxied to hirearya API)
-- arya.az sends { slug, email, success_url, cancel_url } → hirearya creates Stripe session → returns { url }
+## Stripe Integration (PRO Upgrade) — DIRECT
+- Stripe SDK used directly on arya.az (no hirearya proxy)
+- STRIPE_SECRET_KEY env var for authentication
+- PRO plan: 20 AZN/month subscription with 3-day free trial
+- Checkout route: `POST /api/proxy/payment/create-checkout` (protected, creates Stripe session directly)
+- Creates Stripe customer if not exists, saves stripeCustomerId to smart_profiles
 - On checkout success (`?checkout=success`), arya.az marks user as PRO locally (isPro=true, proExpiresAt set)
-- PRO status checked via `GET /api/smart-profile/pro-status` (local + hirearya verification)
-- PRO users get enhanced leads dashboard from hirearya (`GET /api/proxy/leads/:slug` → `/api/p/:slug/leads`)
+- PRO status checked via `GET /api/smart-profile/pro-status`
 
-## hirearya.com Integration (Proxy APIs)
+## 2GIS Integration — DIRECT
+- 2GIS Places API called directly from arya.az backend
+- TWOGIS_API_KEY env var for authentication
+- Endpoint: `POST /api/proxy/location/search` → queries `https://catalog.api.2gis.com/3.0/items`
+- Returns first 5 results with name, address, phone, working hours, coordinates
+
+## hirearya.com Integration (Remaining Proxy APIs)
 - Base URL: `https://api.hirearya.com` (configured as HIREARYA_API in server/routes.ts)
-- All calls proxied through arya.az backend to avoid CORS issues
 - All proxy requests include `x-api-key` header from HIREARYA_SECRET_KEY env var
 - **Templates**: `GET /api/proxy/templates/list` → industry templates for auto-setup
 - **OCR Scan**: `POST /api/proxy/scan` → multipart file upload, returns detected text/prices
-- **Location Search**: `POST /api/proxy/location/search` → 2GIS business search by name
-- **Payment**: `POST /api/proxy/payment/create-checkout` → Stripe checkout session (20 AZN/month, 3-day trial)
 - **Profile Fetch**: `GET /api/proxy/widget/profile/:slug` → fetch demo profiles from hirearya
 
 ## Smart Profile DB Schema

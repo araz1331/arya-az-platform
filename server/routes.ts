@@ -8,8 +8,11 @@ import { eq, sql } from "drizzle-orm";
 import multer from "multer";
 import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
+import Stripe from "stripe";
 import * as fs from "fs";
 import * as path from "path";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
 const gemini = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "",
@@ -602,16 +605,47 @@ export async function registerRoutes(
 
   app.post("/api/proxy/location/search", async (req, res) => {
     try {
-      const response = await fetch(`${HIREARYA_API}/api/location/search`, {
-        method: "POST",
-        headers: { ...HIREARYA_HEADERS, "Content-Type": "application/json" },
-        body: JSON.stringify({ query: req.body.query }),
+      const query = req.body.query;
+      if (!query) return res.status(400).json({ error: "Missing query" });
+
+      const twogisKey = process.env.TWOGIS_API_KEY;
+      if (!twogisKey) return res.status(500).json({ error: "2GIS API key not configured" });
+
+      const params = new URLSearchParams({
+        q: query,
+        key: twogisKey,
+        locale: "az_AZ",
+        fields: "items.point,items.address,items.schedule,items.contact_groups",
+        page_size: "5",
       });
-      if (!response.ok) throw new Error("API error");
+
+      const response = await fetch(`https://catalog.api.2gis.com/3.0/items?${params}`);
+      if (!response.ok) throw new Error("2GIS API error");
       const data = await response.json();
-      res.json(data);
-    } catch {
-      res.status(502).json({ error: "External API unavailable" });
+
+      const items = (data.result?.items || []).map((item: any) => {
+        const contacts = item.contact_groups?.flatMap((g: any) => g.contacts || []) || [];
+        const phone = contacts.find((c: any) => c.type === "phone")?.value || "";
+        const scheduleComment = item.schedule?.comment || "";
+        const scheduleDays = (item.schedule?.Mon || item.schedule?.Tue) ? Object.entries(item.schedule)
+          .filter(([k]) => ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].includes(k))
+          .map(([k, v]: [string, any]) => `${k}: ${v.working_hours?.[0]?.from || ""}-${v.working_hours?.[0]?.to || ""}`)
+          .join(", ") : "";
+        return {
+          id: item.id,
+          name: item.name,
+          address: item.address_name || item.full_name || "",
+          point: item.point,
+          phone,
+          working_hours: scheduleComment || scheduleDays,
+          schedule: item.schedule,
+        };
+      });
+
+      res.json({ items });
+    } catch (err: any) {
+      console.error("2GIS search error:", err?.message);
+      res.status(502).json({ error: "Location search unavailable" });
     }
   });
 
@@ -628,22 +662,42 @@ export async function registerRoutes(
       const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
       const baseUrl = domains ? `https://${domains}` : `${req.protocol}://${req.get("host")}`;
 
-      const response = await fetch(`${HIREARYA_API}/api/payment/create-checkout`, {
-        method: "POST",
-        headers: { ...HIREARYA_HEADERS, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug,
+      const smartProfile = await storage.getSmartProfileByUserId(userId);
+      let customerId = smartProfile?.stripeCustomerId;
+
+      if (!customerId) {
+        const customer = await stripe.customers.create({
           email: u?.email || "",
-          success_url: `${baseUrl}/u/${slug}?checkout=success`,
-          cancel_url: `${baseUrl}/u/${slug}?checkout=cancel`,
-        }),
+          metadata: { userId, slug },
+        });
+        customerId = customer.id;
+        await db.execute(sql`UPDATE smart_profiles SET stripe_customer_id = ${customerId} WHERE user_id = ${userId}`);
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ["card"],
+        line_items: [{
+          price_data: {
+            currency: "azn",
+            product_data: {
+              name: "Arya PRO",
+              description: "AI Receptionist PRO Plan",
+            },
+            unit_amount: 2000,
+            recurring: { interval: "month" },
+          },
+          quantity: 1,
+        }],
+        mode: "subscription",
+        subscription_data: {
+          trial_period_days: 3,
+        },
+        success_url: `${baseUrl}/u/${slug}?checkout=success`,
+        cancel_url: `${baseUrl}/u/${slug}?checkout=cancel`,
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        return res.status(response.status).json(data);
-      }
-      res.json(data);
+      res.json({ url: session.url });
     } catch (err: any) {
       console.error("Checkout error:", err?.message);
       res.status(500).json({ error: "Failed to create checkout session" });

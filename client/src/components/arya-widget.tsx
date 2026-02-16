@@ -719,11 +719,11 @@ export default function AryaWidget({ profileId }: { profileId: string }) {
       if (!res.ok) throw new Error("Location search failed");
       const data = await res.json();
 
-      const result = data.result || data.location || data;
-      const name = result.name || result.title || query;
-      const address = result.address || result.full_address || "";
-      const phone = result.phone || "";
-      const hours = result.working_hours || result.hours || result.workHours || "";
+      const firstItem = data.items?.[0] || data.result || data.location || data;
+      const name = firstItem.name || firstItem.title || query;
+      const address = firstItem.address || firstItem.address_name || firstItem.full_address || "";
+      const phone = firstItem.phone || "";
+      const hours = firstItem.working_hours || firstItem.schedule?.comment || firstItem.hours || firstItem.workHours || "";
 
       if (address) {
         setMessages(prev => [
