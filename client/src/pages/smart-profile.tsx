@@ -690,24 +690,26 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
             <ArrowLeft className="w-5 h-5" />
           </Button>
 
-          <Button
-            onClick={handleBuy}
-            disabled={isUpgrading}
-            size="sm"
-            className="bg-emerald-600 border-emerald-500 text-white text-[11px] sm:text-xs font-bold gap-1"
-            data-testid="button-buy-pro"
-          >
-            {isUpgrading ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
-            ) : (
-              <>
-                <Sparkles className="w-3 h-3" />
-                <span className="hidden sm:inline">{{ az: "3 Gün Pulsuz", ru: "3 Дня Бесплатно", en: "3 Days Free", es: "3 Días Gratis", fr: "3 Jours Gratuits", tr: "3 Gün Ücretsiz" }[language]}</span>
-                <span className="sm:hidden">{{ az: "Pulsuz", ru: "Бесплатно", en: "Free", es: "Gratis", fr: "Gratuit", tr: "Ücretsiz" }[language]}</span>
-                <Badge className="bg-white/20 text-white border-transparent text-[10px] px-1.5 py-0">PRO</Badge>
-              </>
-            )}
-          </Button>
+          {isOwner && (
+            <Button
+              onClick={handleBuy}
+              disabled={isUpgrading}
+              size="sm"
+              className="bg-emerald-600 border-emerald-500 text-white text-[11px] sm:text-xs font-bold gap-1"
+              data-testid="button-buy-pro"
+            >
+              {isUpgrading ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <>
+                  <Sparkles className="w-3 h-3" />
+                  <span className="hidden sm:inline">{{ az: "3 Gün Pulsuz", ru: "3 Дня Бесплатно", en: "3 Days Free", es: "3 Días Gratis", fr: "3 Jours Gratuits", tr: "3 Gün Ücretsiz" }[language]}</span>
+                  <span className="sm:hidden">{{ az: "Pulsuz", ru: "Бесплатно", en: "Free", es: "Gratis", fr: "Gratuit", tr: "Ücretsiz" }[language]}</span>
+                  <Badge className="bg-white/20 text-white border-transparent text-[10px] px-1.5 py-0">PRO</Badge>
+                </>
+              )}
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
