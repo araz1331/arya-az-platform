@@ -794,6 +794,9 @@ export default function GlobalHome() {
             <p className="text-xs text-muted-foreground">
               &copy; 2026 {t("footerCopyright")}
             </p>
+            <p className="text-sm text-muted-foreground flex items-center gap-2" data-testid="text-footer-based">
+              Arya AI. Based in <span className="inline-flex items-center gap-1"><span>🇺🇸</span> USA</span> & <span className="inline-flex items-center gap-1"><span>🇦🇿</span> Azerbaijan</span>.
+            </p>
           </div>
         </div>
       </footer>
