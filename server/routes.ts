@@ -549,9 +549,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/smart-profile/by-slug/:slug", async (req, res) => {
-    console.log("[by-slug] Looking up slug:", req.params.slug);
     const profile = await storage.getSmartProfileBySlug(req.params.slug);
-    console.log("[by-slug] Found profile:", profile ? profile.id : "null", "isActive:", profile?.isActive);
     if (!profile || !profile.isActive) return res.status(404).json({ message: "Profile not found" });
     res.json({
       id: profile.id,
@@ -1163,5 +1161,262 @@ Rules:
     }
   });
 
+  seedDemoProfiles().catch(err => console.error("[seed] Demo profiles seed error:", err));
+
   return httpServer;
+}
+
+async function seedDemoProfiles() {
+  const demos = [
+    {
+      id: "demo-samir-usta",
+      userId: "demo-user-samir",
+      slug: "samir-usta",
+      businessName: "Samir Usta",
+      displayName: "Samir Usta",
+      profession: "Kombi və Kondisioner Ustası",
+      professionRu: "Мастер по котлам и кондиционерам",
+      professionEn: "Boiler & AC Technician",
+      themeColor: "#2563EB",
+      knowledgeBase: `Ad: Samir Usta
+Peşə: Kombi və Kondisioner Ustası
+Ünvan: Bakı, bütün rayonlar
+İş saatları: Hər gün 08:00 - 22:00, həftə sonu da işləyirəm
+Əlaqə: +994 50 555 12 34
+
+Xidmətlər və Qiymətlər:
+- Kombi təmiri: 20 AZN-dən başlayır
+- Kombi təmizliyi: 30 AZN
+- Kombi filtr dəyişdirilməsi: 15 AZN
+- Kondisioner quraşdırma: 50 AZN
+- Kondisioner təmiri: 25 AZN-dən
+- Kondisioner freon doldurma: 40 AZN
+- Radiator sistemi quraşdırma: razılaşma ilə
+- Təcili çağırış (gecə): +10 AZN əlavə
+
+Zəmanət: Bütün işlərə 6 ay zəmanət verilir
+Təcrübə: 12 il təcrübə
+Ən tez gəliş vaxtı: 2 saat ərzində
+Ödəniş: Nağd və ya karta köçürmə`,
+      knowledgeBaseRu: `Имя: Самир Уста
+Профессия: Мастер по котлам и кондиционерам
+Адрес: Баку, все районы
+Часы работы: Каждый день 08:00 - 22:00, работаю и по выходным
+Контакт: +994 50 555 12 34
+
+Услуги и Цены:
+- Ремонт котла: от 20 AZN
+- Чистка котла: 30 AZN
+- Замена фильтра котла: 15 AZN
+- Установка кондиционера: 50 AZN
+- Ремонт кондиционера: от 25 AZN
+- Заправка фреоном: 40 AZN
+- Установка радиаторной системы: по договорённости
+- Срочный вызов (ночь): +10 AZN доплата
+
+Гарантия: На все работы 6 месяцев гарантии
+Опыт: 12 лет
+Самое быстрое прибытие: в течение 2 часов
+Оплата: Наличные или перевод на карту`,
+      knowledgeBaseEn: `Name: Samir Usta
+Profession: Boiler & AC Technician
+Location: Baku, all districts
+Working hours: Every day 08:00 - 22:00, weekends included
+Contact: +994 50 555 12 34
+
+Services and Prices:
+- Boiler repair: from 20 AZN
+- Boiler cleaning: 30 AZN
+- Boiler filter replacement: 15 AZN
+- AC installation: 50 AZN
+- AC repair: from 25 AZN
+- AC freon refill: 40 AZN
+- Radiator system installation: negotiable
+- Emergency call (night): +10 AZN surcharge
+
+Warranty: 6 months warranty on all work
+Experience: 12 years
+Fastest arrival: within 2 hours
+Payment: Cash or card transfer`,
+      onboardingComplete: true,
+      isActive: true,
+      isPro: true,
+    },
+    {
+      id: "demo-aysel-teacher",
+      userId: "demo-user-aysel",
+      slug: "aysel-teacher",
+      businessName: "Aysel English",
+      displayName: "Aysel English",
+      profession: "İngilis Dili Müəllimi",
+      professionRu: "Преподаватель английского языка",
+      professionEn: "English Language Teacher",
+      themeColor: "#9333EA",
+      knowledgeBase: `Ad: Aysel Məmmədova
+Peşə: İngilis Dili Müəllimi
+Ünvan: Bakı, Nəsimi rayonu (onlayn da mümkündür)
+İş saatları: Bazar ertəsi - Şənbə, 09:00 - 20:00
+Əlaqə: +994 55 444 56 78
+
+Xidmətlər və Qiymətlər:
+- Fərdi dərs (45 dəq): 15 AZN
+- Qrup dərsi (60 dəq, 3-5 nəfər): 10 AZN/nəfər
+- IELTS hazırlıq kursu (2 ay, intensiv): 400 AZN
+- Biznes İngiliscəsi kursu: 25 AZN/dərs
+- Uşaqlar üçün (6-12 yaş): 12 AZN/dərs
+- Onlayn dərs (Zoom): eyni qiymət
+- İlk dərs: PULSUZ (səviyyə testi daxil)
+
+Səviyyələr: Başlanğıcdan İrəli səviyyəyə qədər (A1-C2)
+Təcrübə: 8 il, 500+ məzun
+Sertifikatlar: CELTA, IELTS 8.5
+Metodologiya: Kommunikativ yanaşma, real həyat situasiyaları
+Materiallar: Dərs qiyməsinə daxildir`,
+      knowledgeBaseRu: `Имя: Айсель Мамедова
+Профессия: Преподаватель английского языка
+Адрес: Баку, Насиминский район (онлайн тоже возможно)
+Часы работы: Понедельник - Суббота, 09:00 - 20:00
+Контакт: +994 55 444 56 78
+
+Услуги и Цены:
+- Индивидуальный урок (45 мин): 15 AZN
+- Групповой урок (60 мин, 3-5 чел): 10 AZN/чел
+- Курс подготовки к IELTS (2 мес, интенсив): 400 AZN
+- Бизнес-английский: 25 AZN/урок
+- Для детей (6-12 лет): 12 AZN/урок
+- Онлайн урок (Zoom): та же цена
+- Первый урок: БЕСПЛАТНО (включая тест уровня)
+
+Уровни: от начального до продвинутого (A1-C2)
+Опыт: 8 лет, 500+ выпускников
+Сертификаты: CELTA, IELTS 8.5
+Методология: Коммуникативный подход, реальные жизненные ситуации
+Материалы: включены в стоимость урока`,
+      knowledgeBaseEn: `Name: Aysel Mammadova
+Profession: English Language Teacher
+Location: Baku, Nasimi district (online also available)
+Working hours: Monday - Saturday, 09:00 - 20:00
+Contact: +994 55 444 56 78
+
+Services and Prices:
+- Private lesson (45 min): 15 AZN
+- Group lesson (60 min, 3-5 people): 10 AZN/person
+- IELTS preparation course (2 months, intensive): 400 AZN
+- Business English: 25 AZN/lesson
+- Kids classes (6-12 years): 12 AZN/lesson
+- Online lesson (Zoom): same price
+- First lesson: FREE (includes level test)
+
+Levels: Beginner to Advanced (A1-C2)
+Experience: 8 years, 500+ graduates
+Certificates: CELTA, IELTS 8.5
+Methodology: Communicative approach, real-life situations
+Materials: included in lesson price`,
+      onboardingComplete: true,
+      isActive: true,
+      isPro: true,
+    },
+    {
+      id: "demo-kebab-house",
+      userId: "demo-user-kebab",
+      slug: "kebab-house",
+      businessName: "Kebab House",
+      displayName: "Kebab House",
+      profession: "Milli Mətbəx Restoranı",
+      professionRu: "Ресторан национальной кухни",
+      professionEn: "National Cuisine Restaurant",
+      themeColor: "#EA580C",
+      knowledgeBase: `Ad: Kebab House
+Peşə: Milli Mətbəx Restoranı
+Ünvan: Bakı, Fountain Square yaxınlığı, Nizami küçəsi 45
+İş saatları: Hər gün 10:00 - 23:00
+Əlaqə: +994 12 555 78 90
+
+Menyu və Qiymətlər:
+- Lülə Kebab: 8 AZN
+- Tikə Kebab: 10 AZN
+- Toyuq Kebab: 7 AZN
+- Qutab (ət/göyərti): 2 AZN
+- Dolma (5 ədəd): 6 AZN
+- Piti: 5 AZN
+- Dürüm: 4 AZN
+- Lahmacun: 3 AZN
+- Şəhər salatı: 4 AZN
+- Ayran: 1.5 AZN
+- Çay dəsti: 3 AZN
+- Limonad: 2.5 AZN
+
+Çatdırılma: Bakı daxili pulsuz (min sifariş 15 AZN)
+Oturacaq: 60 nəfərlik zal + 20 nəfərlik teras
+Korporativ sifarişlər: xüsusi qiymət (10+ nəfər)
+WiFi: Var, pulsuz
+Ödəniş: Nağd, kart, onlayn
+Xüsusi: Təzə tandır çörəyi hər gün`,
+      knowledgeBaseRu: `Название: Kebab House
+Профессия: Ресторан национальной кухни
+Адрес: Баку, рядом с Fountain Square, ул. Низами 45
+Часы работы: Каждый день 10:00 - 23:00
+Контакт: +994 12 555 78 90
+
+Меню и Цены:
+- Люля кебаб: 8 AZN
+- Тике кебаб: 10 AZN
+- Куриный кебаб: 7 AZN
+- Кутаб (мясо/зелень): 2 AZN
+- Долма (5 шт): 6 AZN
+- Пити: 5 AZN
+- Дюрюм: 4 AZN
+- Лахмаджун: 3 AZN
+- Городской салат: 4 AZN
+- Айран: 1.5 AZN
+- Чайный набор: 3 AZN
+- Лимонад: 2.5 AZN
+
+Доставка: Бесплатно по Баку (мин заказ 15 AZN)
+Зал: 60 мест + терраса 20 мест
+Корпоративные заказы: специальная цена (10+ человек)
+WiFi: Есть, бесплатно
+Оплата: Наличные, карта, онлайн
+Особое: Свежий тандырный хлеб каждый день`,
+      knowledgeBaseEn: `Name: Kebab House
+Profession: National Cuisine Restaurant
+Location: Baku, near Fountain Square, Nizami street 45
+Working hours: Every day 10:00 - 23:00
+Contact: +994 12 555 78 90
+
+Menu and Prices:
+- Lula Kebab: 8 AZN
+- Tika Kebab: 10 AZN
+- Chicken Kebab: 7 AZN
+- Qutab (meat/herbs): 2 AZN
+- Dolma (5 pcs): 6 AZN
+- Piti: 5 AZN
+- Durum: 4 AZN
+- Lahmajun: 3 AZN
+- Garden Salad: 4 AZN
+- Ayran: 1.5 AZN
+- Tea set: 3 AZN
+- Lemonade: 2.5 AZN
+
+Delivery: Free within Baku (min order 15 AZN)
+Seating: 60-seat hall + 20-seat terrace
+Corporate orders: special pricing (10+ people)
+WiFi: Available, free
+Payment: Cash, card, online
+Special: Fresh tandoor bread daily`,
+      onboardingComplete: true,
+      isActive: true,
+      isPro: true,
+    },
+  ];
+
+  for (const demo of demos) {
+    const existing = await storage.getSmartProfileBySlug(demo.slug);
+    if (!existing) {
+      await storage.createSmartProfile(demo);
+      console.log(`[seed] Created demo profile: ${demo.slug}`);
+    } else {
+      console.log(`[seed] Demo profile already exists: ${demo.slug}`);
+    }
+  }
 }
