@@ -259,8 +259,9 @@ function LeadsPanel({ profileId, t }: { profileId: string; t: (key: any) => stri
 
 function EmbedCodePanel({ slug, t }: { slug: string; t: (key: any) => string }) {
   const [copied, setCopied] = useState(false);
-  const embedCode = `<script src="https://arya.az/widget.js" data-slug="${slug}" data-color="#2563EB"></script>`;
-  const profileUrl = `https://arya.az/u/${slug}`;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const embedCode = `<script src="${origin}/widget.js" data-slug="${slug}" data-color="#2563EB"></script>`;
+  const profileUrl = `${origin}/u/${slug}`;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
