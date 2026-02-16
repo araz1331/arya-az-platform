@@ -831,6 +831,53 @@ Rules:
     }
   });
 
+  app.get("/api/smart-profile/analytics", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+
+      const stats = await db.execute(sql`
+        SELECT 
+          COUNT(*) as total_messages,
+          COUNT(DISTINCT session_id) as total_conversations,
+          COUNT(*) FILTER (WHERE role = 'user') as user_messages,
+          COUNT(*) FILTER (WHERE role = 'assistant') as assistant_messages
+        FROM widget_messages
+        WHERE profile_id = ${profile.id}
+      `);
+
+      const daily = await db.execute(sql`
+        SELECT 
+          to_char(DATE(created_at), 'YYYY-MM-DD') as date,
+          COUNT(*) as messages,
+          COUNT(DISTINCT session_id) as sessions
+        FROM widget_messages
+        WHERE profile_id = ${profile.id}
+          AND created_at > NOW() - INTERVAL '30 days'
+        GROUP BY DATE(created_at)
+        ORDER BY DATE(created_at) ASC
+      `);
+
+      const row = stats.rows[0] || {};
+      res.json({
+        totalMessages: Number(row.total_messages) || 0,
+        totalConversations: Number(row.total_conversations) || 0,
+        userMessages: Number(row.user_messages) || 0,
+        assistantMessages: Number(row.assistant_messages) || 0,
+        daily: daily.rows.map((d: any) => ({
+          date: d.date,
+          messages: Number(d.messages),
+          sessions: Number(d.sessions),
+        })),
+      });
+    } catch (error) {
+      console.error("[analytics] Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   app.get("/api/smart-profile/leads", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);

@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Globe, Wrench, GraduationCap, UtensilsCrossed, Camera, Paintbrush, Link2,
-  ChevronDown, ArrowRight, Check, Waves, MessageSquare, Zap
+  ChevronDown, ArrowRight, Check, Waves, MessageSquare, Zap, Star, Quote,
+  Settings, Languages, UserPlus, Code, Mic, BarChart3
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -271,7 +272,23 @@ export default function GlobalHome() {
             </Button>
           </motion.div>
 
-          <motion.div variants={fadeInUp} className="mt-12 sm:mt-20 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-16">
+          <motion.div variants={fadeInUp} className="mt-10 sm:mt-16 w-full max-w-3xl mx-auto">
+            <div className="relative rounded-md overflow-hidden shadow-2xl shadow-black/40 border border-white/10">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-auto"
+                data-testid="video-hero-demo"
+              >
+                <source src="/videos/arya-demo.mp4" type="video/mp4" />
+              </video>
+              <div className="absolute inset-0 rounded-md ring-1 ring-inset ring-white/10 pointer-events-none" />
+            </div>
+          </motion.div>
+
+          <motion.div variants={fadeInUp} className="mt-10 sm:mt-14 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-16">
             <div className="flex items-center justify-center gap-8 sm:gap-16 text-white/40">
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-white" data-testid="text-global-stat-languages">30+</div>
@@ -349,7 +366,86 @@ export default function GlobalHome() {
         </motion.div>
       </section>
 
-      <section id="features" className="py-16 sm:py-24 px-4 bg-card">
+      <section className="py-16 sm:py-24 px-4 bg-card">
+        <motion.div
+          className="max-w-6xl mx-auto"
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={stagger}
+        >
+          <motion.div variants={fadeInUp} className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4" data-testid="text-testimonials-title">{t("testimonialsTitle")}</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">{t("testimonialsSubtitle")}</p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { name: t("testimonial1Name"), role: t("testimonial1Role"), quote: t("testimonial1Quote") },
+              { name: t("testimonial2Name"), role: t("testimonial2Role"), quote: t("testimonial2Quote") },
+              { name: t("testimonial3Name"), role: t("testimonial3Role"), quote: t("testimonial3Quote") },
+            ].map((item, i) => (
+              <motion.div key={i} variants={fadeInUp}>
+                <Card className="p-6 h-full flex flex-col" data-testid={`card-testimonial-${i}`}>
+                  <div className="flex gap-1 mb-4">
+                    {[...Array(5)].map((_, si) => (
+                      <Star key={si} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                  <div className="flex-1 mb-4">
+                    <Quote className="w-5 h-5 text-muted-foreground/30 mb-2" />
+                    <p className="text-sm leading-relaxed" data-testid={`text-testimonial-quote-${i}`}>
+                      {item.quote}
+                    </p>
+                  </div>
+                  <div className="pt-4 border-t">
+                    <p className="font-semibold text-sm" data-testid={`text-testimonial-name-${i}`}>{item.name}</p>
+                    <p className="text-xs text-muted-foreground">{item.role}</p>
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
+      <section id="features" className="py-16 sm:py-24 px-4">
+        <motion.div
+          className="max-w-6xl mx-auto"
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={stagger}
+        >
+          <motion.div variants={fadeInUp} className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4" data-testid="text-feat-grid-title">{t("featGridTitle")}</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">{t("featGridSubtitle")}</p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { icon: Settings, title: t("featGrid1Title"), desc: t("featGrid1Desc") },
+              { icon: Languages, title: t("featGrid2Title"), desc: t("featGrid2Desc") },
+              { icon: UserPlus, title: t("featGrid3Title"), desc: t("featGrid3Desc") },
+              { icon: Code, title: t("featGrid4Title"), desc: t("featGrid4Desc") },
+              { icon: Mic, title: t("featGrid5Title"), desc: t("featGrid5Desc") },
+              { icon: BarChart3, title: t("featGrid6Title"), desc: t("featGrid6Desc") },
+            ].map((feat, i) => (
+              <motion.div key={i} variants={fadeInUp}>
+                <Card className="p-6 h-full hover-elevate" data-testid={`card-feat-${i}`}>
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary mb-4">
+                    <feat.icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-semibold mb-2" data-testid={`text-feat-title-${i}`}>{feat.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{feat.desc}</p>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
+      <section className="py-16 sm:py-24 px-4 bg-card">
         <motion.div
           className="max-w-4xl mx-auto text-center"
           initial="initial"

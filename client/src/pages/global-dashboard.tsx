@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Sparkles, Users, BarChart3, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, ChevronDown } from "lucide-react";
+import { Sparkles, Users, BarChart3, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, ChevronDown, TrendingUp, Clock, Eye, ArrowUpRight } from "lucide-react";
 import AryaWidget from "@/components/arya-widget";
 import type { Profile } from "@shared/schema";
 import {
@@ -62,9 +62,25 @@ function DashLanguageSelector({ lang, setLang }: { lang: GlobalLanguage; setLang
   );
 }
 
-function LeadsPanel({ profileId, t }: { profileId: string; t: (key: any) => string }) {
-  const { data: leads = [], isLoading } = useQuery<LeadSession[]>({
-    queryKey: ["/api/smart-profile/leads"],
+interface AnalyticsData {
+  totalMessages: number;
+  totalConversations: number;
+  userMessages: number;
+  assistantMessages: number;
+  daily: { date: string; messages: number; sessions: number }[];
+}
+
+interface LeadMessage {
+  id: string;
+  role: string;
+  content: string;
+  content_type: string;
+  created_at: string;
+}
+
+function AnalyticsPanel({ profileId, t }: { profileId: string; t: (key: any) => string }) {
+  const { data, isLoading } = useQuery<AnalyticsData>({
+    queryKey: ["/api/smart-profile/analytics"],
     enabled: !!profileId,
   });
 
@@ -72,6 +88,121 @@ function LeadsPanel({ profileId, t }: { profileId: string; t: (key: any) => stri
     return (
       <div className="flex items-center justify-center py-16">
         <div className="animate-pulse text-muted-foreground text-sm">{t("dashLeadsLoading")}</div>
+      </div>
+    );
+  }
+
+  if (!data || data.totalMessages === 0) {
+    return (
+      <Card className="p-8">
+        <div className="flex flex-col items-center text-center text-muted-foreground">
+          <BarChart3 className="w-12 h-12 mb-4 opacity-30" />
+          <h3 className="text-lg font-medium mb-2" data-testid="text-analytics-empty">{t("dashAnalyticsTitle")}</h3>
+          <p className="text-sm max-w-md">{t("dashAnalyticsNoData")}</p>
+        </div>
+      </Card>
+    );
+  }
+
+  const maxMessages = Math.max(...(data.daily.map(d => d.messages)), 1);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: t("dashAnalyticsMessages"), value: data.totalMessages, icon: MessageCircle, desc: t("dashAnalyticsMessagesDesc") },
+          { label: t("dashAnalyticsConversations"), value: data.totalConversations, icon: Users, desc: t("dashAnalyticsConversationsDesc") },
+          { label: t("dashAnalyticsAvgResponse"), value: data.totalConversations > 0 ? `${Math.round(data.assistantMessages / data.totalConversations)}` : "0", icon: Clock, desc: t("dashAnalyticsAvgResponseDesc") },
+          { label: t("dashAnalyticsConversion"), value: `${data.totalMessages > 0 ? Math.round((data.userMessages / data.totalMessages) * 100) : 0}%`, icon: TrendingUp, desc: t("dashAnalyticsConversionDesc") },
+        ].map((stat, i) => (
+          <Card key={i} className="p-4" data-testid={`card-stat-${i}`}>
+            <div className="flex items-center gap-2 mb-2">
+              <stat.icon className="w-4 h-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">{stat.label}</span>
+            </div>
+            <div className="text-2xl font-bold" data-testid={`text-stat-value-${i}`}>{stat.value}</div>
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{stat.desc}</p>
+          </Card>
+        ))}
+      </div>
+
+      {data.daily.length > 0 && (
+        <Card className="p-4">
+          <h3 className="text-sm font-semibold mb-4" data-testid="text-chart-title">{t("dashAnalyticsChart")}</h3>
+          <div className="flex items-end gap-1 h-32">
+            {data.daily.slice(-14).map((day, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1" data-testid={`bar-day-${i}`}>
+                <div
+                  className="w-full bg-primary/80 rounded-sm min-h-[2px] transition-all"
+                  style={{ height: `${(day.messages / maxMessages) * 100}%` }}
+                />
+                <span className="text-[9px] text-muted-foreground">
+                  {new Date(day.date).toLocaleDateString(undefined, { day: "numeric" })}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function LeadsPanel({ profileId, t }: { profileId: string; t: (key: any) => string }) {
+  const [selectedSession, setSelectedSession] = useState<string | null>(null);
+
+  const { data: leads = [], isLoading } = useQuery<LeadSession[]>({
+    queryKey: ["/api/smart-profile/leads"],
+    enabled: !!profileId,
+  });
+
+  const { data: messages = [] } = useQuery<LeadMessage[]>({
+    queryKey: ["/api/smart-profile/leads", selectedSession],
+    enabled: !!selectedSession,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="animate-pulse text-muted-foreground text-sm">{t("dashLeadsLoading")}</div>
+      </div>
+    );
+  }
+
+  if (selectedSession) {
+    return (
+      <div className="space-y-3">
+        <Button variant="ghost" size="sm" onClick={() => setSelectedSession(null)} data-testid="button-leads-back">
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          {t("dashLeadsBack")}
+        </Button>
+        {messages.length === 0 ? (
+          <Card className="p-8">
+            <div className="text-center text-muted-foreground text-sm">{t("dashLeadsNoMessages")}</div>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {messages.map((msg, i) => (
+              <div
+                key={msg.id}
+                className={`flex ${msg.role === "user" ? "justify-start" : "justify-end"}`}
+                data-testid={`msg-${i}`}
+              >
+                <Card className={`p-3 max-w-[80%] ${msg.role === "user" ? "bg-muted" : "bg-primary/10"}`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="outline" className="text-[10px]">
+                      {msg.role === "user" ? "Visitor" : "AI"}
+                    </Badge>
+                    <span className="text-[10px] text-muted-foreground">
+                      {new Date(msg.created_at).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <p className="text-sm">{msg.content}</p>
+                </Card>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -97,7 +228,7 @@ function LeadsPanel({ profileId, t }: { profileId: string; t: (key: any) => stri
         <Badge variant="secondary" data-testid="badge-leads-count">{leads.length} {t("dashLeadsConversations")}</Badge>
       </div>
       {leads.map((lead, i) => (
-        <Card key={lead.sessionId} className="p-4 hover-elevate" data-testid={`card-lead-${i}`}>
+        <Card key={lead.sessionId} className="p-4 hover-elevate cursor-pointer" onClick={() => setSelectedSession(lead.sessionId)} data-testid={`card-lead-${i}`}>
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
@@ -113,9 +244,12 @@ function LeadsPanel({ profileId, t }: { profileId: string; t: (key: any) => stri
                 {lead.lastMessage}
               </p>
             </div>
-            <span className="text-xs text-muted-foreground whitespace-nowrap" data-testid={`text-lead-time-${i}`}>
-              {new Date(lead.lastMessageTime).toLocaleDateString()}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground whitespace-nowrap" data-testid={`text-lead-time-${i}`}>
+                {new Date(lead.lastMessageTime).toLocaleDateString()}
+              </span>
+              <Eye className="w-4 h-4 text-muted-foreground" />
+            </div>
           </div>
         </Card>
       ))}
@@ -310,16 +444,7 @@ export default function GlobalDashboard({ onBack }: { onBack: () => void }) {
 
           <TabsContent value="analytics">
             {hasProfile ? (
-              <Card className="p-8">
-                <div className="flex flex-col items-center text-center text-muted-foreground">
-                  <BarChart3 className="w-12 h-12 mb-4 opacity-30" />
-                  <h3 className="text-lg font-medium mb-2" data-testid="text-analytics-title">{t("dashAnalyticsTitle")}</h3>
-                  <p className="text-sm max-w-md" data-testid="text-analytics-desc">
-                    {t("dashAnalyticsDesc")}
-                  </p>
-                  <Badge variant="secondary" className="mt-4" data-testid="badge-analytics-coming-soon">{t("dashComingSoon")}</Badge>
-                </div>
-              </Card>
+              <AnalyticsPanel profileId={profile.id} t={t} />
             ) : (
               <Card className="p-8">
                 <div className="flex flex-col items-center text-center text-muted-foreground">
