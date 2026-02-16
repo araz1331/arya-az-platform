@@ -1326,15 +1326,24 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     }
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
+    if (!SpeechRecognition) {
+      toast({ title: language === "az" ? "Bu brauzer səs tanımanı dəstəkləmir" : language === "ru" ? "Браузер не поддерживает распознавание речи" : "Speech recognition not supported in this browser", variant: "destructive" });
+      return;
+    }
     if (!micPermissionGranted.current) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         stream.getTracks().forEach(tr => tr.stop());
         micPermissionGranted.current = true;
-      } catch { return; }
+      } catch {
+        toast({ title: language === "az" ? "Mikrofona icazə verin" : language === "ru" ? "Разрешите доступ к микрофону" : "Please allow microphone access", variant: "destructive" });
+        return;
+      }
     }
     try {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch {}
+      }
       const recognition = new SpeechRecognition();
       recognition.lang = getSpeechLang();
       recognition.interimResults = false;
@@ -1345,12 +1354,20 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
         if (transcript) setInput(transcript);
         setIsRecording(false);
       };
-      recognition.onerror = () => setIsRecording(false);
+      recognition.onerror = (event: any) => {
+        if (event.error === "not-allowed") {
+          micPermissionGranted.current = false;
+          toast({ title: language === "az" ? "Mikrofona icazə verin" : language === "ru" ? "Разрешите доступ к микрофону" : "Please allow microphone access", variant: "destructive" });
+        }
+        setIsRecording(false);
+      };
       recognition.onend = () => setIsRecording(false);
       recognitionRef.current = recognition;
       recognition.start();
       setIsRecording(true);
-    } catch {}
+    } catch {
+      toast({ title: language === "az" ? "Mikrofon xətası" : language === "ru" ? "Ошибка микрофона" : "Microphone error", variant: "destructive" });
+    }
   };
 
   const [isUpgrading, setIsUpgrading] = useState(false);
