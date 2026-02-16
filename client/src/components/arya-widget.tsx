@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Send, Loader2, ExternalLink, Sparkles, Camera, Languages, ArrowLeft, Upload, MapPin, Crown, Pencil, Eye, Globe, Users, MessageCircle, Clock, ChevronRight, Mic, Code, Copy, Check, Link2, Smartphone, QrCode, Megaphone } from "lucide-react";
+import { Send, Loader2, ExternalLink, Sparkles, Camera, Languages, ArrowLeft, Upload, MapPin, Crown, Pencil, Eye, Globe, Users, MessageCircle, Clock, ChevronRight, Mic, Code, Copy, Check, Link2, Smartphone, QrCode, Megaphone, Download } from "lucide-react";
+import QRCode from "qrcode";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1153,6 +1154,24 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     }
   };
 
+  const handleDownloadQR = async () => {
+    if (!smartProfile?.slug) return;
+    try {
+      const profileUrl = `${window.location.origin}/u/${smartProfile.slug}`;
+      const dataUrl = await QRCode.toDataURL(profileUrl, {
+        width: 512,
+        margin: 2,
+        color: { dark: "#000000", light: "#ffffff" },
+      });
+      const link = document.createElement("a");
+      link.download = `arya-qr-${smartProfile.slug}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch {
+      toast({ title: "Error", description: "Failed to generate QR code", variant: "destructive" });
+    }
+  };
+
   const handleLanguageChange = (lang: Lang) => {
     setLanguage(lang);
     if (onboarding && onboarding.step === 0 && messages.length <= 1) {
@@ -1477,6 +1496,18 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
                       <p className="text-[10px] text-muted-foreground italic">{item.use}</p>
                     )}
                     <p className="text-[10px] text-foreground/80 font-medium">{item.why}</p>
+                    {item.testId === "physical" && smartProfile?.slug && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleDownloadQR}
+                        className="mt-2 text-xs gap-1.5"
+                        data-testid="button-download-qr"
+                      >
+                        <Download className="w-3 h-3" />
+                        {language === "az" ? "QR Kodu Yüklə" : language === "ru" ? "Скачать QR-код" : "Download QR Code"}
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
