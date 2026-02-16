@@ -1355,29 +1355,34 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
       recognition.onresult = (event: any) => {
         gotResult = true;
         const transcript = event.results[0]?.[0]?.transcript?.trim();
+        console.log("[WIDGET-MIC] onresult:", transcript);
         if (transcript) setInput(transcript);
         setIsRecording(false);
       };
       recognition.onerror = (event: any) => {
+        console.log("[WIDGET-MIC] onerror:", event.error, event.message);
+        toast({ title: `Mic error: ${event.error}`, variant: "destructive" });
         if (event.error === "not-allowed") {
           micPermissionGranted.current = false;
-          toast({ title: language === "az" ? "Mikrofona icazə verin" : language === "ru" ? "Разрешите доступ к микрофону" : "Please allow microphone access", variant: "destructive" });
-        } else if (event.error === "no-speech") {
-          toast({ title: language === "az" ? "Səs eşidilmədi. Yenidən cəhd edin." : language === "ru" ? "Речь не обнаружена. Попробуйте снова." : "No speech detected. Try again.", variant: "destructive" });
-        } else if (event.error === "network") {
-          toast({ title: language === "az" ? "İnternet bağlantısı lazımdır" : language === "ru" ? "Требуется подключение к интернету" : "Internet connection required", variant: "destructive" });
         }
         setIsRecording(false);
       };
       recognition.onend = () => {
+        console.log("[WIDGET-MIC] onend, gotResult:", gotResult);
         if (!gotResult) {
-          toast({ title: language === "az" ? "Səs tanınmadı. Yenidən cəhd edin." : language === "ru" ? "Речь не распознана. Попробуйте снова." : "Speech not recognized. Try again." });
+          toast({ title: `Mic ended without result (lang: ${getSpeechLang()})` });
         }
         setIsRecording(false);
       };
+
+      recognition.onaudiostart = () => console.log("[WIDGET-MIC] audiostart");
+      recognition.onsoundstart = () => console.log("[WIDGET-MIC] soundstart");
+      recognition.onspeechstart = () => console.log("[WIDGET-MIC] speechstart");
+
       recognitionRef.current = recognition;
       recognition.start();
       setIsRecording(true);
+      console.log("[WIDGET-MIC] started, lang:", getSpeechLang());
     } catch {
       toast({ title: language === "az" ? "Mikrofon xətası" : language === "ru" ? "Ошибка микрофона" : "Microphone error", variant: "destructive" });
     }

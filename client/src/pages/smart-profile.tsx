@@ -277,6 +277,8 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
           knowledge_base_ru: data.knowledge_base_ru,
           knowledge_base_en: data.knowledge_base_en,
           user_id: data.user_id,
+          is_pro: data.is_pro || false,
+          pro_expires_at: data.pro_expires_at || null,
         });
         const greetFn = GREETINGS.known[language] || GREETINGS.known.az;
         setMessages([{ role: "assistant", text: greetFn(data.display_name, data.profession) }]);
