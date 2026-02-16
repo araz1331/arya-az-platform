@@ -770,6 +770,82 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/subscription/checkout", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { plan } = req.body;
+      if (!plan || !["pro", "agency"].includes(plan)) {
+        return res.status(400).json({ error: "Invalid plan. Must be 'pro' or 'agency'" });
+      }
+
+      const productName = plan === "pro" ? "Arya Pro" : "Arya Agency";
+      const fallbackAmount = plan === "pro" ? 2900 : 19900;
+
+      const stripe = await getUncachableStripeClient();
+      const [u] = await db.select().from(users).where(eq(users.id, userId));
+      const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
+      const baseUrl = domains ? `https://${domains}` : `${req.protocol}://${req.get("host")}`;
+
+      const smartProfile = await storage.getSmartProfileByUserId(userId);
+      let customerId = smartProfile?.stripeCustomerId;
+
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: u?.email || "",
+          metadata: { userId, type: plan },
+        });
+        customerId = customer.id;
+        if (smartProfile) {
+          await db.execute(sql`UPDATE smart_profiles SET stripe_customer_id = ${customerId} WHERE user_id = ${userId}`);
+        }
+      }
+
+      const planPrice = await db.execute(
+        sql`SELECT pr.id as price_id FROM stripe.prices pr
+            JOIN stripe.products p ON pr.product = p.id
+            WHERE p.name = ${productName} AND p.active = true AND pr.active = true
+            LIMIT 1`
+      );
+
+      let priceId: string;
+      if (planPrice.rows.length > 0) {
+        priceId = planPrice.rows[0].price_id as string;
+      } else {
+        const product = await stripe.products.create({
+          name: productName,
+          description: plan === "pro" ? "AI receptionist with unlimited chat, voice responses, lead capture, and analytics." : "Multi-location AI receptionist with priority support, API access, custom branding, and team management.",
+          metadata: { type: "subscription", tier: plan },
+        });
+        const price = await stripe.prices.create({
+          product: product.id,
+          unit_amount: fallbackAmount,
+          currency: "usd",
+          recurring: { interval: "month" as const },
+        });
+        priceId = price.id;
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ["card"],
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: "subscription",
+        success_url: `${baseUrl}/dashboard?checkout=${plan}-success`,
+        cancel_url: `${baseUrl}/?checkout=cancel`,
+        metadata: { userId, type: plan },
+      });
+
+      res.json({ url: session.url });
+    } catch (err: any) {
+      console.error("Subscription checkout error:", err?.message);
+      res.status(500).json({ error: "Failed to create checkout session" });
+    }
+  });
+
   app.get("/api/proxy/widget/profile/:slug", async (req, res) => {
     try {
       const response = await fetch(`${HIREARYA_API}/api/widget/profile/${req.params.slug}`, {

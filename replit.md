@@ -133,6 +133,16 @@ Arya.az is a "National Voice AI" platform for Azerbaijan where users donate thei
   - Checkout: `POST /api/founding-member/checkout` (protected, one-time payment mode)
   - Homepage CTA checks auth → creates checkout session → redirects to Stripe
   - Success redirects to `/dashboard?checkout=founder-success`
+- **Arya Pro**: $29/month subscription
+  - Product seeded via `server/seed-products.ts`
+  - Checkout: `POST /api/subscription/checkout` with `{ plan: "pro" }` (protected, subscription mode)
+  - Homepage pricing card button checks auth → creates checkout session → redirects to Stripe
+  - Success redirects to `/dashboard?checkout=pro-success`
+- **Arya Agency**: $199/month subscription
+  - Product seeded via `server/seed-products.ts`
+  - Checkout: `POST /api/subscription/checkout` with `{ plan: "agency" }` (protected, subscription mode)
+  - Homepage pricing card button checks auth → creates checkout session → redirects to Stripe
+  - Success redirects to `/dashboard?checkout=agency-success`
 - **PRO plan** (/az): 20 AZN/month subscription with 3-day free trial
   - Checkout: `POST /api/proxy/payment/create-checkout` (protected, subscription mode)
   - Creates Stripe customer if not exists, saves stripeCustomerId to smart_profiles

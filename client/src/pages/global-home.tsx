@@ -114,6 +114,36 @@ export default function GlobalHome() {
     window.location.href = "/dashboard";
   };
 
+  const handlePlanCheckout = async (tier: "free" | "pro" | "agency") => {
+    if (tier === "free") {
+      window.location.href = "/dashboard";
+      return;
+    }
+    try {
+      const authCheck = await fetch("/api/auth/user", { credentials: "include" });
+      if (!authCheck.ok) {
+        window.location.href = `/dashboard?plan=${tier}`;
+        return;
+      }
+      const res = await fetch("/api/subscription/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ plan: tier }),
+      });
+      if (!res.ok) {
+        window.location.href = `/dashboard?plan=${tier}`;
+        return;
+      }
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      window.location.href = `/dashboard?plan=${tier}`;
+    }
+  };
+
   const handleFounderCheckout = async () => {
     try {
       const authCheck = await fetch("/api/auth/user", { credentials: "include" });
@@ -189,6 +219,7 @@ export default function GlobalHome() {
       features: [t("pricingFreeFeat1"), t("pricingFreeFeat2"), t("pricingFreeFeat3")],
       cta: t("pricingFreeCta"),
       popular: false,
+      tier: "free" as const,
     },
     {
       name: t("pricingPro"),
@@ -198,6 +229,7 @@ export default function GlobalHome() {
       features: [t("pricingProFeat1"), t("pricingProFeat2"), t("pricingProFeat3"), t("pricingProFeat4")],
       cta: t("pricingProCta"),
       popular: true,
+      tier: "pro" as const,
     },
     {
       name: t("pricingAgency"),
@@ -207,6 +239,7 @@ export default function GlobalHome() {
       features: [t("pricingAgencyFeat1"), t("pricingAgencyFeat2"), t("pricingAgencyFeat3"), t("pricingAgencyFeat4")],
       cta: t("pricingAgencyCta"),
       popular: false,
+      tier: "agency" as const,
     },
   ];
 
@@ -703,7 +736,7 @@ export default function GlobalHome() {
                   <Button
                     variant={plan.popular ? "default" : "outline"}
                     className="w-full"
-                    onClick={handleGetStarted}
+                    onClick={() => handlePlanCheckout(plan.tier)}
                     data-testid={`button-plan-cta-${i}`}
                   >
                     {plan.cta}
