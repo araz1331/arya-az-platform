@@ -757,10 +757,11 @@ export async function registerRoutes(
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      const { plan } = req.body;
+      const { plan, interval } = req.body;
       if (!plan || !["pro", "agency"].includes(plan)) {
         return res.status(400).json({ error: "Invalid plan. Must be 'pro' or 'agency'" });
       }
+      const billingInterval = interval === "year" ? "year" : "month";
 
       const PLAN_PRODUCTS: Record<string, string> = {
         pro: "prod_TzR14TzIwPyEIv",
@@ -786,8 +787,9 @@ export async function registerRoutes(
         }
       }
 
-      const prices = await stripe.prices.list({ product: PLAN_PRODUCTS[plan], active: true, limit: 1 });
-      const priceId = prices.data[0]?.id;
+      const allPrices = await stripe.prices.list({ product: PLAN_PRODUCTS[plan], active: true, limit: 10 });
+      const matchedPrice = allPrices.data.find(p => p.recurring?.interval === billingInterval);
+      const priceId = matchedPrice?.id || allPrices.data[0]?.id;
       if (!priceId) throw new Error(`No active price found for ${plan} plan`);
 
       const session = await stripe.checkout.sessions.create({

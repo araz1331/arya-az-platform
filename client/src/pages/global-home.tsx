@@ -129,7 +129,7 @@ export default function GlobalHome() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ plan: tier }),
+        body: JSON.stringify({ plan: tier, interval: yearly ? "year" : "month" }),
       });
       if (!res.ok) {
         window.location.href = `/dashboard?plan=${tier}`;
