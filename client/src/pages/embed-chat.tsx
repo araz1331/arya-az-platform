@@ -169,9 +169,14 @@ export default function EmbedChat({ slug }: { slug: string }) {
     return map[language] || "az-AZ";
   };
 
-  const startRecording = () => {
+  const startRecording = async () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      return;
+    }
     try {
       const recognition = new SpeechRecognition();
       recognition.lang = getSpeechLang();

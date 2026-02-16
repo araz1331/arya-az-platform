@@ -357,11 +357,44 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
     return map[language] || "az-AZ";
   };
 
+  const micErrorMessages: Record<string, string> = {
+    az: "Mikrofona icazə verin və yenidən cəhd edin.",
+    ru: "Разрешите доступ к микрофону и попробуйте снова.",
+    en: "Please allow microphone access and try again.",
+    es: "Permita el acceso al micrófono e inténtelo de nuevo.",
+    fr: "Veuillez autoriser l'accès au microphone et réessayer.",
+    tr: "Mikrofon erişimine izin verin ve tekrar deneyin.",
+  };
+
+  const micNotSupportedMessages: Record<string, string> = {
+    az: "Bu brauzer səs tanımanı dəstəkləmir. Google Chrome istifadə edin.",
+    ru: "Этот браузер не поддерживает распознавание речи. Используйте Google Chrome.",
+    en: "This browser doesn't support speech recognition. Please use Google Chrome.",
+    es: "Este navegador no admite reconocimiento de voz. Use Google Chrome.",
+    fr: "Ce navigateur ne prend pas en charge la reconnaissance vocale. Utilisez Google Chrome.",
+    tr: "Bu tarayıcı ses tanımayı desteklemiyor. Google Chrome kullanın.",
+  };
+
+  const micNotRecognizedMessages: Record<string, string> = {
+    az: "Səs tanınmadı. Yenidən cəhd edin.",
+    ru: "Речь не распознана. Попробуйте снова.",
+    en: "Speech not recognized. Please try again.",
+    es: "No se reconoció el habla. Inténtelo de nuevo.",
+    fr: "Voix non reconnue. Veuillez réessayer.",
+    tr: "Ses tanınmadı. Tekrar deneyin.",
+  };
+
   const startRecording = async () => {
     if (!profile) return;
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      setMessages(prev => [...prev, { role: "assistant", text: "Bu brauzer səs tanımanı dəstəkləmir. Google Chrome istifadə edin." }]);
+      setMessages(prev => [...prev, { role: "assistant", text: micNotSupportedMessages[language] || micNotSupportedMessages.en }]);
+      return;
+    }
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setMessages(prev => [...prev, { role: "assistant", text: micErrorMessages[language] || micErrorMessages.en }]);
       return;
     }
     try {
@@ -376,13 +409,17 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
         if (transcript) {
           setPendingVoiceText(transcript);
         } else {
-          setMessages(prev => [...prev, { role: "assistant", text: "Səs tanınmadı. Yenidən cəhd edin." }]);
+          setMessages(prev => [...prev, { role: "assistant", text: micNotRecognizedMessages[language] || micNotRecognizedMessages.en }]);
         }
         setIsRecording(false);
       };
 
-      recognition.onerror = () => {
-        setMessages(prev => [...prev, { role: "assistant", text: "Mikrofona icazə verin və yenidən cəhd edin." }]);
+      recognition.onerror = (event: any) => {
+        if (event.error === "not-allowed") {
+          setMessages(prev => [...prev, { role: "assistant", text: micErrorMessages[language] || micErrorMessages.en }]);
+        } else if (event.error !== "aborted") {
+          setMessages(prev => [...prev, { role: "assistant", text: micNotRecognizedMessages[language] || micNotRecognizedMessages.en }]);
+        }
         setIsRecording(false);
       };
 
@@ -394,7 +431,7 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
       recognition.start();
       setIsRecording(true);
     } catch {
-      setMessages(prev => [...prev, { role: "assistant", text: "Mikrofona icazə verin." }]);
+      setMessages(prev => [...prev, { role: "assistant", text: micErrorMessages[language] || micErrorMessages.en }]);
     }
   };
 
@@ -805,7 +842,7 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-3 -mt-2 space-y-3 pb-24 z-0" data-testid="smart-messages">
+      <div className="flex-1 overflow-y-auto px-4 py-3 -mt-2 space-y-3 pb-36 z-0" data-testid="smart-messages">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             {m.role === "user" && editingIndex === i ? (
@@ -912,45 +949,52 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-3 pb-4 sm:pb-6 z-20 safe-bottom">
-        <div className="flex gap-2 items-center max-w-md mx-auto">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={inputPlaceholder}
-            disabled={isLoading}
-            className="flex-1"
-            data-testid="input-smart-message"
-          />
-
-          {input.length > 0 ? (
-            <Button
-              size="icon"
-              onClick={handleSendText}
+        <div className="max-w-md mx-auto">
+          <div className="flex gap-2 items-center">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={inputPlaceholder}
               disabled={isLoading}
-              data-testid="button-smart-send"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          ) : (
-            <Button
-              size="icon"
-              variant={isRecording ? "destructive" : "default"}
-              onMouseDown={startRecording}
-              onMouseUp={stopRecording}
-              onTouchStart={startRecording}
-              onTouchEnd={stopRecording}
-              onPointerLeave={stopRecording}
-              disabled={isLoading}
-              data-testid="button-smart-voice"
-              className={isRecording ? "animate-pulse" : ""}
-            >
-              {isRecording ? (
-                <Square className="w-4 h-4" />
-              ) : (
-                <Mic className="w-4 h-4" />
-              )}
-            </Button>
+              className="flex-1"
+              data-testid="input-smart-message"
+            />
+            {input.length > 0 && (
+              <Button
+                size="icon"
+                onClick={handleSendText}
+                disabled={isLoading}
+                data-testid="button-smart-send"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+          {input.length === 0 && (
+            <div className="flex justify-center mt-3">
+              <button
+                type="button"
+                onMouseDown={startRecording}
+                onMouseUp={stopRecording}
+                onTouchStart={startRecording}
+                onTouchEnd={stopRecording}
+                onPointerLeave={stopRecording}
+                disabled={isLoading}
+                data-testid="button-smart-voice"
+                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+                  isRecording
+                    ? "bg-destructive text-destructive-foreground animate-pulse scale-110"
+                    : "bg-primary text-primary-foreground hover:opacity-90"
+                } ${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              >
+                {isRecording ? (
+                  <Square className="w-6 h-6" />
+                ) : (
+                  <Mic className="w-6 h-6" />
+                )}
+              </button>
+            </div>
           )}
         </div>
         <p className="text-center mt-2 text-[10px] text-muted-foreground">
