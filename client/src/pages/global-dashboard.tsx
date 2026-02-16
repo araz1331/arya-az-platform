@@ -403,7 +403,8 @@ export default function GlobalDashboard({ onBack }: { onBack: () => void }) {
             </TabsTrigger>
             <TabsTrigger value="leads" className="flex-1 gap-1.5 text-xs sm:text-sm" data-testid="tab-leads">
               <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              {t("dashTabLeads")}
+              <span className="hidden sm:inline">{t("dashTabLeads")}</span>
+              <span className="sm:hidden">{t("dashTabLeadsShort")}</span>
             </TabsTrigger>
             <TabsTrigger value="embed" className="flex-1 gap-1.5 text-xs sm:text-sm" disabled={!hasProfile} data-testid="tab-embed">
               <Code className="w-3.5 h-3.5 sm:w-4 sm:h-4" />

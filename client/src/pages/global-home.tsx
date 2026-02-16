@@ -463,8 +463,8 @@ export default function GlobalHome() {
                 data-testid="button-founder-cta"
               >
                 <Lock className="w-4 h-4 mr-1.5 shrink-0" />
-                <span className="hidden sm:inline">{t("founderCta")}</span>
-                <span className="sm:hidden">{t("founderCtaShort")}</span>
+                <span className="hidden md:inline">{t("founderCta")}</span>
+                <span className="md:hidden">{t("founderCtaShort")}</span>
               </Button>
               <p className="text-xs text-center text-muted-foreground mt-3" data-testid="text-founder-cta-sub">
                 {t("founderCtaSub")}
