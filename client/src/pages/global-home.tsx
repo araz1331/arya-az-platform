@@ -397,7 +397,7 @@ export default function GlobalHome() {
         </div>
       </section>
 
-      <section className="py-16 sm:py-24 px-4 relative overflow-hidden">
+      <section className="pt-20 sm:pt-28 pb-16 sm:pb-24 px-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background pointer-events-none" />
         <motion.div
           className="max-w-4xl mx-auto relative z-10"
