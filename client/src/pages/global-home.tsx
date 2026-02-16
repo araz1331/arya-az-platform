@@ -275,6 +275,7 @@ export default function GlobalHome() {
           <motion.div variants={fadeInUp} className="mt-10 sm:mt-16 w-full max-w-sm sm:max-w-md mx-auto">
             <div className="relative rounded-md overflow-hidden shadow-2xl shadow-black/40 border border-white/10">
               <video
+                key={lang === "es" ? "es" : "default"}
                 autoPlay
                 loop
                 muted
@@ -282,7 +283,7 @@ export default function GlobalHome() {
                 className="w-full h-auto"
                 data-testid="video-hero-demo"
               >
-                <source src="/videos/arya-demo.mp4" type="video/mp4" />
+                <source src={lang === "es" ? "/videos/arya-demo-es.mp4" : "/videos/arya-demo.mp4"} type="video/mp4" />
               </video>
               <div className="absolute inset-0 rounded-md ring-1 ring-inset ring-white/10 pointer-events-none" />
             </div>
