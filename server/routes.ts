@@ -448,6 +448,32 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/set-pro", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { userId, isPro, days } = req.body;
+      if (!userId) return res.status(400).json({ message: "userId required" });
+
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "User has no smart profile" });
+      }
+
+      const proExpiresAt = isPro && days
+        ? new Date(Date.now() + days * 24 * 60 * 60 * 1000)
+        : isPro ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null;
+
+      await storage.updateSmartProfile(profile.id, {
+        isPro: !!isPro,
+        proExpiresAt,
+      });
+
+      res.json({ success: true, isPro: !!isPro, proExpiresAt });
+    } catch (error) {
+      console.error("Admin set-pro error:", error);
+      res.status(500).json({ message: "Server xətası" });
+    }
+  });
+
   app.get("/api/export/metadata.csv", async (_req: Request, res: Response) => {
     try {
       const allRecordings = await storage.getAllRecordings();

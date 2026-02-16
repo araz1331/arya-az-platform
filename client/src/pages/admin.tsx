@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
 import {
   Users, Mic, HardDrive, Clock, ArrowLeft, Waves, Download,
   MessageSquare, Globe, Crown, TrendingUp, Briefcase,
-  ExternalLink, Languages, CheckCircle, XCircle,
+  ExternalLink, Languages, CheckCircle, XCircle, Loader2,
 } from "lucide-react";
 
 type Tab = "overview" | "users" | "profiles" | "leads" | "voice";
@@ -198,8 +200,84 @@ function OverviewTab({ stats }: { stats: FullStats | undefined }) {
 }
 
 function UsersTab({ users, isLoading }: { users: AdminUser[]; isLoading: boolean }) {
+  const { toast } = useToast();
+  const [proDialog, setProDialog] = useState<{ userId: string; name: string; currentPro: boolean } | null>(null);
+  const [proDays, setProDays] = useState("30");
+
+  const setProMutation = useMutation({
+    mutationFn: async ({ userId, isPro, days }: { userId: string; isPro: boolean; days?: number }) => {
+      const res = await apiRequest("POST", "/api/admin/set-pro", { userId, isPro, days });
+      return res.json();
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/full-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/smart-profiles"] });
+      toast({
+        title: variables.isPro ? "PRO activated" : "PRO removed",
+        description: variables.isPro ? `PRO for ${variables.days || 30} days` : "Subscription removed",
+      });
+      setProDialog(null);
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to update", variant: "destructive" });
+    },
+  });
+
   if (isLoading) return <p className="text-muted-foreground text-sm p-4">Loading...</p>;
   return (
+    <>
+    {proDialog && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setProDialog(null)}>
+        <Card className="p-6 max-w-sm w-full mx-4 space-y-4" onClick={(e) => e.stopPropagation()}>
+          <h3 className="font-semibold">
+            {proDialog.currentPro ? "Remove PRO" : "Activate PRO"}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {proDialog.currentPro
+              ? `Remove PRO subscription from ${proDialog.name}?`
+              : `Grant PRO subscription to ${proDialog.name}`}
+          </p>
+          {!proDialog.currentPro && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Duration (days)</label>
+              <div className="flex items-center gap-2 flex-wrap">
+                {["7", "30", "90", "365"].map((d) => (
+                  <Button
+                    key={d}
+                    variant={proDays === d ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setProDays(d)}
+                    data-testid={`button-days-${d}`}
+                  >
+                    {d === "365" ? "1 year" : `${d} days`}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setProDialog(null)} data-testid="button-pro-cancel">
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              variant={proDialog.currentPro ? "destructive" : "default"}
+              disabled={setProMutation.isPending}
+              onClick={() => setProMutation.mutate({
+                userId: proDialog.userId,
+                isPro: !proDialog.currentPro,
+                days: proDialog.currentPro ? undefined : parseInt(proDays),
+              })}
+              data-testid="button-pro-confirm"
+            >
+              {setProMutation.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
+              {proDialog.currentPro ? "Remove PRO" : "Activate PRO"}
+            </Button>
+          </div>
+        </Card>
+      </div>
+    )}
     <Card className="overflow-hidden">
       <div className="p-4 border-b">
         <h3 className="font-semibold">All Users ({users.length})</h3>
@@ -214,6 +292,7 @@ function UsersTab({ users, isLoading }: { users: AdminUser[]; isLoading: boolean
               <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Joined</th>
               <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Recordings</th>
               <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Tokens</th>
+              <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -253,12 +332,33 @@ function UsersTab({ users, isLoading }: { users: AdminUser[]; isLoading: boolean
                   {u.recordingsCount > 0 ? <Badge variant="secondary">{u.recordingsCount}</Badge> : <span className="text-muted-foreground">0</span>}
                 </td>
                 <td className="py-2.5 px-4 text-right tabular-nums font-medium">{u.tokens.toLocaleString()}</td>
+                <td className="py-2.5 px-4 text-right">
+                  {u.hasSmartProfile ? (
+                    <Button
+                      variant={u.isPro ? "outline" : "default"}
+                      size="sm"
+                      className="text-[11px] gap-1"
+                      onClick={() => setProDialog({
+                        userId: u.id,
+                        name: u.firstName || u.lastName ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() : u.email,
+                        currentPro: u.isPro,
+                      })}
+                      data-testid={`button-set-pro-${u.id}`}
+                    >
+                      <Crown className="w-3 h-3" />
+                      {u.isPro ? "Manage" : "Give PRO"}
+                    </Button>
+                  ) : (
+                    <span className="text-[10px] text-muted-foreground">No profile</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
     </Card>
+    </>
   );
 }
 
