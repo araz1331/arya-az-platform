@@ -277,7 +277,7 @@ export default function GlobalHome() {
         </div>
       </nav>
 
-      <section className="relative min-h-[100svh] flex items-center justify-center overflow-hidden pt-16">
+      <section className="relative min-h-[100svh] flex items-center justify-center overflow-hidden pt-16 pb-24 sm:pb-32">
         <div className="absolute inset-0 bg-gradient-to-br from-[hsl(240,40%,12%)] via-[hsl(260,35%,15%)] to-[hsl(220,40%,10%)]" />
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-10 w-72 h-72 rounded-full bg-[hsl(260,85%,50%)] blur-[120px]" />
@@ -390,9 +390,9 @@ export default function GlobalHome() {
           </motion.div>
         </motion.div>
 
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-            <path d="M0 80V40C360 0 720 60 1080 30C1260 15 1380 40 1440 50V80H0Z" fill="hsl(var(--background))" />
+        <div className="absolute -bottom-px left-0 right-0">
+          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full block">
+            <path d="M0 120V60C360 10 720 90 1080 50C1260 30 1380 60 1440 70V120H0Z" fill="hsl(var(--background))" />
           </svg>
         </div>
       </section>
