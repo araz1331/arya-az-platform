@@ -384,28 +384,45 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
     tr: "Ses tanınmadı. Tekrar deneyin.",
   };
 
-  const startRecording = async () => {
+  const micPermissionGranted = useRef(false);
+
+  const toggleRecording = async () => {
+    if (isRecording) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsRecording(false);
+      return;
+    }
+
     if (!profile) return;
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setMessages(prev => [...prev, { role: "assistant", text: micNotSupportedMessages[language] || micNotSupportedMessages.en }]);
       return;
     }
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch {
-      setMessages(prev => [...prev, { role: "assistant", text: micErrorMessages[language] || micErrorMessages.en }]);
-      return;
+
+    if (!micPermissionGranted.current) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(t => t.stop());
+        micPermissionGranted.current = true;
+      } catch {
+        setMessages(prev => [...prev, { role: "assistant", text: micErrorMessages[language] || micErrorMessages.en }]);
+        return;
+      }
     }
+
     try {
       const recognition = new SpeechRecognition();
       recognition.lang = getSpeechLang();
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
-      recognition.continuous = false;
+      recognition.continuous = true;
 
-      recognition.onresult = async (event: any) => {
-        const transcript = event.results[0]?.[0]?.transcript;
+      recognition.onresult = (event: any) => {
+        const last = event.results[event.results.length - 1];
+        const transcript = last?.[0]?.transcript;
         if (transcript) {
           setPendingVoiceText(transcript);
         } else {
@@ -416,8 +433,9 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
 
       recognition.onerror = (event: any) => {
         if (event.error === "not-allowed") {
+          micPermissionGranted.current = false;
           setMessages(prev => [...prev, { role: "assistant", text: micErrorMessages[language] || micErrorMessages.en }]);
-        } else if (event.error !== "aborted") {
+        } else if (event.error !== "aborted" && event.error !== "no-speech") {
           setMessages(prev => [...prev, { role: "assistant", text: micNotRecognizedMessages[language] || micNotRecognizedMessages.en }]);
         }
         setIsRecording(false);
@@ -432,13 +450,6 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
       setIsRecording(true);
     } catch {
       setMessages(prev => [...prev, { role: "assistant", text: micErrorMessages[language] || micErrorMessages.en }]);
-    }
-  };
-
-  const stopRecording = () => {
-    if (recognitionRef.current && isRecording) {
-      recognitionRef.current.stop();
-      setIsRecording(false);
     }
   };
 
