@@ -787,18 +787,13 @@ export default function GlobalHome() {
               <p className="text-sm text-muted-foreground max-w-xs">{t("footerTagline")}</p>
             </div>
             <div className="flex flex-wrap gap-6 text-sm">
-              <a href="/" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-usa">{t("footerAryaUSA")}</a>
-              <a href="/" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-europe">{t("footerAryaEurope")}</a>
+              <a href="/az" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-az">Arya Azərbaycan</a>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t">
             <p className="text-xs text-muted-foreground">
               &copy; 2026 {t("footerCopyright")}
             </p>
-            <div className="flex gap-4 text-xs text-muted-foreground">
-              <span>{t("footerPrivacy")}</span>
-              <span>{t("footerTerms")}</span>
-            </div>
           </div>
         </div>
       </footer>
