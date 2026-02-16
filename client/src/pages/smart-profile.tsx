@@ -161,7 +161,13 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
   const [profileLoading, setProfileLoading] = useState(true);
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [showTutorial, setShowTutorial] = useState(() => slug === "new-user");
-  const [language, setLanguage] = useState<"az" | "ru" | "en">("az");
+  const [language, setLanguage] = useState<"az" | "ru" | "en">(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlLang = params.get("lang");
+    if (urlLang === "ru") return "ru";
+    if (urlLang === "en") return "en";
+    return "az";
+  });
   const [pendingVoiceText, setPendingVoiceText] = useState<string | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
