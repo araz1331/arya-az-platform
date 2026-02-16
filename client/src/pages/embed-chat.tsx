@@ -175,29 +175,30 @@ export default function EmbedChat({ slug }: { slug: string }) {
     en: "Instagram/Facebook browser blocks microphone access. Open this link in Safari or Chrome — the mic will work there.",
   };
 
-  const toggleRecording = () => {
+  const toggleRecording = async () => {
     if (isRecording) {
       if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch {}
+        recognitionRef.current.stop();
       }
       setIsRecording(false);
       return;
     }
 
     const ua = navigator.userAgent || "";
-    if (/FBAN|FBAV|Instagram|FB_IAB/i.test(ua)) {
+    const isMetaBrowser = /FBAN|FBAV|Instagram|FB_IAB/i.test(ua);
+    if (isMetaBrowser) {
       setMessages(prev => [...prev, { role: "assistant", text: metaBrowserMessages[language] || metaBrowserMessages.en }]);
       return;
     }
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
-
     try {
-      if (recognitionRef.current) {
-        try { recognitionRef.current.abort(); } catch {}
-      }
-
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      return;
+    }
+    try {
       const recognition = new SpeechRecognition();
       recognition.lang = getSpeechLang();
       recognition.interimResults = false;
