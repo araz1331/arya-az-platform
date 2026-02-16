@@ -1,4 +1,4 @@
-import { getStripeSync } from './stripeClient';
+import { getStripeClient } from './stripeClient';
 
 export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string): Promise<void> {
@@ -11,7 +11,29 @@ export class WebhookHandlers {
       );
     }
 
-    const sync = await getStripeSync();
-    await sync.processWebhook(payload, signature);
+    const stripe = getStripeClient();
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.warn('STRIPE_WEBHOOK_SECRET not set, skipping signature verification');
+      const event = JSON.parse(payload.toString());
+      console.log('Webhook event:', event.type);
+      return;
+    }
+
+    const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+    console.log('Stripe webhook event:', event.type);
+
+    switch (event.type) {
+      case 'checkout.session.completed':
+        console.log('Checkout completed:', event.data.object);
+        break;
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+        console.log('Subscription update:', event.data.object);
+        break;
+      default:
+        console.log('Unhandled event type:', event.type);
+    }
   }
 }

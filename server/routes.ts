@@ -729,16 +729,12 @@ export async function registerRoutes(
         }
       }
 
-      const founderPrice = await db.execute(
-        sql`SELECT pr.id as price_id FROM stripe.prices pr
-            JOIN stripe.products p ON pr.product = p.id
-            WHERE p.name = 'Founding Member Pass' AND p.active = true AND pr.active = true
-            LIMIT 1`
-      );
-
+      const products = await stripe.products.search({ query: "name:'Founding Member Pass' active:'true'" });
       let priceId: string;
-      if (founderPrice.rows.length > 0) {
-        priceId = founderPrice.rows[0].price_id as string;
+      if (products.data.length > 0) {
+        const prices = await stripe.prices.list({ product: products.data[0].id, active: true, limit: 1 });
+        priceId = prices.data[0]?.id;
+        if (!priceId) throw new Error("No active price found for Founding Member Pass");
       } else {
         const product = await stripe.products.create({
           name: "Founding Member Pass",
@@ -804,16 +800,12 @@ export async function registerRoutes(
         }
       }
 
-      const planPrice = await db.execute(
-        sql`SELECT pr.id as price_id FROM stripe.prices pr
-            JOIN stripe.products p ON pr.product = p.id
-            WHERE p.name = ${productName} AND p.active = true AND pr.active = true
-            LIMIT 1`
-      );
-
+      const products = await stripe.products.search({ query: `name:'${productName}' active:'true'` });
       let priceId: string;
-      if (planPrice.rows.length > 0) {
-        priceId = planPrice.rows[0].price_id as string;
+      if (products.data.length > 0) {
+        const prices = await stripe.prices.list({ product: products.data[0].id, active: true, limit: 1 });
+        priceId = prices.data[0]?.id;
+        if (!priceId) throw new Error(`No active price found for ${productName}`);
       } else {
         const product = await stripe.products.create({
           name: productName,

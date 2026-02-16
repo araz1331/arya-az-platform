@@ -1,4 +1,4 @@
-import { getUncachableStripeClient } from './stripeClient';
+import { getStripeClient } from './stripeClient';
 
 async function ensureProduct(stripe: any, config: {
   name: string;
@@ -37,7 +37,7 @@ async function ensureProduct(stripe: any, config: {
 }
 
 async function createProducts() {
-  const stripe = await getUncachableStripeClient();
+  const stripe = getStripeClient();
 
   await ensureProduct(stripe, {
     name: 'Founding Member Pass',

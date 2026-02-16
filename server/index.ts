@@ -4,8 +4,6 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
-import { runMigrations } from "stripe-replit-sync";
-import { getStripeSync } from "./stripeClient";
 import { WebhookHandlers } from "./webhookHandlers";
 
 const app = express();
@@ -100,37 +98,11 @@ async function bootstrapViews() {
 }
 
 async function initStripe() {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    console.warn('DATABASE_URL not set, skipping Stripe initialization');
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.warn('STRIPE_SECRET_KEY not set, skipping Stripe check');
     return;
   }
-
-  try {
-    console.log('Initializing Stripe schema...');
-    await runMigrations({ databaseUrl });
-    console.log('Stripe schema ready');
-
-    const stripeSync = await getStripeSync();
-
-    console.log('Setting up managed webhook...');
-    const webhookBaseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
-    try {
-      const result = await stripeSync.findOrCreateManagedWebhook(
-        `${webhookBaseUrl}/api/stripe/webhook`
-      );
-      console.log('Webhook configured:', result?.webhook?.url || 'managed');
-    } catch (whErr: any) {
-      console.warn('Webhook auto-setup skipped:', whErr.message);
-    }
-
-    console.log('Syncing Stripe data...');
-    stripeSync.syncBackfill()
-      .then(() => console.log('Stripe data synced'))
-      .catch((err: any) => console.error('Error syncing Stripe data:', err));
-  } catch (error) {
-    console.error('Failed to initialize Stripe:', error);
-  }
+  console.log('Stripe configured (direct HireArya account)');
 }
 
 (async () => {
