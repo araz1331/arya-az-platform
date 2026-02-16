@@ -297,7 +297,7 @@ export default function GlobalHome() {
                 className="w-full h-auto"
                 data-testid="video-hero-demo"
               >
-                <source src={lang === "es" ? "/videos/arya-demo-es.mp4" : lang === "ru" ? "/videos/arya-demo-ru.mp4" : lang === "fr" ? "/videos/arya-demo-fr.mp4" : "/videos/arya-demo.mp4"} type="video/mp4" />
+                <source src={lang === "es" ? "/videos/arya-demo-es.mp4" : lang === "ru" ? "/videos/arya-demo-ru.mp4" : lang === "fr" ? "/videos/arya-demo-fr.mp4" : lang === "tr" ? "/videos/arya-demo-tr.mp4" : "/videos/arya-demo.mp4"} type="video/mp4" />
               </video>
               <button
                 type="button"
