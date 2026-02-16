@@ -116,7 +116,7 @@ export default function GlobalHome() {
       role: t("card1Role"),
       bubble: t("card1Bubble"),
       color: "from-blue-500 to-blue-700",
-      slug: "samir-usta",
+      slug: "new-user",
     },
     {
       icon: GraduationCap,
@@ -124,7 +124,7 @@ export default function GlobalHome() {
       role: t("card2Role"),
       bubble: t("card2Bubble"),
       color: "from-purple-500 to-purple-700",
-      slug: "aysel-teacher",
+      slug: "new-user",
     },
     {
       icon: UtensilsCrossed,
@@ -132,7 +132,7 @@ export default function GlobalHome() {
       role: t("card3Role"),
       bubble: t("card3Bubble"),
       color: "from-orange-500 to-orange-700",
-      slug: "kebab-house",
+      slug: "new-user",
     },
   ];
 
