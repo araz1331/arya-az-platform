@@ -155,7 +155,7 @@ export default function Landing({ onStart, onLogin, onDemoClick }: { onStart: ()
           </motion.div>
 
           <motion.div variants={fadeInUp} className="mb-8">
-            <div className="relative max-w-sm mx-auto">
+            <div className="relative max-w-[12rem] mx-auto">
               <div className="rounded-md overflow-hidden shadow-2xl">
                 <video
                   ref={videoRef}

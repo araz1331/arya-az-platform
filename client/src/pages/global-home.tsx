@@ -272,7 +272,7 @@ export default function GlobalHome() {
             </Button>
           </motion.div>
 
-          <motion.div variants={fadeInUp} className="mt-10 sm:mt-16 w-full max-w-3xl mx-auto">
+          <motion.div variants={fadeInUp} className="mt-10 sm:mt-16 w-full max-w-sm sm:max-w-md mx-auto">
             <div className="relative rounded-md overflow-hidden shadow-2xl shadow-black/40 border border-white/10">
               <video
                 autoPlay
