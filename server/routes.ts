@@ -549,7 +549,9 @@ export async function registerRoutes(
   });
 
   app.get("/api/smart-profile/by-slug/:slug", async (req, res) => {
+    console.log("[by-slug] Looking up slug:", req.params.slug);
     const profile = await storage.getSmartProfileBySlug(req.params.slug);
+    console.log("[by-slug] Found profile:", profile ? profile.id : "null", "isActive:", profile?.isActive);
     if (!profile || !profile.isActive) return res.status(404).json({ message: "Profile not found" });
     res.json({
       id: profile.id,
