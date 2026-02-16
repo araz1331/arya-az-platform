@@ -983,19 +983,34 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
             )}
           </div>
           {input.length === 0 && (
-            <div className="flex justify-center mt-3">
+            <div className="flex flex-col items-center mt-3 gap-2">
+              {isRecording && (
+                <div className="flex items-center gap-2 text-destructive animate-pulse" data-testid="recording-indicator">
+                  <div className="w-2 h-2 rounded-full bg-destructive" />
+                  <div className="flex items-end gap-[3px] h-5">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className="w-[3px] rounded-full bg-destructive"
+                        style={{
+                          animation: `soundWave 0.8s ease-in-out ${i * 0.12}s infinite alternate`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-xs font-medium">
+                    {{ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening...", es: "Escuchando...", fr: "J'écoute...", tr: "Dinliyorum..." }[language] || "Listening..."}
+                  </span>
+                </div>
+              )}
               <button
                 type="button"
-                onMouseDown={startRecording}
-                onMouseUp={stopRecording}
-                onTouchStart={startRecording}
-                onTouchEnd={stopRecording}
-                onPointerLeave={stopRecording}
+                onClick={toggleRecording}
                 disabled={isLoading}
                 data-testid="button-smart-voice"
                 className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
                   isRecording
-                    ? "bg-destructive text-destructive-foreground animate-pulse scale-110"
+                    ? "bg-destructive text-destructive-foreground scale-110 ring-4 ring-destructive/30"
                     : "bg-primary text-primary-foreground hover:opacity-90"
                 } ${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               >

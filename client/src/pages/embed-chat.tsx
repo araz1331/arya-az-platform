@@ -169,7 +169,14 @@ export default function EmbedChat({ slug }: { slug: string }) {
     return map[language] || "az-AZ";
   };
 
-  const startRecording = async () => {
+  const toggleRecording = async () => {
+    if (isRecording) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsRecording(false);
+      return;
+    }
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
     try {
@@ -182,11 +189,11 @@ export default function EmbedChat({ slug }: { slug: string }) {
       recognition.lang = getSpeechLang();
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
-      recognition.continuous = false;
+      recognition.continuous = true;
       recognition.onresult = (event: any) => {
-        const transcript = event.results[0]?.[0]?.transcript;
+        const last = event.results[event.results.length - 1];
+        const transcript = last?.[0]?.transcript;
         if (transcript) setPendingVoiceText(transcript);
-        setIsRecording(false);
       };
       recognition.onerror = () => setIsRecording(false);
       recognition.onend = () => setIsRecording(false);
@@ -194,13 +201,6 @@ export default function EmbedChat({ slug }: { slug: string }) {
       recognition.start();
       setIsRecording(true);
     } catch {}
-  };
-
-  const stopRecording = () => {
-    if (recognitionRef.current && isRecording) {
-      recognitionRef.current.stop();
-      setIsRecording(false);
-    }
   };
 
   const confirmPendingVoice = () => {
@@ -344,23 +344,40 @@ export default function EmbedChat({ slug }: { slug: string }) {
             <Send style={{ width: 16, height: 16 }} />
           </button>
         ) : (
-          <button
-            onMouseDown={startRecording}
-            onMouseUp={stopRecording}
-            onTouchStart={startRecording}
-            onTouchEnd={stopRecording}
-            onPointerLeave={stopRecording}
-            disabled={isLoading}
-            style={{
-              width: 36, height: 36, borderRadius: 8, border: "none",
-              background: isRecording ? "#ef4444" : themeColor,
-              color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-              animation: isRecording ? "pulse 1.5s infinite" : "none",
-            }}
-            data-testid="embed-button-voice"
-          >
-            {isRecording ? <Square style={{ width: 16, height: 16 }} /> : <Mic style={{ width: 16, height: 16 }} />}
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {isRecording && (
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }} data-testid="embed-recording-indicator">
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s infinite" }} />
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 18 }}>
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      style={{
+                        width: 3, borderRadius: 2, background: "#ef4444",
+                        animation: `soundWave 0.8s ease-in-out ${i * 0.12}s infinite alternate`,
+                      }}
+                    />
+                  ))}
+                </div>
+                <span style={{ fontSize: 10, color: "#ef4444", fontWeight: 500 }}>
+                  {{ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening..." }[language] || "Listening..."}
+                </span>
+              </div>
+            )}
+            <button
+              onClick={toggleRecording}
+              disabled={isLoading}
+              style={{
+                width: 36, height: 36, borderRadius: 8, border: "none",
+                background: isRecording ? "#ef4444" : themeColor,
+                color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: isRecording ? "0 0 0 4px rgba(239,68,68,0.3)" : "none",
+              }}
+              data-testid="embed-button-voice"
+            >
+              {isRecording ? <Square style={{ width: 16, height: 16 }} /> : <Mic style={{ width: 16, height: 16 }} />}
+            </button>
+          </div>
         )}
       </div>
 
