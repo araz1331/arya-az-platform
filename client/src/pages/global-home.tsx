@@ -289,7 +289,7 @@ export default function GlobalHome() {
             <div className="relative rounded-md overflow-hidden shadow-2xl shadow-black/40 border border-white/10">
               <video
                 ref={videoRef}
-                key={lang === "es" ? "es" : lang === "ru" ? "ru" : "default"}
+                key={lang}
                 autoPlay
                 loop
                 muted
@@ -297,7 +297,7 @@ export default function GlobalHome() {
                 className="w-full h-auto"
                 data-testid="video-hero-demo"
               >
-                <source src={lang === "es" ? "/videos/arya-demo-es.mp4" : lang === "ru" ? "/videos/arya-demo-ru.mp4" : "/videos/arya-demo.mp4"} type="video/mp4" />
+                <source src={lang === "es" ? "/videos/arya-demo-es.mp4" : lang === "ru" ? "/videos/arya-demo-ru.mp4" : lang === "fr" ? "/videos/arya-demo-fr.mp4" : "/videos/arya-demo.mp4"} type="video/mp4" />
               </video>
               <button
                 type="button"
