@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Send, Loader2, ExternalLink, Sparkles, Camera, Languages, ArrowLeft, Upload, MapPin, Crown, Pencil, Eye, Globe, Users, MessageCircle, Clock, ChevronRight, Mic, Code, Copy, Check, Link2, Smartphone, QrCode, Megaphone, Download } from "lucide-react";
+import { Send, Loader2, ExternalLink, Sparkles, Camera, Languages, ArrowLeft, Upload, MapPin, Crown, Pencil, Eye, Globe, Users, MessageCircle, Clock, ChevronRight, Mic, Code, Copy, Check, Link2, Smartphone, QrCode, Megaphone, Download, Trash2, X, Plus } from "lucide-react";
 import QRCode from "qrcode";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
@@ -124,6 +124,14 @@ const UI_TEXT: Record<Lang, {
   emptyState: string;
   viewProfile: string;
   editProfile: string;
+  editField: string;
+  deleteField: string;
+  fieldDeleted: string;
+  fieldUpdated: string;
+  saveField: string;
+  cancelEdit: string;
+  addInfo: string;
+  kbFieldLabels: Record<string, string>;
   uploadPhoto: string;
   translateKb: string;
   translating: string;
@@ -220,6 +228,22 @@ const UI_TEXT: Record<Lang, {
     emptyState: "Sİ köməkçinizi qurmaq üçün hazırıq",
     viewProfile: "Profilimi Gör",
     editProfile: "Məlumatları Redaktə Et",
+    editField: "Redaktə",
+    deleteField: "Sil",
+    fieldDeleted: "Məlumat silindi",
+    fieldUpdated: "Məlumat yeniləndi",
+    saveField: "Yadda saxla",
+    cancelEdit: "Ləğv et",
+    addInfo: "Məlumat əlavə et",
+    kbFieldLabels: {
+      "Biznes adı": "Biznes adı",
+      "Peşə": "Peşə",
+      "Xidmətlər və qiymətlər": "Xidmətlər",
+      "Qiymət siyasəti": "Qiymət siyasəti",
+      "Ərazi/Ünvan": "Ərazi/Ünvan",
+      "İş saatları": "İş saatları",
+      "Tez-tez verilən suallar": "FAQ",
+    },
     uploadPhoto: "Şəkil Yüklə",
     translateKb: "Rus/İngilis Tərcümə",
     translating: "Tərcümə edilir...",
@@ -325,6 +349,22 @@ const UI_TEXT: Record<Lang, {
     emptyState: "Готовы создать вашего ИИ-ассистента",
     viewProfile: "Мой профиль",
     editProfile: "Редактировать",
+    editField: "Изменить",
+    deleteField: "Удалить",
+    fieldDeleted: "Информация удалена",
+    fieldUpdated: "Информация обновлена",
+    saveField: "Сохранить",
+    cancelEdit: "Отмена",
+    addInfo: "Добавить информацию",
+    kbFieldLabels: {
+      "Biznes adı": "Название",
+      "Peşə": "Профессия",
+      "Xidmətlər və qiymətlər": "Услуги",
+      "Qiymət siyasəti": "Ценовая политика",
+      "Ərazi/Ünvan": "Район/Адрес",
+      "İş saatları": "Часы работы",
+      "Tez-tez verilən suallar": "FAQ",
+    },
     uploadPhoto: "Загрузить фото",
     translateKb: "Перевод Рус/Англ",
     translating: "Переводится...",
@@ -430,6 +470,22 @@ const UI_TEXT: Record<Lang, {
     emptyState: "Ready to build your AI assistant",
     viewProfile: "View My Profile",
     editProfile: "Edit Info",
+    editField: "Edit",
+    deleteField: "Delete",
+    fieldDeleted: "Information deleted",
+    fieldUpdated: "Information updated",
+    saveField: "Save",
+    cancelEdit: "Cancel",
+    addInfo: "Add information",
+    kbFieldLabels: {
+      "Biznes adı": "Business name",
+      "Peşə": "Profession",
+      "Xidmətlər və qiymətlər": "Services",
+      "Qiymət siyasəti": "Pricing policy",
+      "Ərazi/Ünvan": "Area/Address",
+      "İş saatları": "Work hours",
+      "Tez-tez verilən suallar": "FAQ",
+    },
     uploadPhoto: "Upload Photo",
     translateKb: "Translate Ru/En",
     translating: "Translating...",
@@ -565,6 +621,8 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
   const [embedCopied, setEmbedCopied] = useState(false);
   const [showWidgetGuide, setShowWidgetGuide] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
   const [smartLinkCopied, setSmartLinkCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const ocrInputRef = useRef<HTMLInputElement | null>(null);
@@ -1151,6 +1209,53 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
       toast({ title: msg, variant: "destructive" });
     } finally {
       setIsUpgrading(false);
+    }
+  };
+
+  const handleFieldSave = async (fieldLabel: string, newValue: string) => {
+    if (!smartProfile?.knowledgeBase) return;
+    const kbParts: Record<string, string> = {};
+    const lines = smartProfile.knowledgeBase.split("\n\n");
+    for (const line of lines) {
+      const colonIdx = line.indexOf(":");
+      if (colonIdx > 0) {
+        kbParts[line.substring(0, colonIdx).trim()] = line.substring(colonIdx + 1).trim();
+      }
+    }
+    kbParts[fieldLabel] = newValue;
+    const newKb = Object.entries(kbParts).map(([k, v]) => `${k}: ${v}`).join("\n\n");
+    const updates: Record<string, string> = { knowledgeBase: newKb };
+    if (fieldLabel === "Biznes adı") updates.businessName = newValue;
+    if (fieldLabel === "Peşə") updates.profession = newValue;
+    try {
+      await apiRequest("PATCH", "/api/smart-profile", updates);
+      queryClient.invalidateQueries({ queryKey: ["/api/smart-profile"] });
+      toast({ title: t.fieldUpdated });
+    } catch {
+      toast({ title: t.genericError, variant: "destructive" });
+    }
+    setEditingField(null);
+    setEditingValue("");
+  };
+
+  const handleFieldDelete = async (fieldLabel: string) => {
+    if (!smartProfile?.knowledgeBase) return;
+    const kbParts: Record<string, string> = {};
+    const lines = smartProfile.knowledgeBase.split("\n\n");
+    for (const line of lines) {
+      const colonIdx = line.indexOf(":");
+      if (colonIdx > 0) {
+        kbParts[line.substring(0, colonIdx).trim()] = line.substring(colonIdx + 1).trim();
+      }
+    }
+    delete kbParts[fieldLabel];
+    const newKb = Object.entries(kbParts).map(([k, v]) => `${k}: ${v}`).join("\n\n");
+    try {
+      await apiRequest("PATCH", "/api/smart-profile", { knowledgeBase: newKb });
+      queryClient.invalidateQueries({ queryKey: ["/api/smart-profile"] });
+      toast({ title: t.fieldDeleted });
+    } catch {
+      toast({ title: t.genericError, variant: "destructive" });
     }
   };
 
@@ -1794,18 +1899,76 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
                 onClick={() => { startEditMode(); setShowDashboard(false); }}
                 data-testid="button-edit-kb"
               >
-                <Pencil className="w-3 h-3" />
-                {t.editProfile}
+                <Plus className="w-3 h-3" />
+                {t.addInfo}
               </Button>
             </div>
             {kbPreview.length > 0 ? (
-              <div className="space-y-1.5 bg-muted/50 rounded-md p-2.5 text-xs max-h-40 overflow-y-auto" data-testid="kb-preview">
-                {kbPreview.map((item, i) => (
-                  <div key={i}>
-                    {item.label && <span className="font-medium text-muted-foreground">{item.label}:</span>}
-                    <span className="break-words ml-1">{item.value}</span>
-                  </div>
-                ))}
+              <div className="space-y-1 max-h-48 overflow-y-auto" data-testid="kb-preview">
+                {kbPreview.map((item, i) => {
+                  const fieldKey = item.label || "";
+                  const displayLabel = t.kbFieldLabels[fieldKey] || fieldKey;
+                  const isEditing = editingField === fieldKey;
+                  const isProtected = fieldKey === "Biznes adı" || fieldKey === "Peşə";
+
+                  if (isEditing) {
+                    return (
+                      <div key={i} className="bg-muted/50 rounded-md p-2 space-y-1.5" data-testid={`kb-field-editing-${i}`}>
+                        <span className="text-[10px] font-medium text-muted-foreground">{displayLabel}</span>
+                        <Input
+                          value={editingValue}
+                          onChange={(e) => setEditingValue(e.target.value)}
+                          className="text-xs h-8"
+                          autoFocus
+                          data-testid={`input-edit-field-${i}`}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && editingValue.trim()) handleFieldSave(fieldKey, editingValue.trim());
+                            if (e.key === "Escape") { setEditingField(null); setEditingValue(""); }
+                          }}
+                        />
+                        <div className="flex items-center gap-1">
+                          <Button size="sm" className="text-[10px] h-6 gap-1" onClick={() => editingValue.trim() && handleFieldSave(fieldKey, editingValue.trim())} data-testid={`button-save-field-${i}`}>
+                            <Check className="w-3 h-3" />
+                            {t.saveField}
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-[10px] h-6 gap-1" onClick={() => { setEditingField(null); setEditingValue(""); }} data-testid={`button-cancel-field-${i}`}>
+                            <X className="w-3 h-3" />
+                            {t.cancelEdit}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={i} className="group flex items-start gap-2 bg-muted/50 rounded-md p-2 hover-elevate" data-testid={`kb-field-${i}`}>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[10px] font-medium text-muted-foreground block">{displayLabel}</span>
+                        <span className="text-xs break-words">{item.value}</span>
+                      </div>
+                      <div className="flex items-center gap-0.5 shrink-0 invisible group-hover:visible">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => { setEditingField(fieldKey); setEditingValue(item.value); }}
+                          data-testid={`button-edit-field-${i}`}
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                        {!isProtected && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleFieldDelete(fieldKey)}
+                            data-testid={`button-delete-field-${i}`}
+                          >
+                            <Trash2 className="w-3 h-3 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-xs text-muted-foreground italic">{t.knowledgeBaseEmpty}</p>
