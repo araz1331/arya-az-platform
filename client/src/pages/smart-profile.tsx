@@ -442,6 +442,7 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
       recognition.onresult = (event: any) => {
         const transcript = event.results[0]?.[0]?.transcript?.trim();
         gotResult = true;
+        console.log("[MIC] onresult:", transcript);
         if (transcript) {
           setPendingVoiceText(transcript);
         }
@@ -449,21 +450,36 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
       };
 
       recognition.onerror = (event: any) => {
+        console.log("[MIC] onerror:", event.error, event.message);
+        setMessages(prev => [...prev, { role: "assistant", text: `🎤 Error: ${event.error || "unknown"}` }]);
         if (event.error === "not-allowed") {
           micPermissionGranted.current = false;
-          setMessages(prev => [...prev, { role: "assistant", text: micErrorMessages[language] || micErrorMessages.en }]);
         }
         setIsRecording(false);
       };
 
       recognition.onend = () => {
+        console.log("[MIC] onend, gotResult:", gotResult);
+        if (!gotResult) {
+          setMessages(prev => [...prev, { role: "assistant", text: `🎤 Ended without result (lang: ${getSpeechLang()})` }]);
+        }
         setIsRecording(false);
       };
+
+      recognition.onaudiostart = () => console.log("[MIC] audiostart");
+      recognition.onsoundstart = () => console.log("[MIC] soundstart");
+      recognition.onspeechstart = () => {
+        console.log("[MIC] speechstart");
+        setMessages(prev => [...prev, { role: "assistant", text: "🎤 Speech detected..." }]);
+      };
+      recognition.onspeechend = () => console.log("[MIC] speechend");
 
       recognitionRef.current = recognition;
       recognition.start();
       setIsRecording(true);
-    } catch {
+      console.log("[MIC] started, lang:", getSpeechLang());
+    } catch (err: any) {
+      console.log("[MIC] catch error:", err);
       setMessages(prev => [...prev, { role: "assistant", text: micErrorMessages[language] || micErrorMessages.en }]);
     }
   };
