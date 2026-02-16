@@ -208,7 +208,7 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
   const sessionIdRef = useRef(getSessionId());
   const demoReplyIndexRef = useRef(0);
   const apiAvailableRef = useRef(true);
-  const recognitionRef = useRef<any>(null);
+  const mediaCleanupRef = useRef<(() => void) | null>(null);
 
   const localKnowledgeRef = useRef<string | null>(null);
   const localKnowledgeRuRef = useRef<string | null>(null);
@@ -348,16 +348,9 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
 
   useEffect(() => {
     return () => {
-      if (recognitionRef.current) {
-        try { recognitionRef.current.abort(); } catch {}
-      }
+      if (mediaCleanupRef.current) mediaCleanupRef.current();
     };
   }, []);
-
-  const getSpeechLang = () => {
-    const map: Record<string, string> = { az: "az-AZ", ru: "ru-RU", en: "en-US" };
-    return map[language] || "az-AZ";
-  };
 
   const micErrorMessages: Record<string, string> = {
     az: "Mikrofona icazə verin və yenidən cəhd edin.",
@@ -366,15 +359,6 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
     es: "Permita el acceso al micrófono e inténtelo de nuevo.",
     fr: "Veuillez autoriser l'accès au microphone et réessayer.",
     tr: "Mikrofon erişimine izin verin ve tekrar deneyin.",
-  };
-
-  const micNotSupportedMessages: Record<string, string> = {
-    az: "Bu brauzer səs tanımanı dəstəkləmir. Google Chrome istifadə edin.",
-    ru: "Этот браузер не поддерживает распознавание речи. Используйте Google Chrome.",
-    en: "This browser doesn't support speech recognition. Please use Google Chrome.",
-    es: "Este navegador no admite reconocimiento de voz. Use Google Chrome.",
-    fr: "Ce navigateur ne prend pas en charge la reconnaissance vocale. Utilisez Google Chrome.",
-    tr: "Bu tarayıcı ses tanımayı desteklemiyor. Google Chrome kullanın.",
   };
 
   const micMetaBrowserMessages: Record<string, string> = {
@@ -395,14 +379,15 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
     tr: "Ses tanınmadı. Tekrar deneyin.",
   };
 
-  const micPermissionGranted = useRef(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
   const toggleRecording = async () => {
     if (isRecording) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stop();
       }
-      setIsRecording(false);
       return;
     }
 
@@ -415,73 +400,53 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
       return;
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setMessages(prev => [...prev, { role: "assistant", text: micNotSupportedMessages[language] || micNotSupportedMessages.en }]);
-      return;
-    }
-
-    if (!micPermissionGranted.current) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(t => t.stop());
-        micPermissionGranted.current = true;
-      } catch {
-        setMessages(prev => [...prev, { role: "assistant", text: micErrorMessages[language] || micErrorMessages.en }]);
-        return;
-      }
-    }
-
     try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = getSpeechLang();
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-      recognition.continuous = false;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
 
-      let gotResult = false;
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/mp4")
+          ? "audio/mp4"
+          : "audio/webm";
 
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0]?.[0]?.transcript?.trim();
-        gotResult = true;
-        console.log("[MIC] onresult:", transcript);
-        if (transcript) {
-          setPendingVoiceText(transcript);
-        }
+      const recorder = new MediaRecorder(stream, { mimeType });
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
         setIsRecording(false);
-      };
 
-      recognition.onerror = (event: any) => {
-        console.log("[MIC] onerror:", event.error, event.message);
-        setMessages(prev => [...prev, { role: "assistant", text: `🎤 Error: ${event.error || "unknown"}` }]);
-        if (event.error === "not-allowed") {
-          micPermissionGranted.current = false;
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        if (audioBlob.size < 1000) return;
+
+        setIsTranscribing(true);
+        try {
+          const formData = new FormData();
+          formData.append("audio", audioBlob, "recording.webm");
+
+          const res = await fetch("/api/transcribe", { method: "POST", body: formData });
+          if (!res.ok) throw new Error("Transcription failed");
+          const data = await res.json();
+          if (data.text?.trim()) {
+            setPendingVoiceText(data.text.trim());
+          } else {
+            setMessages(prev => [...prev, { role: "assistant", text: micNotRecognizedMessages[language] || micNotRecognizedMessages.en }]);
+          }
+        } catch {
+          setMessages(prev => [...prev, { role: "assistant", text: micErrorMessages[language] || micErrorMessages.en }]);
+        } finally {
+          setIsTranscribing(false);
         }
-        setIsRecording(false);
       };
 
-      recognition.onend = () => {
-        console.log("[MIC] onend, gotResult:", gotResult);
-        if (!gotResult) {
-          setMessages(prev => [...prev, { role: "assistant", text: `🎤 Ended without result (lang: ${getSpeechLang()})` }]);
-        }
-        setIsRecording(false);
-      };
-
-      recognition.onaudiostart = () => console.log("[MIC] audiostart");
-      recognition.onsoundstart = () => console.log("[MIC] soundstart");
-      recognition.onspeechstart = () => {
-        console.log("[MIC] speechstart");
-        setMessages(prev => [...prev, { role: "assistant", text: "🎤 Speech detected..." }]);
-      };
-      recognition.onspeechend = () => console.log("[MIC] speechend");
-
-      recognitionRef.current = recognition;
-      recognition.start();
+      mediaRecorderRef.current = recorder;
+      recorder.start();
       setIsRecording(true);
-      console.log("[MIC] started, lang:", getSpeechLang());
-    } catch (err: any) {
-      console.log("[MIC] catch error:", err);
+    } catch {
       setMessages(prev => [...prev, { role: "assistant", text: micErrorMessages[language] || micErrorMessages.en }]);
     }
   };
@@ -1017,14 +982,14 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
           </div>
           {input.length === 0 && (
             <div className="flex flex-col items-center mt-3 gap-2">
-              {isRecording && (
-                <div className="flex items-center gap-2 text-destructive animate-pulse" data-testid="recording-indicator">
-                  <div className="w-2 h-2 rounded-full bg-destructive" />
+              {(isRecording || isTranscribing) && (
+                <div className={`flex items-center gap-2 animate-pulse ${isTranscribing ? "text-primary" : "text-destructive"}`} data-testid="recording-indicator">
+                  <div className={`w-2 h-2 rounded-full ${isTranscribing ? "bg-primary" : "bg-destructive"}`} />
                   <div className="flex items-end gap-[3px] h-5">
                     {[0, 1, 2, 3, 4].map((i) => (
                       <div
                         key={i}
-                        className="w-[3px] rounded-full bg-destructive"
+                        className={`w-[3px] rounded-full ${isTranscribing ? "bg-primary" : "bg-destructive"}`}
                         style={{
                           animation: `soundWave 0.8s ease-in-out ${i * 0.12}s infinite alternate`,
                         }}
@@ -1032,23 +997,29 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
                     ))}
                   </div>
                   <span className="text-xs font-medium">
-                    {{ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening...", es: "Escuchando...", fr: "J'écoute...", tr: "Dinliyorum..." }[language] || "Listening..."}
+                    {isTranscribing
+                      ? ({ az: "Emal olunur...", ru: "Обработка...", en: "Processing...", es: "Procesando...", fr: "Traitement...", tr: "İşleniyor..." }[language] || "Processing...")
+                      : ({ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening...", es: "Escuchando...", fr: "J'écoute...", tr: "Dinliyorum..." }[language] || "Listening...")}
                   </span>
                 </div>
               )}
               <button
                 type="button"
                 onClick={toggleRecording}
-                disabled={isLoading}
+                disabled={isLoading || isTranscribing}
                 data-testid="button-smart-voice"
                 className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${
                   isRecording
                     ? "bg-destructive text-destructive-foreground scale-110 ring-4 ring-destructive/30"
-                    : "bg-primary text-primary-foreground hover:opacity-90"
-                } ${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                    : isTranscribing
+                      ? "bg-primary/50 text-primary-foreground cursor-wait"
+                      : "bg-primary text-primary-foreground hover:opacity-90"
+                } ${(isLoading || isTranscribing) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               >
                 {isRecording ? (
                   <Square className="w-6 h-6" />
+                ) : isTranscribing ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
                 ) : (
                   <Mic className="w-6 h-6" />
                 )}

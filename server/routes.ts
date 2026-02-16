@@ -11,6 +11,7 @@ import OpenAI from "openai";
 import { getUncachableStripeClient } from "./stripeClient";
 import * as fs from "fs";
 import * as path from "path";
+import { ensureCompatibleFormat, speechToText } from "./replit_integrations/audio/client";
 
 const gemini = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "",
@@ -243,6 +244,21 @@ export async function registerRoutes(
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     res.status(204).end();
+  });
+
+  app.post("/api/transcribe", upload.single("audio"), async (req: Request, res: Response) => {
+    try {
+      const audioFile = req.file;
+      if (!audioFile) return res.status(400).json({ error: "No audio file" });
+
+      const audioBuffer = audioFile.buffer;
+      const { buffer: compatBuffer, format } = await ensureCompatibleFormat(audioBuffer);
+      const transcript = await speechToText(compatBuffer, format);
+      res.json({ text: transcript.trim() });
+    } catch (err: any) {
+      console.error("[transcribe] error:", err?.message || err);
+      res.status(500).json({ error: "Transcription failed" });
+    }
   });
 
   app.post("/api/donate-voice", upload.single("audio"), async (req: Request, res: Response) => {
