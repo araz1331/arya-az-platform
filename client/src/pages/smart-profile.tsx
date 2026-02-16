@@ -658,8 +658,8 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
             ) : (
               <>
                 <Sparkles className="w-3 h-3" />
-                <span className="hidden sm:inline">3 Gun Pulsuz</span>
-                <span className="sm:hidden">Pulsuz</span>
+                <span className="hidden sm:inline">{language === "ru" ? "3 Дня Бесплатно" : language === "en" ? "3 Days Free" : "3 Gün Pulsuz"}</span>
+                <span className="sm:hidden">{language === "ru" ? "Бесплатно" : language === "en" ? "Free" : "Pulsuz"}</span>
                 <Badge className="bg-white/20 text-white border-transparent text-[10px] px-1.5 py-0">PRO</Badge>
               </>
             )}
