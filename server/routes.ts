@@ -734,7 +734,7 @@ export async function registerRoutes(
         profession = profile.profession || "";
         if (language === "ru" && profile.knowledgeBaseRu) {
           knowledgeBase = profile.knowledgeBaseRu;
-        } else if (language === "en" && profile.knowledgeBaseEn) {
+        } else if (["en", "es", "fr", "tr"].includes(language) && profile.knowledgeBaseEn) {
           knowledgeBase = profile.knowledgeBaseEn;
         } else {
           knowledgeBase = profile.knowledgeBase || "";
@@ -745,11 +745,15 @@ export async function registerRoutes(
         return res.status(404).json({ error: "no_knowledge_base", fallback: true });
       }
 
-      const langInstruction = language === "ru"
-        ? "Respond in Russian."
-        : language === "en"
-        ? "Respond in English."
-        : "Respond in Azerbaijani.";
+      const langMap: Record<string, string> = {
+        az: "Respond in Azerbaijani.",
+        ru: "Respond in Russian.",
+        en: "Respond in English.",
+        es: "Respond in Spanish.",
+        fr: "Respond in French.",
+        tr: "Respond in Turkish.",
+      };
+      const langInstruction = langMap[language] || "Respond in English.";
 
       const systemPrompt = `You are ${displayName}, ${profession}. You are a helpful business assistant chatbot on your profile page. Answer questions based on your business information below. Be friendly, concise and helpful. ${langInstruction}
 
@@ -779,7 +783,8 @@ Rules:
         },
       });
 
-      const reply = result.text || (language === "ru" ? "Извините, попробуйте снова." : language === "en" ? "Sorry, please try again." : "Bağışlayın, yenidən cəhd edin.");
+      const fallbacks: Record<string, string> = { az: "Bağışlayın, yenidən cəhd edin.", ru: "Извините, попробуйте снова.", en: "Sorry, please try again.", es: "Lo siento, inténtelo de nuevo.", fr: "Désolé, veuillez réessayer.", tr: "Üzgünüm, tekrar deneyin." };
+      const reply = result.text || fallbacks[language] || fallbacks.en;
       res.json({ reply });
     } catch (err: any) {
       console.error("Chat error:", err?.message);

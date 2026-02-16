@@ -101,8 +101,7 @@ export default function GlobalHome() {
   };
 
   const handleDemoClick = (slug: string) => {
-    const langParam = lang === "ru" ? "ru" : lang === "en" ? "en" : "en";
-    window.location.href = `/u/${slug}?lang=${langParam}`;
+    window.location.href = `/u/${slug}?lang=${lang}`;
   };
 
   const scrollTo = (id: string) => {

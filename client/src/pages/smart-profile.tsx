@@ -101,6 +101,21 @@ const DEMO_REPLIES: Record<string, Record<string, string[]>> = {
       "I work 24/7 without breaks. Type your questions or speak by voice.",
       "Power up your business with Arya. First 3 days completely free!",
     ],
+    es: [
+      "Esta es una cuenta demo. Estoy aquí para responder llamadas, tomar pedidos y filtrar clientes potenciales automáticamente. ¡Haz clic en \"3 Días Gratis\" para crear tu propio perfil!",
+      "Trabajo 24/7 sin descanso. Escribe tus preguntas o habla por voz.",
+      "Potencia tu negocio con Arya. ¡Los primeros 3 días son completamente gratis!",
+    ],
+    fr: [
+      "Ceci est un compte démo. Je suis là pour répondre aux appels, prendre les commandes et filtrer automatiquement les clients potentiels. Cliquez sur \"3 Jours Gratuits\" pour créer votre propre profil !",
+      "Je travaille 24h/24, 7j/7 sans pause. Tapez vos questions ou parlez par la voix.",
+      "Boostez votre entreprise avec Arya. Les 3 premiers jours sont entièrement gratuits !",
+    ],
+    tr: [
+      "Bu bir demo hesaptır. Aramaları yanıtlamak, sipariş almak ve potansiyel müşterileri otomatik filtrelemek için buradayım. Kendi profilinizi oluşturmak için \"3 Gün Ücretsiz\" düğmesine tıklayın!",
+      "7/24 aralıksız çalışıyorum. Sorularınızı yazın veya sesle konuşun.",
+      "Arya ile işinizi güçlendirin. İlk 3 gün tamamen ücretsiz!",
+    ],
   },
 };
 
@@ -109,16 +124,25 @@ const GREETINGS: Record<string, Record<string, (name: string, profession: string
     az: (name, _prof) => `Salam! Mən Arya, ${name}-nin Sİ köməkçisiyəm. Sizə necə kömək edə bilərəm?`,
     ru: (name, _prof) => `Здравствуйте! Я Arya, ИИ-ассистент ${name}. Чем могу помочь?`,
     en: (name, _prof) => `Hi! I'm Arya, ${name}'s AI assistant. How can I help you?`,
+    es: (name, _prof) => `¡Hola! Soy Arya, el asistente de IA de ${name}. ¿En qué puedo ayudarte?`,
+    fr: (name, _prof) => `Bonjour ! Je suis Arya, l'assistant IA de ${name}. Comment puis-je vous aider ?`,
+    tr: (name, _prof) => `Merhaba! Ben Arya, ${name}'in yapay zeka asistanıyım. Size nasıl yardımcı olabilirim?`,
   },
   fallback: {
     az: (name, _prof) => `Salam! Mən Arya, ${name}-nin Sİ köməkçisiyəm. Sizə necə kömək edə bilərəm?`,
     ru: (name, _prof) => `Здравствуйте! Я Arya, ИИ-ассистент ${name}. Чем могу помочь?`,
     en: (name, _prof) => `Hi! I'm Arya, ${name}'s AI assistant. How can I help you?`,
+    es: (name, _prof) => `¡Hola! Soy Arya, el asistente de IA de ${name}. ¿En qué puedo ayudarte?`,
+    fr: (name, _prof) => `Bonjour ! Je suis Arya, l'assistant IA de ${name}. Comment puis-je vous aider ?`,
+    tr: (name, _prof) => `Merhaba! Ben Arya, ${name}'in yapay zeka asistanıyım. Size nasıl yardımcı olabilirim?`,
   },
   newUser: {
     az: (_n, _p) => "Salam! Mən Arya, sizin Sİ köməkçinizəm. Sizə necə kömək edə bilərəm?",
     ru: (_n, _p) => "Здравствуйте! Я Arya, ваш ИИ-ассистент. Чем могу помочь?",
     en: (_n, _p) => "Hi! I'm Arya, your AI assistant. How can I help you?",
+    es: (_n, _p) => "¡Hola! Soy Arya, tu asistente de IA. ¿En qué puedo ayudarte?",
+    fr: (_n, _p) => "Bonjour ! Je suis Arya, votre assistant IA. Comment puis-je vous aider ?",
+    tr: (_n, _p) => "Merhaba! Ben Arya, yapay zeka asistanınızım. Size nasıl yardımcı olabilirim?",
   },
 };
 
@@ -161,11 +185,14 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
   const [profileLoading, setProfileLoading] = useState(true);
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [showTutorial, setShowTutorial] = useState(() => slug === "new-user");
-  const [language, setLanguage] = useState<"az" | "ru" | "en">(() => {
+  const [language, setLanguage] = useState<"az" | "ru" | "en" | "es" | "fr" | "tr">(() => {
     const params = new URLSearchParams(window.location.search);
     const urlLang = params.get("lang");
     if (urlLang === "ru") return "ru";
     if (urlLang === "en") return "en";
+    if (urlLang === "es") return "es";
+    if (urlLang === "fr") return "fr";
+    if (urlLang === "tr") return "tr";
     return "az";
   });
   const [pendingVoiceText, setPendingVoiceText] = useState<string | null>(null);
@@ -207,9 +234,7 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
         .then(() => {
           setMessages(prev => [...prev, {
             role: "assistant",
-            text: language === "ru" ? "PRO подписка активирована! 3 дня бесплатно."
-              : language === "en" ? "PRO subscription activated! 3 days free trial."
-              : "PRO abunəlik aktivləşdirildi! 3 gün pulsuz sınaq."
+            text: ({ az: "PRO abunəlik aktivləşdirildi! 3 gün pulsuz sınaq.", ru: "PRO подписка активирована! 3 дня бесплатно.", en: "PRO subscription activated! 3 days free trial.", es: "¡Suscripción PRO activada! 3 días de prueba gratis.", fr: "Abonnement PRO activé ! 3 jours d'essai gratuit.", tr: "PRO abonelik aktifleştirildi! 3 gün ücretsiz deneme." })[language] || "PRO subscription activated! 3 days free trial."
           }]);
         })
         .catch(() => {});
@@ -390,15 +415,18 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
     let kb = localKnowledgeRef.current;
     if (language === "ru" && localKnowledgeRuRef.current) {
       kb = localKnowledgeRuRef.current;
-    } else if (language === "en" && localKnowledgeEnRef.current) {
+    } else if ((language === "en" || language === "es" || language === "fr" || language === "tr") && localKnowledgeEnRef.current) {
       kb = localKnowledgeEnRef.current;
     }
     const fallbackMessages: Record<string, string> = {
       az: "Mən sizə kömək etmək üçün buradayam. Nə sual vermək istərdiniz?",
       ru: "Я здесь, чтобы помочь вам. Какой у вас вопрос?",
       en: "I'm here to help you. What would you like to ask?",
+      es: "Estoy aquí para ayudarte. ¿Qué te gustaría preguntar?",
+      fr: "Je suis là pour vous aider. Que souhaitez-vous demander ?",
+      tr: "Size yardımcı olmak için buradayım. Ne sormak istersiniz?",
     };
-    if (!kb) return fallbackMessages[language] || fallbackMessages.az;
+    if (!kb) return fallbackMessages[language] || fallbackMessages.en;
     const lines = kb.split("\n").filter(l => l.trim());
     const q = question.toLowerCase();
     const keywords = q.split(/\s+/).filter(w => w.length > 2);
@@ -550,14 +578,23 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
     .slice(0, 2)
     .toUpperCase() || "?";
 
-  const displayProfession = language === "ru" && profile?.profession_ru
+  const displayProfession = (language === "ru" && profile?.profession_ru)
     ? profile.profession_ru
-    : language === "en" && profile?.profession_en
+    : ((language === "en" || language === "es" || language === "fr" || language === "tr") && profile?.profession_en)
       ? profile.profession_en
       : profile?.profession;
 
-  const locationText = language === "ru" ? "Баку, Азербайджан" : language === "en" ? "Baku, Azerbaijan" : "Bakı, Azərbaycan";
-  const inputPlaceholder = language === "ru" ? "Напишите сообщение..." : language === "en" ? "Type a message..." : "Mesaj yazın...";
+  const locationTexts: Record<string, string> = {
+    az: "Bakı, Azərbaycan", ru: "Баку, Азербайджан", en: "Baku, Azerbaijan",
+    es: "Bakú, Azerbaiyán", fr: "Bakou, Azerbaïdjan", tr: "Bakü, Azerbaycan",
+  };
+  const locationText = locationTexts[language] || locationTexts.en;
+
+  const placeholders: Record<string, string> = {
+    az: "Mesaj yazın...", ru: "Напишите сообщение...", en: "Type a message...",
+    es: "Escribe un mensaje...", fr: "Écrivez un message...", tr: "Mesaj yazın...",
+  };
+  const inputPlaceholder = placeholders[language] || placeholders.en;
 
   const isOwner = !!(currentUserId && profile?.user_id && currentUserId === profile.user_id);
 
@@ -658,8 +695,8 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
             ) : (
               <>
                 <Sparkles className="w-3 h-3" />
-                <span className="hidden sm:inline">{language === "ru" ? "3 Дня Бесплатно" : language === "en" ? "3 Days Free" : "3 Gün Pulsuz"}</span>
-                <span className="sm:hidden">{language === "ru" ? "Бесплатно" : language === "en" ? "Free" : "Pulsuz"}</span>
+                <span className="hidden sm:inline">{{ az: "3 Gün Pulsuz", ru: "3 Дня Бесплатно", en: "3 Days Free", es: "3 Días Gratis", fr: "3 Jours Gratuits", tr: "3 Gün Ücretsiz" }[language]}</span>
+                <span className="sm:hidden">{{ az: "Pulsuz", ru: "Бесплатно", en: "Free", es: "Gratis", fr: "Gratuit", tr: "Ücretsiz" }[language]}</span>
                 <Badge className="bg-white/20 text-white border-transparent text-[10px] px-1.5 py-0">PRO</Badge>
               </>
             )}
@@ -720,11 +757,20 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
                 {locationText}
               </span>
               <div className="flex items-center gap-0.5" data-testid="language-selector">
-                {([
-                  { code: "az" as const, label: "AZ" },
-                  { code: "ru" as const, label: "RU" },
-                  { code: "en" as const, label: "EN" },
-                ]).map((lang) => (
+                {(["es","fr","tr"].includes(language)
+                  ? [
+                      { code: "en" as const, label: "EN" },
+                      { code: "es" as const, label: "ES" },
+                      { code: "ru" as const, label: "RU" },
+                      { code: "fr" as const, label: "FR" },
+                      { code: "tr" as const, label: "TR" },
+                    ]
+                  : [
+                      { code: "az" as const, label: "AZ" },
+                      { code: "ru" as const, label: "RU" },
+                      { code: "en" as const, label: "EN" },
+                    ]
+                ).map((lang) => (
                   <button
                     key={lang.code}
                     onClick={() => setLanguage(lang.code)}
