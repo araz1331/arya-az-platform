@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Globe, Wrench, GraduationCap, UtensilsCrossed, Camera, Paintbrush, Link2,
   ChevronDown, ArrowRight, Check, Waves, MessageSquare, Zap, Star, Quote,
-  Settings, Languages, UserPlus, Code, Mic, BarChart3
+  Settings, Languages, UserPlus, Code, Mic, BarChart3, Volume2, VolumeX
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -88,6 +88,19 @@ function LanguageAnimation() {
 export default function GlobalHome() {
   const [lang, setLangState] = useState<GlobalLanguage>(getStoredGlobalLanguage);
   const [yearly, setYearly] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const toggleMute = useCallback(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(videoRef.current.muted);
+    }
+  }, []);
+
+  useEffect(() => {
+    setIsMuted(true);
+  }, [lang]);
 
   const setLang = useCallback((l: GlobalLanguage) => {
     setLangState(l);
@@ -275,6 +288,7 @@ export default function GlobalHome() {
           <motion.div variants={fadeInUp} className="mt-10 sm:mt-16 w-full max-w-sm sm:max-w-md mx-auto">
             <div className="relative rounded-md overflow-hidden shadow-2xl shadow-black/40 border border-white/10">
               <video
+                ref={videoRef}
                 key={lang === "es" ? "es" : lang === "ru" ? "ru" : "default"}
                 autoPlay
                 loop
@@ -285,6 +299,14 @@ export default function GlobalHome() {
               >
                 <source src={lang === "es" ? "/videos/arya-demo-es.mp4" : lang === "ru" ? "/videos/arya-demo-ru.mp4" : "/videos/arya-demo.mp4"} type="video/mp4" />
               </video>
+              <button
+                type="button"
+                onClick={toggleMute}
+                className="absolute top-2 right-2 z-30 w-9 h-9 flex items-center justify-center rounded-md bg-black/60 text-white backdrop-blur-sm border border-white/20 cursor-pointer"
+                data-testid="button-toggle-mute"
+              >
+                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              </button>
               <div className="absolute inset-0 rounded-md ring-1 ring-inset ring-white/10 pointer-events-none" />
             </div>
           </motion.div>
