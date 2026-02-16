@@ -666,7 +666,7 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
 
   if (profileLoading) {
     return (
-      <div className="flex flex-col h-screen bg-[#0F172A] items-center justify-center">
+      <div className="flex flex-col bg-[#0F172A] items-center justify-center" style={{ height: "100dvh" }}>
         <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
         <p className="text-blue-200 mt-3 text-sm">Yukl&#601;nir...</p>
       </div>
@@ -674,7 +674,7 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background" data-testid="smart-profile-page">
+    <div className="flex flex-col bg-background" style={{ height: "100dvh" }} data-testid="smart-profile-page">
       {showTutorial && slug === "new-user" && (
         <div
           className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-6 bg-black/80 backdrop-blur-sm"
