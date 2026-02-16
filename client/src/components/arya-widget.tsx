@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -542,11 +542,17 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
   const [isLoading, setIsLoading] = useState(false);
   const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [language, setLanguage] = useState<Lang>(() => {
-    if (defaultLang === "ru") return "ru";
-    if (defaultLang && defaultLang !== "az") return "en";
+  const mapLang = useCallback((dl?: string): Lang => {
+    if (dl === "ru") return "ru";
+    if (dl && dl !== "az") return "en";
     return "az";
-  });
+  }, []);
+  const [language, setLanguage] = useState<Lang>(() => mapLang(defaultLang));
+
+  useEffect(() => {
+    setLanguage(mapLang(defaultLang));
+  }, [defaultLang, mapLang]);
+
   const [editMode, setEditMode] = useState<{ step: number; data: Partial<OnboardingState> } | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
