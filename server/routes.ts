@@ -261,6 +261,24 @@ export async function registerRoutes(
 
       console.log(`[donate-voice] Received: speaker=${speaker_name}, age=${age}, gender=${gender}, sentence=${sentenceId}, duration=${duration}s, fileSize=${audioFile.size}, mimeType=${audioFile.mimetype}`);
 
+      const ext = audioFile.mimetype.includes("mp4") ? "mp4" : "webm";
+      const audioFilename = `${Date.now()}-${sentenceId || "unknown"}.${ext}`;
+      let audioUrl: string | null = null;
+      try {
+        const { uploadToS3 } = await import("./s3");
+        const s3Key = `voice-donations/${audioFilename}`;
+        audioUrl = await uploadToS3(s3Key, audioFile.buffer, audioFile.mimetype, false);
+        console.log(`[donate-voice] Uploaded to S3: ${s3Key}`);
+      } catch (s3Err) {
+        console.warn("[donate-voice] S3 upload failed, saving locally:", s3Err);
+        const voiceDir = path.join(process.cwd(), "uploads", "voice-donations");
+        if (!fs.existsSync(voiceDir)) fs.mkdirSync(voiceDir, { recursive: true });
+        const localPath = path.join(voiceDir, audioFilename);
+        fs.writeFileSync(localPath, audioFile.buffer);
+        audioUrl = `/uploads/voice-donations/${audioFilename}`;
+        console.log(`[donate-voice] Saved locally: ${audioUrl}`);
+      }
+
       const donation = await storage.createVoiceDonation({
         userId: req.session?.userId || null,
         speakerName: speaker_name || "unknown",
@@ -268,7 +286,7 @@ export async function registerRoutes(
         gender: gender || null,
         sentenceId: sentenceId || null,
         transcription: sentenceText || null,
-        audioUrl: null,
+        audioUrl,
         category: category || null,
         duration: parseInt(duration) || 0,
         fileSize: audioFile.size,
@@ -441,7 +459,19 @@ export async function registerRoutes(
   app.get("/api/admin/voice-donations", isAdmin, async (_req: Request, res: Response) => {
     try {
       const donations = await storage.getAdminVoiceDonations();
-      res.json(donations);
+      const { getSignedDownloadUrl } = await import("./s3");
+      const donationsWithUrls = await Promise.all(
+        donations.map(async (d: any) => {
+          if (d.audioUrl && !d.audioUrl.startsWith("http")) {
+            try {
+              const signedUrl = await getSignedDownloadUrl(d.audioUrl, 3600);
+              return { ...d, audioStreamUrl: signedUrl };
+            } catch { return d; }
+          }
+          return d;
+        })
+      );
+      res.json(donationsWithUrls);
     } catch (error) {
       console.error("Admin voice donations error:", error);
       res.status(500).json({ message: "Server xətası" });
@@ -592,15 +622,39 @@ export async function registerRoutes(
       const extMap: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" };
       const ext = extMap[file.mimetype] || "png";
       const filename = `${existing.id}-${Date.now()}.${ext}`;
-      const filepath = path.join(uploadsDir, filename);
-      fs.writeFileSync(filepath, file.buffer);
 
-      const imageUrl = `/uploads/profile-images/${filename}`;
+      let imageUrl: string;
+      try {
+        const { uploadToS3 } = await import("./s3");
+        const s3Key = `profile-images/${filename}`;
+        await uploadToS3(s3Key, file.buffer, file.mimetype, false);
+        imageUrl = `/api/s3/profile-images/${filename}`;
+        console.log(`[upload-image] Uploaded to S3: ${s3Key}`);
+      } catch (s3Err) {
+        console.warn("[upload-image] S3 upload failed, falling back to local storage:", s3Err);
+        const filepath = path.join(uploadsDir, filename);
+        fs.writeFileSync(filepath, file.buffer);
+        imageUrl = `/uploads/profile-images/${filename}`;
+      }
+
       await storage.updateSmartProfile(existing.id, { profileImageUrl: imageUrl });
       res.json({ imageUrl });
     } catch (error) {
       console.error("Upload image error:", error);
       res.status(500).json({ message: "Upload failed" });
+    }
+  });
+
+  app.get("/api/s3/profile-images/:filename", async (req: Request, res: Response) => {
+    try {
+      const filename = req.params.filename as string;
+      const safeFilename = path.basename(filename);
+      const { getSignedDownloadUrl } = await import("./s3");
+      const signedUrl = await getSignedDownloadUrl(`profile-images/${safeFilename}`, 86400);
+      res.redirect(signedUrl);
+    } catch (error) {
+      console.error("[s3-proxy] Error:", error);
+      res.status(404).json({ message: "Image not found" });
     }
   });
 

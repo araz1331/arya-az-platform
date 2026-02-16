@@ -8,7 +8,7 @@ Arya.az is a "National Voice AI" platform for Azerbaijan where users donate thei
 - **Backend**: Express.js with custom email/password authentication
 - **Database**: PostgreSQL via Drizzle ORM
 - **Auth**: Custom email/password auth with bcrypt, express-session + connect-pg-simple
-- **Storage**: Audio recordings tracked in DB (metadata), file uploads via multer
+- **Storage**: AWS S3 (`server/s3.ts`) for file uploads; profile images stored publicly via signed-URL proxy (`/api/s3/profile-images/:filename`), voice donations stored privately with admin signed-URL access; local fallback via multer if S3 fails
 
 ## URL Structure
 - `/` → Global SaaS homepage (English default, multi-language: EN/ES/RU/FR/TR)
