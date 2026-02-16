@@ -158,6 +158,8 @@ interface ProfileData {
   knowledge_base_ru?: string | null;
   knowledge_base_en?: string | null;
   user_id?: string;
+  is_pro?: boolean;
+  pro_expires_at?: string | null;
 }
 
 interface Message {
@@ -690,7 +692,11 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
             <ArrowLeft className="w-5 h-5" />
           </Button>
 
-          {isOwner && (
+          {isOwner && profile?.is_pro ? (
+            <Badge className="bg-amber-500/20 text-amber-300 border-transparent text-xs font-bold px-2.5 py-1" data-testid="badge-pro-active">
+              PRO
+            </Badge>
+          ) : isOwner && !profile?.is_pro ? (
             <Button
               onClick={handleBuy}
               disabled={isUpgrading}
@@ -709,7 +715,7 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
                 </>
               )}
             </Button>
-          )}
+          ) : null}
         </div>
 
         <div className="flex items-center gap-3">

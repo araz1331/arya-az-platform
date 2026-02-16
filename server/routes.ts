@@ -565,6 +565,8 @@ export async function registerRoutes(
       knowledge_base_en: profile.knowledgeBaseEn || null,
       slug: profile.slug,
       user_id: profile.userId,
+      is_pro: profile.isPro || false,
+      pro_expires_at: profile.proExpiresAt || null,
     });
   });
 
