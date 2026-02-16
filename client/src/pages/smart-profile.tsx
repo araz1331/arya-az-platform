@@ -418,15 +418,15 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
       recognition.lang = getSpeechLang();
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
-      recognition.continuous = true;
+      recognition.continuous = false;
+
+      let gotResult = false;
 
       recognition.onresult = (event: any) => {
-        const last = event.results[event.results.length - 1];
-        const transcript = last?.[0]?.transcript;
+        const transcript = event.results[0]?.[0]?.transcript?.trim();
+        gotResult = true;
         if (transcript) {
           setPendingVoiceText(transcript);
-        } else {
-          setMessages(prev => [...prev, { role: "assistant", text: micNotRecognizedMessages[language] || micNotRecognizedMessages.en }]);
         }
         setIsRecording(false);
       };
@@ -435,8 +435,6 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
         if (event.error === "not-allowed") {
           micPermissionGranted.current = false;
           setMessages(prev => [...prev, { role: "assistant", text: micErrorMessages[language] || micErrorMessages.en }]);
-        } else if (event.error !== "aborted" && event.error !== "no-speech") {
-          setMessages(prev => [...prev, { role: "assistant", text: micNotRecognizedMessages[language] || micNotRecognizedMessages.en }]);
         }
         setIsRecording(false);
       };

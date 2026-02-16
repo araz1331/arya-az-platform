@@ -189,11 +189,11 @@ export default function EmbedChat({ slug }: { slug: string }) {
       recognition.lang = getSpeechLang();
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
-      recognition.continuous = true;
+      recognition.continuous = false;
       recognition.onresult = (event: any) => {
-        const last = event.results[event.results.length - 1];
-        const transcript = last?.[0]?.transcript;
+        const transcript = event.results[0]?.[0]?.transcript?.trim();
         if (transcript) setPendingVoiceText(transcript);
+        setIsRecording(false);
       };
       recognition.onerror = () => setIsRecording(false);
       recognition.onend = () => setIsRecording(false);
