@@ -146,6 +146,11 @@ const UI_TEXT: Record<Lang, {
   editFormTitle: string;
   editFormSave: string;
   editFormPlaceholders: Record<string, string>;
+  faqQuestion: string;
+  faqAnswer: string;
+  faqAddPair: string;
+  faqQuestionPlaceholder: string;
+  faqAnswerPlaceholder: string;
   backToProfile: string;
   selectTemplate: string;
   templateSelected: (name: string) => string;
@@ -269,6 +274,11 @@ const UI_TEXT: Record<Lang, {
       "İş saatları": "Məs: Hər gün 09:00-18:00",
       "Tez-tez verilən suallar": "Müştərilərin sualları və cavabları",
     },
+    faqQuestion: "Sual",
+    faqAnswer: "Cavab",
+    faqAddPair: "Sual əlavə et",
+    faqQuestionPlaceholder: "Məs: Evə gəlirsiniz?",
+    faqAnswerPlaceholder: "Məs: Bəli, bütün Bakı ərazisində",
     backToProfile: "Geri",
     selectTemplate: "Sahənizi seçin və ya aşağıda əl ilə yazın:",
     templateSelected: (name: string) => `"${name}" şablonu seçildi! Xidmətlər və qiymətlər avtomatik dolduruldu.`,
@@ -401,6 +411,11 @@ const UI_TEXT: Record<Lang, {
       "İş saatları": "Напр: Ежедневно 09:00-18:00",
       "Tez-tez verilən suallar": "Частые вопросы и ответы",
     },
+    faqQuestion: "Вопрос",
+    faqAnswer: "Ответ",
+    faqAddPair: "Добавить вопрос",
+    faqQuestionPlaceholder: "Напр: Вы выезжаете на дом?",
+    faqAnswerPlaceholder: "Напр: Да, по всему городу",
     backToProfile: "Назад",
     selectTemplate: "Выберите вашу отрасль или введите вручную ниже:",
     templateSelected: (name: string) => `Шаблон "${name}" выбран! Услуги и цены заполнены автоматически.`,
@@ -533,6 +548,11 @@ const UI_TEXT: Record<Lang, {
       "İş saatları": "e.g., Daily 09:00-18:00",
       "Tez-tez verilən suallar": "FAQ and answers",
     },
+    faqQuestion: "Question",
+    faqAnswer: "Answer",
+    faqAddPair: "Add question",
+    faqQuestionPlaceholder: "e.g., Do you do house calls?",
+    faqAnswerPlaceholder: "e.g., Yes, citywide",
     backToProfile: "Back",
     selectTemplate: "Choose your industry or type manually below:",
     templateSelected: (name: string) => `Template "${name}" selected! Services and prices auto-filled.`,
@@ -651,6 +671,8 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
   const [showEditForm, setShowEditForm] = useState(false);
   const [editFormData, setEditFormData] = useState<Record<string, string>>({});
   const [editFormSaving, setEditFormSaving] = useState(false);
+  const [faqPairs, setFaqPairs] = useState<{ q: string; a: string; id: number }[]>([]);
+  const faqIdRef = useRef(0);
   const [isTranslating, setIsTranslating] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
   const [ocrPendingConfirm, setOcrPendingConfirm] = useState<string | null>(null);
@@ -1120,6 +1142,29 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
 
   const KB_FIELD_KEYS = ["Biznes adı", "Peşə", "Xidmətlər və qiymətlər", "Qiymət siyasəti", "Ərazi/Ünvan", "İş saatları", "Tez-tez verilən suallar"];
 
+  const parseFaqPairs = (faqText: string): { q: string; a: string; id: number }[] => {
+    if (!faqText.trim()) return [];
+    const pairs: { q: string; a: string; id: number }[] = [];
+    const parts = faqText.split(/(?:S:|Q:|В:|\n\s*S:|\n\s*Q:|\n\s*В:)/i).filter(Boolean);
+    for (const part of parts) {
+      const answerMatch = part.split(/(?:C:|A:|О:)/i);
+      if (answerMatch.length >= 2) {
+        pairs.push({ q: answerMatch[0].trim(), a: answerMatch.slice(1).join("").trim(), id: ++faqIdRef.current });
+      } else {
+        const trimmed = part.trim();
+        if (trimmed) pairs.push({ q: trimmed, a: "", id: ++faqIdRef.current });
+      }
+    }
+    return pairs.length > 0 ? pairs : [{ q: faqText.trim(), a: "", id: ++faqIdRef.current }];
+  };
+
+  const serializeFaqPairs = (pairs: { q: string; a: string; id: number }[]): string => {
+    return pairs
+      .filter(p => p.q.trim() || p.a.trim())
+      .map(p => `S: ${p.q.trim()} C: ${p.a.trim()}`)
+      .join("\n");
+  };
+
   const startEditMode = () => {
     const currentValues: Record<string, string> = {};
     if (smartProfile?.knowledgeBase) {
@@ -1132,6 +1177,9 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
       }
     }
     setEditFormData(currentValues);
+    const faqText = currentValues["Tez-tez verilən suallar"] || "";
+    const pairs = faqText ? parseFaqPairs(faqText) : [];
+    setFaqPairs(pairs);
     setShowEditForm(true);
     setShowDashboard(false);
   };
@@ -1140,15 +1188,17 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     if (!smartProfile) return;
     setEditFormSaving(true);
     try {
+      const faqText = serializeFaqPairs(faqPairs);
+      const dataWithFaq: Record<string, string> = { ...editFormData, "Tez-tez verilən suallar": faqText };
       const kbParts: string[] = [];
       for (const key of KB_FIELD_KEYS) {
-        const val = editFormData[key]?.trim();
+        const val = dataWithFaq[key]?.trim();
         if (val) kbParts.push(`${key}: ${val}`);
       }
       const newKb = kbParts.join("\n\n");
       const updates: Record<string, string> = { knowledgeBase: newKb };
-      if (editFormData["Biznes adı"]?.trim()) updates.businessName = editFormData["Biznes adı"].trim();
-      if (editFormData["Peşə"]?.trim()) updates.profession = editFormData["Peşə"].trim();
+      if (dataWithFaq["Biznes adı"]?.trim()) updates.businessName = dataWithFaq["Biznes adı"].trim();
+      if (dataWithFaq["Peşə"]?.trim()) updates.profession = dataWithFaq["Peşə"].trim();
       await apiRequest("PATCH", "/api/smart-profile", updates);
       queryClient.invalidateQueries({ queryKey: ["/api/smart-profile"] });
       toast({ title: t.editSaved });
@@ -1851,11 +1901,11 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
           <div className="w-14" />
         </div>
         <div className="flex-1 overflow-y-auto px-3 sm:px-4 pb-3 space-y-3" data-testid="edit-form-fields">
-          {KB_FIELD_KEYS.map((fieldKey) => {
+          {KB_FIELD_KEYS.filter(k => k !== "Tez-tez verilən suallar").map((fieldKey) => {
             const displayLabel = t.kbFieldLabels[fieldKey] || fieldKey;
             const placeholder = t.editFormPlaceholders[fieldKey] || "";
             const value = editFormData[fieldKey] || "";
-            const isLong = fieldKey === "Xidmətlər və qiymətlər" || fieldKey === "Tez-tez verilən suallar" || fieldKey === "Qiymət siyasəti";
+            const isLong = fieldKey === "Xidmətlər və qiymətlər" || fieldKey === "Qiymət siyasəti";
             return (
               <div key={fieldKey} className="space-y-1" data-testid={`edit-form-field-${fieldKey}`}>
                 <label className="text-xs font-medium text-muted-foreground">{displayLabel}</label>
@@ -1880,6 +1930,67 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
               </div>
             );
           })}
+
+          <div className="space-y-2" data-testid="edit-form-faq-section">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-muted-foreground">{t.kbFieldLabels["Tez-tez verilən suallar"] || "FAQ"}</label>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-xs gap-1 h-7"
+                onClick={() => setFaqPairs(prev => [...prev, { q: "", a: "", id: ++faqIdRef.current }])}
+                data-testid="button-add-faq-pair"
+              >
+                <Plus className="w-3 h-3" />
+                {t.faqAddPair}
+              </Button>
+            </div>
+            {faqPairs.length === 0 && (
+              <div className="text-center py-3">
+                <p className="text-xs text-muted-foreground italic">{t.editFormPlaceholders["Tez-tez verilən suallar"]}</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-2 text-xs gap-1"
+                  onClick={() => setFaqPairs([{ q: "", a: "", id: ++faqIdRef.current }])}
+                  data-testid="button-add-first-faq"
+                >
+                  <Plus className="w-3 h-3" />
+                  {t.faqAddPair}
+                </Button>
+              </div>
+            )}
+            {faqPairs.map((pair, idx) => (
+              <div key={pair.id} className="bg-muted/50 rounded-md p-2.5 space-y-1.5" data-testid={`faq-pair-${idx}`}>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-medium text-muted-foreground">{t.faqQuestion} {idx + 1}</span>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setFaqPairs(prev => prev.filter(p => p.id !== pair.id))}
+                    data-testid={`button-delete-faq-${idx}`}
+                  >
+                    <Trash2 className="w-3 h-3 text-destructive" />
+                  </Button>
+                </div>
+                <Input
+                  value={pair.q}
+                  onChange={(e) => { const val = e.target.value; setFaqPairs(prev => prev.map(p => p.id === pair.id ? { ...p, q: val } : p)); }}
+                  placeholder={t.faqQuestionPlaceholder}
+                  className="text-xs"
+                  data-testid={`input-faq-question-${idx}`}
+                />
+                <span className="text-[10px] font-medium text-muted-foreground">{t.faqAnswer}</span>
+                <Input
+                  value={pair.a}
+                  onChange={(e) => { const val = e.target.value; setFaqPairs(prev => prev.map(p => p.id === pair.id ? { ...p, a: val } : p)); }}
+                  placeholder={t.faqAnswerPlaceholder}
+                  className="text-xs"
+                  data-testid={`input-faq-answer-${idx}`}
+                />
+              </div>
+            ))}
+          </div>
         </div>
         <div className="p-3 border-t">
           <Button
