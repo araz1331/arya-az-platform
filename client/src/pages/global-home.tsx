@@ -114,6 +114,31 @@ export default function GlobalHome() {
     window.location.href = "/dashboard";
   };
 
+  const handleFounderCheckout = async () => {
+    try {
+      const authCheck = await fetch("/api/auth/user", { credentials: "include" });
+      if (!authCheck.ok) {
+        window.location.href = "/dashboard?plan=founder";
+        return;
+      }
+      const res = await fetch("/api/founding-member/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      if (!res.ok) {
+        window.location.href = "/dashboard?plan=founder";
+        return;
+      }
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      window.location.href = "/dashboard?plan=founder";
+    }
+  };
+
   const handleDemoClick = (slug: string) => {
     window.location.href = `/u/${slug}?lang=${lang}`;
   };
@@ -399,7 +424,7 @@ export default function GlobalHome() {
 
               <Button
                 size="lg"
-                onClick={handleGetStarted}
+                onClick={handleFounderCheckout}
                 className="w-full"
                 data-testid="button-founder-cta"
               >

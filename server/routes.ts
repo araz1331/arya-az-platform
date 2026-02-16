@@ -8,11 +8,9 @@ import { eq, sql } from "drizzle-orm";
 import multer from "multer";
 import { GoogleGenAI } from "@google/genai";
 import OpenAI from "openai";
-import Stripe from "stripe";
+import { getUncachableStripeClient } from "./stripeClient";
 import * as fs from "fs";
 import * as path from "path";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
 const gemini = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "",
@@ -658,6 +656,7 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Missing required parameters" });
       }
 
+      const stripe = await getUncachableStripeClient();
       const [u] = await db.select().from(users).where(eq(users.id, userId));
       const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
       const baseUrl = domains ? `https://${domains}` : `${req.protocol}://${req.get("host")}`;
@@ -700,6 +699,73 @@ export async function registerRoutes(
       res.json({ url: session.url });
     } catch (err: any) {
       console.error("Checkout error:", err?.message);
+      res.status(500).json({ error: "Failed to create checkout session" });
+    }
+  });
+
+  app.post("/api/founding-member/checkout", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const stripe = await getUncachableStripeClient();
+      const [u] = await db.select().from(users).where(eq(users.id, userId));
+      const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
+      const baseUrl = domains ? `https://${domains}` : `${req.protocol}://${req.get("host")}`;
+
+      const smartProfile = await storage.getSmartProfileByUserId(userId);
+      let customerId = smartProfile?.stripeCustomerId;
+
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: u?.email || "",
+          metadata: { userId, type: "founding_member" },
+        });
+        customerId = customer.id;
+        if (smartProfile) {
+          await db.execute(sql`UPDATE smart_profiles SET stripe_customer_id = ${customerId} WHERE user_id = ${userId}`);
+        }
+      }
+
+      const founderPrice = await db.execute(
+        sql`SELECT pr.id as price_id FROM stripe.prices pr
+            JOIN stripe.products p ON pr.product = p.id
+            WHERE p.name = 'Founding Member Pass' AND p.active = true AND pr.active = true
+            LIMIT 1`
+      );
+
+      let priceId: string;
+      if (founderPrice.rows.length > 0) {
+        priceId = founderPrice.rows[0].price_id as string;
+      } else {
+        const product = await stripe.products.create({
+          name: "Founding Member Pass",
+          description: "Lifetime access to Arya Pro",
+          metadata: { type: "lifetime", tier: "founder" },
+        });
+        const price = await stripe.prices.create({
+          product: product.id,
+          unit_amount: 9900,
+          currency: "usd",
+        });
+        priceId = price.id;
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ["card"],
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: "payment",
+        success_url: `${baseUrl}/dashboard?checkout=founder-success`,
+        cancel_url: `${baseUrl}/?checkout=cancel`,
+        metadata: { userId, type: "founding_member" },
+      });
+
+      res.json({ url: session.url });
+    } catch (err: any) {
+      console.error("Founding member checkout error:", err?.message);
       res.status(500).json({ error: "Failed to create checkout session" });
     }
   });

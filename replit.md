@@ -121,14 +121,23 @@ Arya.az is a "National Voice AI" platform for Azerbaijan where users donate thei
   - **Translate Ru/En**: Auto-translates knowledge base to Russian & English via Gemini AI (`/api/smart-profile/translate`)
 - Static files served from `/uploads/` directory
 
-## Stripe Integration (PRO Upgrade) — DIRECT
-- Stripe SDK used directly on arya.az (no hirearya proxy)
-- STRIPE_SECRET_KEY env var for authentication
-- PRO plan: 20 AZN/month subscription with 3-day free trial
-- Checkout route: `POST /api/proxy/payment/create-checkout` (protected, creates Stripe session directly)
-- Creates Stripe customer if not exists, saves stripeCustomerId to smart_profiles
-- On checkout success (`?checkout=success`), arya.az marks user as PRO locally (isPro=true, proExpiresAt set)
-- PRO status checked via `GET /api/smart-profile/pro-status`
+## Stripe Integration — Replit Managed Connection
+- Uses `stripe-replit-sync` with Replit Stripe connection (auto-managed keys)
+- Stripe client: `server/stripeClient.ts` (fetches credentials from Replit connection API)
+- Webhook handler: `server/webhookHandlers.ts` (processes via stripe-replit-sync)
+- Webhook route registered BEFORE `express.json()` in `server/index.ts`
+- On startup: `runMigrations()` → `getStripeSync()` → webhook setup → `syncBackfill()`
+- Stripe data synced to `stripe.*` schema tables (products, prices, customers, etc.)
+- **Founding Member Pass**: $99 one-time payment, lifetime Arya Pro access
+  - Product seeded via `server/seed-products.ts`
+  - Checkout: `POST /api/founding-member/checkout` (protected, one-time payment mode)
+  - Homepage CTA checks auth → creates checkout session → redirects to Stripe
+  - Success redirects to `/dashboard?checkout=founder-success`
+- **PRO plan** (/az): 20 AZN/month subscription with 3-day free trial
+  - Checkout: `POST /api/proxy/payment/create-checkout` (protected, subscription mode)
+  - Creates Stripe customer if not exists, saves stripeCustomerId to smart_profiles
+  - On checkout success (`?checkout=success`), marks user as PRO locally
+  - PRO status checked via `GET /api/smart-profile/pro-status`
 
 ## 2GIS Integration — DIRECT
 - 2GIS Places API called directly from arya.az backend
