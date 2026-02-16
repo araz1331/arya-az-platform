@@ -395,10 +395,10 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
 
   const micPermissionGranted = useRef(false);
 
-  const toggleRecording = async () => {
+  const toggleRecording = () => {
     if (isRecording) {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try { recognitionRef.current.stop(); } catch {}
       }
       setIsRecording(false);
       return;
@@ -407,8 +407,7 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
     if (!profile) return;
 
     const ua = navigator.userAgent || "";
-    const isMetaBrowser = /FBAN|FBAV|Instagram|FB_IAB/i.test(ua);
-    if (isMetaBrowser) {
+    if (/FBAN|FBAV|Instagram|FB_IAB/i.test(ua)) {
       setMessages(prev => [...prev, { role: "assistant", text: micMetaBrowserMessages[language] || micMetaBrowserMessages.en }]);
       return;
     }
@@ -419,29 +418,19 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
       return;
     }
 
-    if (!micPermissionGranted.current) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(t => t.stop());
-        micPermissionGranted.current = true;
-      } catch {
-        setMessages(prev => [...prev, { role: "assistant", text: micErrorMessages[language] || micErrorMessages.en }]);
-        return;
-      }
-    }
-
     try {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch {}
+      }
+
       const recognition = new SpeechRecognition();
       recognition.lang = getSpeechLang();
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
       recognition.continuous = false;
 
-      let gotResult = false;
-
       recognition.onresult = (event: any) => {
         const transcript = event.results[0]?.[0]?.transcript?.trim();
-        gotResult = true;
         if (transcript) {
           setPendingVoiceText(transcript);
         }
@@ -450,7 +439,6 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
 
       recognition.onerror = (event: any) => {
         if (event.error === "not-allowed") {
-          micPermissionGranted.current = false;
           setMessages(prev => [...prev, { role: "assistant", text: micErrorMessages[language] || micErrorMessages.en }]);
         }
         setIsRecording(false);

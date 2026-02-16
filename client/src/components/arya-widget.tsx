@@ -1312,9 +1312,11 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     return map[language] || "az-AZ";
   };
 
-  const toggleRecording = async () => {
+  const toggleRecording = () => {
     if (isRecording) {
-      if (recognitionRef.current) recognitionRef.current.stop();
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch {}
+      }
       setIsRecording(false);
       return;
     }
@@ -1330,49 +1332,30 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
       toast({ title: language === "az" ? "Bu brauzer səs tanımanı dəstəkləmir" : language === "ru" ? "Браузер не поддерживает распознавание речи" : "Speech recognition not supported in this browser", variant: "destructive" });
       return;
     }
-    if (!micPermissionGranted.current) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(tr => tr.stop());
-        micPermissionGranted.current = true;
-      } catch {
-        toast({ title: language === "az" ? "Mikrofona icazə verin" : language === "ru" ? "Разрешите доступ к микрофону" : "Please allow microphone access", variant: "destructive" });
-        return;
-      }
-    }
+
     try {
       if (recognitionRef.current) {
         try { recognitionRef.current.abort(); } catch {}
       }
+
       const recognition = new SpeechRecognition();
       recognition.lang = getSpeechLang();
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
       recognition.continuous = false;
 
-      let gotResult = false;
-
       recognition.onresult = (event: any) => {
-        gotResult = true;
         const transcript = event.results[0]?.[0]?.transcript?.trim();
         if (transcript) setInput(transcript);
         setIsRecording(false);
       };
       recognition.onerror = (event: any) => {
         if (event.error === "not-allowed") {
-          micPermissionGranted.current = false;
           toast({ title: language === "az" ? "Mikrofona icazə verin" : language === "ru" ? "Разрешите доступ к микрофону" : "Please allow microphone access", variant: "destructive" });
-        } else if (event.error === "no-speech") {
-          toast({ title: language === "az" ? "Səs eşidilmədi. Yenidən cəhd edin." : language === "ru" ? "Речь не обнаружена. Попробуйте снова." : "No speech detected. Try again.", variant: "destructive" });
-        } else if (event.error === "network") {
-          toast({ title: language === "az" ? "İnternet bağlantısı lazımdır" : language === "ru" ? "Требуется подключение к интернету" : "Internet connection required", variant: "destructive" });
         }
         setIsRecording(false);
       };
       recognition.onend = () => {
-        if (!gotResult) {
-          toast({ title: language === "az" ? "Səs tanınmadı. Yenidən cəhd edin." : language === "ru" ? "Речь не распознана. Попробуйте снова." : "Speech not recognized. Try again." });
-        }
         setIsRecording(false);
       };
       recognitionRef.current = recognition;
