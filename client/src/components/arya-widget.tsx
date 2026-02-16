@@ -535,14 +535,18 @@ const LANG_LABELS: { key: Lang; label: string }[] = [
   { key: "en", label: "En" },
 ];
 
-export default function AryaWidget({ profileId }: { profileId: string }) {
+export default function AryaWidget({ profileId, defaultLang }: { profileId: string; defaultLang?: string }) {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [onboarding, setOnboarding] = useState<OnboardingState | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [language, setLanguage] = useState<Lang>("az");
+  const [language, setLanguage] = useState<Lang>(() => {
+    if (defaultLang === "ru") return "ru";
+    if (defaultLang && defaultLang !== "az") return "en";
+    return "az";
+  });
   const [editMode, setEditMode] = useState<{ step: number; data: Partial<OnboardingState> } | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);

@@ -418,7 +418,7 @@ export default function GlobalDashboard({ onBack }: { onBack: () => void }) {
           </TabsList>
 
           <TabsContent value="setup">
-            <AryaWidget profileId={userProfile?.id ?? ""} />
+            <AryaWidget profileId={userProfile?.id ?? ""} defaultLang={lang} />
           </TabsContent>
 
           <TabsContent value="leads">
