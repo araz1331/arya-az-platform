@@ -1349,7 +1349,11 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
       recognition.continuous = false;
+
+      let gotResult = false;
+
       recognition.onresult = (event: any) => {
+        gotResult = true;
         const transcript = event.results[0]?.[0]?.transcript?.trim();
         if (transcript) setInput(transcript);
         setIsRecording(false);
@@ -1358,10 +1362,19 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
         if (event.error === "not-allowed") {
           micPermissionGranted.current = false;
           toast({ title: language === "az" ? "Mikrofona icazə verin" : language === "ru" ? "Разрешите доступ к микрофону" : "Please allow microphone access", variant: "destructive" });
+        } else if (event.error === "no-speech") {
+          toast({ title: language === "az" ? "Səs eşidilmədi. Yenidən cəhd edin." : language === "ru" ? "Речь не обнаружена. Попробуйте снова." : "No speech detected. Try again.", variant: "destructive" });
+        } else if (event.error === "network") {
+          toast({ title: language === "az" ? "İnternet bağlantısı lazımdır" : language === "ru" ? "Требуется подключение к интернету" : "Internet connection required", variant: "destructive" });
         }
         setIsRecording(false);
       };
-      recognition.onend = () => setIsRecording(false);
+      recognition.onend = () => {
+        if (!gotResult) {
+          toast({ title: language === "az" ? "Səs tanınmadı. Yenidən cəhd edin." : language === "ru" ? "Речь не распознана. Попробуйте снова." : "Speech not recognized. Try again." });
+        }
+        setIsRecording(false);
+      };
       recognitionRef.current = recognition;
       recognition.start();
       setIsRecording(true);
