@@ -175,6 +175,16 @@ export class DatabaseStorage implements IStorage {
     const profilesData = await db.select().from(profiles);
     const profileMap = new Map(profilesData.map(p => [p.id, p]));
 
+    const smartProfilesData = await db.select({
+      userId: smartProfiles.userId,
+      slug: smartProfiles.slug,
+      businessName: smartProfiles.businessName,
+      isPro: smartProfiles.isPro,
+      proExpiresAt: smartProfiles.proExpiresAt,
+      stripeCustomerId: smartProfiles.stripeCustomerId,
+    }).from(smartProfiles);
+    const spMap = new Map(smartProfilesData.map(sp => [sp.userId, sp]));
+
     const recCounts = await db.select({
       userId: recordings.userId,
       count: sql<number>`count(*)::int`,
@@ -186,12 +196,18 @@ export class DatabaseStorage implements IStorage {
     return usersData.map(u => {
       const profile = profileMap.get(u.id);
       const rec = recMap.get(u.id);
+      const sp = spMap.get(u.id);
       return {
         ...u,
         tokens: profile?.tokens ?? 0,
         recordingsCount: profile?.recordingsCount ?? 0,
         totalDuration: rec?.totalDuration ?? 0,
         totalFileSize: Number(rec?.totalSize ?? 0),
+        hasSmartProfile: !!sp,
+        smartProfileSlug: sp?.slug || null,
+        isPro: sp?.isPro ?? false,
+        proExpiresAt: sp?.proExpiresAt || null,
+        stripeCustomerId: sp?.stripeCustomerId || null,
       };
     });
   }

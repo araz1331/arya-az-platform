@@ -39,6 +39,11 @@ interface AdminUser {
   recordingsCount: number;
   totalDuration: number;
   totalFileSize: number;
+  hasSmartProfile: boolean;
+  smartProfileSlug: string | null;
+  isPro: boolean;
+  proExpiresAt: string | null;
+  stripeCustomerId: string | null;
 }
 
 interface AdminSmartProfile {
@@ -205,10 +210,9 @@ function UsersTab({ users, isLoading }: { users: AdminUser[]; isLoading: boolean
             <tr className="border-b bg-muted/30">
               <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">User</th>
               <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Email</th>
+              <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Status</th>
               <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Joined</th>
               <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Recordings</th>
-              <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Duration</th>
-              <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Size</th>
               <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Tokens</th>
             </tr>
           </thead>
@@ -221,12 +225,33 @@ function UsersTab({ users, isLoading }: { users: AdminUser[]; isLoading: boolean
                   </div>
                 </td>
                 <td className="py-2.5 px-4 text-muted-foreground text-xs">{u.email}</td>
+                <td className="py-2.5 px-4">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {u.isPro ? (
+                      <Badge className="bg-amber-500/10 text-amber-600 border-transparent text-[10px]" data-testid={`badge-pro-${u.id}`}>
+                        PRO
+                      </Badge>
+                    ) : u.hasSmartProfile ? (
+                      <Badge variant="outline" className="text-[10px]" data-testid={`badge-free-${u.id}`}>Free</Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                    {u.smartProfileSlug && (
+                      <a href={`/u/${u.smartProfileSlug}`} target="_blank" rel="noopener" className="text-[10px] text-blue-500 flex items-center gap-0.5" data-testid={`link-user-profile-${u.id}`}>
+                        /u/{u.smartProfileSlug} <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    )}
+                  </div>
+                  {u.isPro && u.proExpiresAt && (
+                    <div className="text-[10px] text-muted-foreground mt-0.5" data-testid={`text-pro-expires-${u.id}`}>
+                      expires {formatDate(u.proExpiresAt)}
+                    </div>
+                  )}
+                </td>
                 <td className="py-2.5 px-4 text-muted-foreground text-xs">{formatDate(u.createdAt)}</td>
                 <td className="py-2.5 px-4 text-right tabular-nums">
                   {u.recordingsCount > 0 ? <Badge variant="secondary">{u.recordingsCount}</Badge> : <span className="text-muted-foreground">0</span>}
                 </td>
-                <td className="py-2.5 px-4 text-right tabular-nums text-muted-foreground">{formatDuration(u.totalDuration)}</td>
-                <td className="py-2.5 px-4 text-right tabular-nums text-muted-foreground">{formatBytes(u.totalFileSize)}</td>
                 <td className="py-2.5 px-4 text-right tabular-nums font-medium">{u.tokens.toLocaleString()}</td>
               </tr>
             ))}
