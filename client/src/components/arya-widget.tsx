@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Send, Loader2, ExternalLink, Sparkles, Camera, Languages, ArrowLeft, Upload, MapPin, Crown, Pencil, Eye, Globe, Users, MessageCircle, Clock, ChevronRight, Mic, Code, Copy, Check, Link2, Smartphone, QrCode, Megaphone, Download, Trash2, X, Plus } from "lucide-react";
 import QRCode from "qrcode";
 import { Badge } from "@/components/ui/badge";
@@ -142,6 +143,9 @@ const UI_TEXT: Record<Lang, {
   editMode: string;
   editSaved: string;
   editSkip: string;
+  editFormTitle: string;
+  editFormSave: string;
+  editFormPlaceholders: Record<string, string>;
   backToProfile: string;
   selectTemplate: string;
   templateSelected: (name: string) => string;
@@ -254,6 +258,17 @@ const UI_TEXT: Record<Lang, {
     editMode: "Redaktə rejimi. Hər suala cavab yazın və ya keçmək üçün \"-\" göndərin.",
     editSaved: "Dəyişikliklər saxlanıldı! Profiliniz yeniləndi.",
     editSkip: "-",
+    editFormTitle: "Məlumatları Redaktə Et",
+    editFormSave: "Yadda Saxla",
+    editFormPlaceholders: {
+      "Biznes adı": "Biznesinizin adı",
+      "Peşə": "Peşəniz və ya fəaliyyət sahəniz",
+      "Xidmətlər və qiymətlər": "Xidmətlər və qiymətlər (məs: Təmir - 30 AZN)",
+      "Qiymət siyasəti": "Endirim, xüsusi təkliflər...",
+      "Ərazi/Ünvan": "Ərazi və ya ünvan",
+      "İş saatları": "Məs: Hər gün 09:00-18:00",
+      "Tez-tez verilən suallar": "Müştərilərin sualları və cavabları",
+    },
     backToProfile: "Geri",
     selectTemplate: "Sahənizi seçin və ya aşağıda əl ilə yazın:",
     templateSelected: (name: string) => `"${name}" şablonu seçildi! Xidmətlər və qiymətlər avtomatik dolduruldu.`,
@@ -375,6 +390,17 @@ const UI_TEXT: Record<Lang, {
     editMode: "Режим редактирования. Отвечайте на вопросы или отправьте \"-\" чтобы пропустить.",
     editSaved: "Изменения сохранены! Профиль обновлён.",
     editSkip: "-",
+    editFormTitle: "Редактировать информацию",
+    editFormSave: "Сохранить",
+    editFormPlaceholders: {
+      "Biznes adı": "Название бизнеса",
+      "Peşə": "Профессия или сфера деятельности",
+      "Xidmətlər və qiymətlər": "Услуги и цены (напр: Ремонт - 30 AZN)",
+      "Qiymət siyasəti": "Скидки, спецпредложения...",
+      "Ərazi/Ünvan": "Район или адрес",
+      "İş saatları": "Напр: Ежедневно 09:00-18:00",
+      "Tez-tez verilən suallar": "Частые вопросы и ответы",
+    },
     backToProfile: "Назад",
     selectTemplate: "Выберите вашу отрасль или введите вручную ниже:",
     templateSelected: (name: string) => `Шаблон "${name}" выбран! Услуги и цены заполнены автоматически.`,
@@ -496,6 +522,17 @@ const UI_TEXT: Record<Lang, {
     editMode: "Edit mode. Answer each question or send \"-\" to skip.",
     editSaved: "Changes saved! Your profile has been updated.",
     editSkip: "-",
+    editFormTitle: "Edit Information",
+    editFormSave: "Save Changes",
+    editFormPlaceholders: {
+      "Biznes adı": "Your business name",
+      "Peşə": "Your profession or field",
+      "Xidmətlər və qiymətlər": "Services and prices (e.g., Repair - $30)",
+      "Qiymət siyasəti": "Discounts, special offers...",
+      "Ərazi/Ünvan": "Area or address",
+      "İş saatları": "e.g., Daily 09:00-18:00",
+      "Tez-tez verilən suallar": "FAQ and answers",
+    },
     backToProfile: "Back",
     selectTemplate: "Choose your industry or type manually below:",
     templateSelected: (name: string) => `Template "${name}" selected! Services and prices auto-filled.`,
@@ -611,6 +648,9 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
   }, [defaultLang, mapLang]);
 
   const [editMode, setEditMode] = useState<{ step: number; data: Partial<OnboardingState> } | null>(null);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editFormData, setEditFormData] = useState<Record<string, string>>({});
+  const [editFormSaving, setEditFormSaving] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
   const [ocrPendingConfirm, setOcrPendingConfirm] = useState<string | null>(null);
@@ -1078,16 +1118,52 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     return sections.join("\n\n");
   };
 
+  const KB_FIELD_KEYS = ["Biznes adı", "Peşə", "Xidmətlər və qiymətlər", "Qiymət siyasəti", "Ərazi/Ünvan", "İş saatları", "Tez-tez verilən suallar"];
+
   const startEditMode = () => {
-    setEditMode({ step: 0, data: {} });
-    setMessages([
-      { role: "assistant", text: t.editMode },
-      { role: "assistant", text: editQuestions[0] },
-    ]);
+    const currentValues: Record<string, string> = {};
+    if (smartProfile?.knowledgeBase) {
+      const lines = smartProfile.knowledgeBase.split("\n\n");
+      for (const line of lines) {
+        const colonIdx = line.indexOf(":");
+        if (colonIdx > 0) {
+          currentValues[line.substring(0, colonIdx).trim()] = line.substring(colonIdx + 1).trim();
+        }
+      }
+    }
+    setEditFormData(currentValues);
+    setShowEditForm(true);
+    setShowDashboard(false);
+  };
+
+  const handleEditFormSave = async () => {
+    if (!smartProfile) return;
+    setEditFormSaving(true);
+    try {
+      const kbParts: string[] = [];
+      for (const key of KB_FIELD_KEYS) {
+        const val = editFormData[key]?.trim();
+        if (val) kbParts.push(`${key}: ${val}`);
+      }
+      const newKb = kbParts.join("\n\n");
+      const updates: Record<string, string> = { knowledgeBase: newKb };
+      if (editFormData["Biznes adı"]?.trim()) updates.businessName = editFormData["Biznes adı"].trim();
+      if (editFormData["Peşə"]?.trim()) updates.profession = editFormData["Peşə"].trim();
+      await apiRequest("PATCH", "/api/smart-profile", updates);
+      queryClient.invalidateQueries({ queryKey: ["/api/smart-profile"] });
+      toast({ title: t.editSaved });
+      setShowEditForm(false);
+      setShowDashboard(true);
+    } catch {
+      toast({ title: t.genericError, variant: "destructive" });
+    } finally {
+      setEditFormSaving(false);
+    }
   };
 
   const exitEditMode = () => {
     setEditMode(null);
+    setShowEditForm(false);
     if (smartProfile) {
       setMessages([{
         role: "assistant",
@@ -1754,7 +1830,73 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     );
   }
 
-  if (profileReady && showDashboard && !editMode) {
+  if (profileReady && showEditForm && smartProfile) {
+    return (
+      <Card className="flex flex-col h-[calc(100svh-12rem)] sm:h-[500px] min-h-[350px] max-h-[600px] overflow-visible">
+        <div className="flex items-center justify-between gap-1 px-3 sm:px-4 pt-3 pb-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => { setShowEditForm(false); setShowDashboard(true); }}
+            className="text-xs gap-1"
+            data-testid="button-edit-form-back"
+          >
+            <ArrowLeft className="w-3 h-3" />
+            {t.backToProfile}
+          </Button>
+          <h3 className="font-semibold text-sm flex items-center gap-1.5">
+            <Pencil className="w-3.5 h-3.5 text-primary" />
+            {t.editFormTitle}
+          </h3>
+          <div className="w-14" />
+        </div>
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 pb-3 space-y-3" data-testid="edit-form-fields">
+          {KB_FIELD_KEYS.map((fieldKey) => {
+            const displayLabel = t.kbFieldLabels[fieldKey] || fieldKey;
+            const placeholder = t.editFormPlaceholders[fieldKey] || "";
+            const value = editFormData[fieldKey] || "";
+            const isLong = fieldKey === "Xidmətlər və qiymətlər" || fieldKey === "Tez-tez verilən suallar" || fieldKey === "Qiymət siyasəti";
+            return (
+              <div key={fieldKey} className="space-y-1" data-testid={`edit-form-field-${fieldKey}`}>
+                <label className="text-xs font-medium text-muted-foreground">{displayLabel}</label>
+                {isLong ? (
+                  <Textarea
+                    value={value}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, [fieldKey]: e.target.value }))}
+                    placeholder={placeholder}
+                    className="text-sm resize-none min-h-[60px]"
+                    rows={3}
+                    data-testid={`input-edit-form-${fieldKey}`}
+                  />
+                ) : (
+                  <Input
+                    value={value}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, [fieldKey]: e.target.value }))}
+                    placeholder={placeholder}
+                    className="text-sm"
+                    data-testid={`input-edit-form-${fieldKey}`}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div className="p-3 border-t">
+          <Button
+            onClick={handleEditFormSave}
+            disabled={editFormSaving}
+            className="w-full"
+            data-testid="button-edit-form-save"
+          >
+            {editFormSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+            {t.editFormSave}
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
+  if (profileReady && showDashboard && !editMode && !showEditForm) {
     return (
       <Card className="flex flex-col h-[calc(100svh-12rem)] sm:h-[500px] min-h-[350px] max-h-[600px] overflow-visible">
         <div className="flex items-center justify-between gap-1 px-3 sm:px-4 pt-3 pb-1">
@@ -1896,7 +2038,7 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
                 size="sm"
                 variant="ghost"
                 className="text-xs gap-1 h-7"
-                onClick={() => { startEditMode(); setShowDashboard(false); }}
+                onClick={startEditMode}
                 data-testid="button-edit-kb"
               >
                 <Plus className="w-3 h-3" />
