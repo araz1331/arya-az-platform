@@ -36,6 +36,10 @@ export interface IStorage {
   getStats(): Promise<{ totalUsers: number; totalRecordings: number; totalHours: number }>;
   getAdminStats(): Promise<{ totalUsers: number; totalRecordings: number; totalDurationSeconds: number; totalFileSize: number }>;
   getAllUsersWithProfiles(): Promise<any[]>;
+  getAdminFullStats(): Promise<any>;
+  getAdminSmartProfiles(): Promise<any[]>;
+  getAdminLeads(): Promise<any[]>;
+  getAdminVoiceDonations(): Promise<any[]>;
 
   createVoiceDonation(donation: InsertVoiceDonation): Promise<VoiceDonation>;
   createWidgetMessage(message: InsertWidgetMessage): Promise<WidgetMessage>;
@@ -219,6 +223,124 @@ export class DatabaseStorage implements IStorage {
   async updateSmartProfile(id: string, data: Partial<InsertSmartProfile>): Promise<SmartProfile> {
     const [p] = await db.update(smartProfiles).set(data).where(eq(smartProfiles.id, id)).returning();
     return p;
+  }
+
+  async getAdminFullStats(): Promise<any> {
+    const [userCount] = await db.select({ count: sql<number>`count(*)::int` }).from(users);
+    const [profileCount] = await db.select({ count: sql<number>`count(*)::int` }).from(profiles);
+    const [smartProfileCount] = await db.select({ count: sql<number>`count(*)::int` }).from(smartProfiles);
+    const [proCount] = await db.select({ count: sql<number>`count(*)::int` }).from(smartProfiles).where(eq(smartProfiles.isPro, true));
+    const [recStats] = await db.select({
+      count: sql<number>`count(*)::int`,
+      totalDuration: sql<number>`coalesce(sum(duration), 0)::int`,
+      totalSize: sql<number>`coalesce(sum(file_size), 0)::bigint`,
+    }).from(recordings);
+    const [donationStats] = await db.select({
+      count: sql<number>`count(*)::int`,
+      totalDuration: sql<number>`coalesce(sum(duration), 0)::int`,
+      totalSize: sql<number>`coalesce(sum(file_size), 0)::bigint`,
+    }).from(voiceDonations);
+    const [messageCount] = await db.select({ count: sql<number>`count(*)::int` }).from(widgetMessages);
+    const [sessionCount] = await db.select({ count: sql<number>`count(distinct session_id)::int` }).from(widgetMessages);
+    const [voucherCount] = await db.select({ count: sql<number>`count(*)::int` }).from(vouchers);
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const [newUsersToday] = await db.select({ count: sql<number>`count(*)::int` }).from(users).where(sql`${users.createdAt} >= ${todayStart}`);
+    const [newProfilesToday] = await db.select({ count: sql<number>`count(*)::int` }).from(smartProfiles).where(sql`${smartProfiles.createdAt} >= ${todayStart}`);
+
+    return {
+      totalUsers: userCount?.count ?? 0,
+      totalSmartProfiles: smartProfileCount?.count ?? 0,
+      totalProUsers: proCount?.count ?? 0,
+      totalRecordings: recStats?.count ?? 0,
+      totalRecordingDuration: recStats?.totalDuration ?? 0,
+      totalRecordingSize: Number(recStats?.totalSize ?? 0),
+      totalVoiceDonations: donationStats?.count ?? 0,
+      totalDonationDuration: donationStats?.totalDuration ?? 0,
+      totalDonationSize: Number(donationStats?.totalSize ?? 0),
+      totalWidgetMessages: messageCount?.count ?? 0,
+      totalChatSessions: sessionCount?.count ?? 0,
+      totalVouchers: voucherCount?.count ?? 0,
+      newUsersToday: newUsersToday?.count ?? 0,
+      newProfilesToday: newProfilesToday?.count ?? 0,
+    };
+  }
+
+  async getAdminSmartProfiles(): Promise<any[]> {
+    const allProfiles = await db.select({
+      id: smartProfiles.id,
+      userId: smartProfiles.userId,
+      slug: smartProfiles.slug,
+      businessName: smartProfiles.businessName,
+      displayName: smartProfiles.displayName,
+      profession: smartProfiles.profession,
+      isPro: smartProfiles.isPro,
+      proExpiresAt: smartProfiles.proExpiresAt,
+      onboardingComplete: smartProfiles.onboardingComplete,
+      isActive: smartProfiles.isActive,
+      profileImageUrl: smartProfiles.profileImageUrl,
+      hasRu: sql<boolean>`${smartProfiles.knowledgeBaseRu} IS NOT NULL AND ${smartProfiles.knowledgeBaseRu} != ''`,
+      hasEn: sql<boolean>`${smartProfiles.knowledgeBaseEn} IS NOT NULL AND ${smartProfiles.knowledgeBaseEn} != ''`,
+      createdAt: smartProfiles.createdAt,
+    }).from(smartProfiles).orderBy(desc(smartProfiles.createdAt));
+
+    const messageCounts = await db.select({
+      profileId: widgetMessages.profileId,
+      count: sql<number>`count(*)::int`,
+      sessions: sql<number>`count(distinct session_id)::int`,
+    }).from(widgetMessages).groupBy(widgetMessages.profileId);
+    const msgMap = new Map(messageCounts.map(m => [m.profileId, m]));
+
+    const usersData = await db.select({ id: users.id, email: users.email }).from(users);
+    const userMap = new Map(usersData.map(u => [u.id, u.email]));
+
+    return allProfiles.map(p => ({
+      ...p,
+      email: userMap.get(p.userId) || null,
+      totalMessages: msgMap.get(p.id)?.count ?? 0,
+      totalSessions: msgMap.get(p.id)?.sessions ?? 0,
+    }));
+  }
+
+  async getAdminLeads(): Promise<any[]> {
+    const sessions = await db.select({
+      sessionId: widgetMessages.sessionId,
+      profileId: widgetMessages.profileId,
+      messageCount: sql<number>`count(*)::int`,
+      firstMessage: sql<string>`min(${widgetMessages.createdAt})`,
+      lastMessage: sql<string>`max(${widgetMessages.createdAt})`,
+      firstUserMsg: sql<string>`min(case when ${widgetMessages.role} = 'user' then ${widgetMessages.content} end)`,
+    }).from(widgetMessages)
+      .groupBy(widgetMessages.sessionId, widgetMessages.profileId)
+      .orderBy(sql`max(${widgetMessages.createdAt}) desc`)
+      .limit(100);
+
+    const profileIds = Array.from(new Set(sessions.map(s => s.profileId).filter(Boolean)));
+    let profileMap = new Map<string, { slug: string; displayName: string | null }>();
+    if (profileIds.length > 0) {
+      const profs = await db.select({
+        id: smartProfiles.id,
+        slug: smartProfiles.slug,
+        displayName: smartProfiles.displayName,
+      }).from(smartProfiles).where(sql`${smartProfiles.id} IN (${sql.join(profileIds.map(id => sql`${id}`), sql`,`)})`);
+      profileMap = new Map(profs.map(p => [p.id, { slug: p.slug, displayName: p.displayName }]));
+    }
+
+    return sessions.map(s => ({
+      sessionId: s.sessionId,
+      profileId: s.profileId,
+      profileSlug: profileMap.get(s.profileId || "")?.slug || null,
+      profileName: profileMap.get(s.profileId || "")?.displayName || null,
+      messageCount: s.messageCount,
+      firstMessage: s.firstMessage,
+      lastMessage: s.lastMessage,
+      preview: s.firstUserMsg ? (s.firstUserMsg.length > 80 ? s.firstUserMsg.slice(0, 80) + "..." : s.firstUserMsg) : null,
+    }));
+  }
+
+  async getAdminVoiceDonations(): Promise<any[]> {
+    return db.select().from(voiceDonations).orderBy(desc(voiceDonations.createdAt)).limit(200);
   }
 }
 

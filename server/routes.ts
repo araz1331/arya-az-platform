@@ -398,12 +398,52 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/full-stats", isAdmin, async (_req: Request, res: Response) => {
+    try {
+      const stats = await storage.getAdminFullStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Admin full stats error:", error);
+      res.status(500).json({ message: "Server xətası" });
+    }
+  });
+
   app.get("/api/admin/users", isAdmin, async (_req: Request, res: Response) => {
     try {
       const allUsers = await storage.getAllUsersWithProfiles();
       res.json(allUsers);
     } catch (error) {
       console.error("Admin users error:", error);
+      res.status(500).json({ message: "Server xətası" });
+    }
+  });
+
+  app.get("/api/admin/smart-profiles", isAdmin, async (_req: Request, res: Response) => {
+    try {
+      const profiles = await storage.getAdminSmartProfiles();
+      res.json(profiles);
+    } catch (error) {
+      console.error("Admin smart profiles error:", error);
+      res.status(500).json({ message: "Server xətası" });
+    }
+  });
+
+  app.get("/api/admin/leads", isAdmin, async (_req: Request, res: Response) => {
+    try {
+      const leads = await storage.getAdminLeads();
+      res.json(leads);
+    } catch (error) {
+      console.error("Admin leads error:", error);
+      res.status(500).json({ message: "Server xətası" });
+    }
+  });
+
+  app.get("/api/admin/voice-donations", isAdmin, async (_req: Request, res: Response) => {
+    try {
+      const donations = await storage.getAdminVoiceDonations();
+      res.json(donations);
+    } catch (error) {
+      console.error("Admin voice donations error:", error);
       res.status(500).json({ message: "Server xətası" });
     }
   });
