@@ -396,25 +396,25 @@ export default function GlobalDashboard({ onBack }: { onBack: () => void }) {
       <main className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full mb-4 sm:mb-6">
-            <TabsTrigger value="setup" className="flex-1 gap-1.5 text-xs sm:text-sm" data-testid="tab-setup">
-              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <TabsTrigger value="setup" className="flex-1 gap-1 sm:gap-1.5 text-[11px] sm:text-sm" data-testid="tab-setup">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               <span className="hidden sm:inline">{t("dashTabSetup")}</span>
-              <span className="sm:hidden">{t("dashTabSetupShort")}</span>
+              <span className="sm:hidden truncate">{t("dashTabSetupShort")}</span>
             </TabsTrigger>
-            <TabsTrigger value="leads" className="flex-1 gap-1.5 text-xs sm:text-sm" data-testid="tab-leads">
-              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <TabsTrigger value="leads" className="flex-1 gap-1 sm:gap-1.5 text-[11px] sm:text-sm" data-testid="tab-leads">
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               <span className="hidden sm:inline">{t("dashTabLeads")}</span>
-              <span className="sm:hidden">{t("dashTabLeadsShort")}</span>
+              <span className="sm:hidden truncate">{t("dashTabLeadsShort")}</span>
             </TabsTrigger>
-            <TabsTrigger value="embed" className="flex-1 gap-1.5 text-xs sm:text-sm" disabled={!hasProfile} data-testid="tab-embed">
-              <Code className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <TabsTrigger value="embed" className="flex-1 gap-1 sm:gap-1.5 text-[11px] sm:text-sm" disabled={!hasProfile} data-testid="tab-embed">
+              <Code className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               <span className="hidden sm:inline">{t("dashTabWidget")}</span>
-              <span className="sm:hidden">{t("dashTabWidgetShort")}</span>
+              <span className="sm:hidden truncate">{t("dashTabWidgetShort")}</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex-1 gap-1.5 text-xs sm:text-sm" disabled={!hasProfile} data-testid="tab-analytics">
-              <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <TabsTrigger value="analytics" className="flex-1 gap-1 sm:gap-1.5 text-[11px] sm:text-sm" disabled={!hasProfile} data-testid="tab-analytics">
+              <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               <span className="hidden sm:inline">{t("dashTabAnalytics")}</span>
-              <span className="sm:hidden">{t("dashTabAnalyticsShort")}</span>
+              <span className="sm:hidden truncate">{t("dashTabAnalyticsShort")}</span>
             </TabsTrigger>
           </TabsList>
 
