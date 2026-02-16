@@ -1,35 +1,71 @@
 import { getUncachableStripeClient } from './stripeClient';
 
-async function createProducts() {
-  const stripe = await getUncachableStripeClient();
-
-  const existing = await stripe.products.search({ query: "name:'Founding Member Pass'" });
+async function ensureProduct(stripe: any, config: {
+  name: string;
+  description: string;
+  metadata: Record<string, string>;
+  priceAmount: number;
+  currency: string;
+  recurring?: { interval: string };
+}) {
+  const existing = await stripe.products.search({ query: `name:'${config.name}'` });
   if (existing.data.length > 0) {
-    console.log('Founding Member Pass already exists:', existing.data[0].id);
     const prices = await stripe.prices.list({ product: existing.data[0].id, active: true });
-    console.log('Price:', prices.data[0]?.id, '- $' + (prices.data[0]?.unit_amount || 0) / 100);
+    console.log(`${config.name} already exists: ${existing.data[0].id}`);
+    console.log(`  Price: ${prices.data[0]?.id} - $${(prices.data[0]?.unit_amount || 0) / 100}${config.recurring ? '/mo' : ' one-time'}`);
     return;
   }
 
   const product = await stripe.products.create({
-    name: 'Founding Member Pass',
-    description: 'Lifetime access to Arya Pro — unlimited AI chat, voice responses, lead capture, WhatsApp & Instagram integration, and Founder badge.',
-    metadata: {
-      type: 'lifetime',
-      tier: 'founder',
-      maxSpots: '1000',
-    },
+    name: config.name,
+    description: config.description,
+    metadata: config.metadata,
   });
 
-  const price = await stripe.prices.create({
+  const priceData: any = {
     product: product.id,
-    unit_amount: 9900,
+    unit_amount: config.priceAmount,
+    currency: config.currency,
+  };
+  if (config.recurring) {
+    priceData.recurring = config.recurring;
+  }
+
+  const price = await stripe.prices.create(priceData);
+  console.log(`Created ${config.name}: ${product.id}`);
+  console.log(`  Price: ${price.id} - $${config.priceAmount / 100}${config.recurring ? '/mo' : ' one-time'}`);
+}
+
+async function createProducts() {
+  const stripe = await getUncachableStripeClient();
+
+  await ensureProduct(stripe, {
+    name: 'Founding Member Pass',
+    description: 'Lifetime access to Arya Pro — unlimited AI chat, voice responses, lead capture, WhatsApp & Instagram integration, and Founder badge.',
+    metadata: { type: 'lifetime', tier: 'founder', maxSpots: '1000' },
+    priceAmount: 9900,
     currency: 'usd',
   });
 
-  console.log('Created product:', product.id);
-  console.log('Created price:', price.id, '- $99.00 one-time');
-  console.log('\nSave this price ID for checkout: ', price.id);
+  await ensureProduct(stripe, {
+    name: 'Arya Pro',
+    description: 'AI receptionist with unlimited chat, voice responses, lead capture, and analytics.',
+    metadata: { type: 'subscription', tier: 'pro' },
+    priceAmount: 2900,
+    currency: 'usd',
+    recurring: { interval: 'month' },
+  });
+
+  await ensureProduct(stripe, {
+    name: 'Arya Agency',
+    description: 'Multi-location AI receptionist with priority support, API access, custom branding, and team management.',
+    metadata: { type: 'subscription', tier: 'agency' },
+    priceAmount: 19900,
+    currency: 'usd',
+    recurring: { interval: 'month' },
+  });
+
+  console.log('\nAll products ready.');
 }
 
 createProducts().catch(console.error);
