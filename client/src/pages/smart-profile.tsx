@@ -638,20 +638,27 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
             <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
               <MessageSquare className="w-7 h-7" />
             </div>
-            <h2 className="text-2xl font-bold mb-2">Xos Geldiniz!</h2>
+            <h2 className="text-2xl font-bold mb-2">
+              {{ az: "Xoş Gəldiniz!", ru: "Добро пожаловать!", en: "Welcome!", es: "¡Bienvenido!", fr: "Bienvenue !", tr: "Hoş Geldiniz!" }[language]}
+            </h2>
             <p className="text-muted-foreground mb-6 leading-relaxed">
-              Bu sizin <b className="text-foreground">Demo Sehifenizdir</b>.
-              Asagidaki <b className="text-foreground">mikrofon duymesin</b>i sixin ve Arya ile danisin.
+              {{ az: <>Bu sizin <b className="text-foreground">Demo Səhifənizdir</b>. Aşağıdakı <b className="text-foreground">mikrofon düyməsin</b>i sıxın və Arya ilə danışın.</>,
+                 ru: <>Это ваша <b className="text-foreground">Демо Страница</b>. Нажмите <b className="text-foreground">кнопку микрофона</b> ниже и поговорите с Arya.</>,
+                 en: <>This is your <b className="text-foreground">Demo Page</b>. Press the <b className="text-foreground">microphone button</b> below and talk to Arya.</>,
+                 es: <>Esta es tu <b className="text-foreground">Página Demo</b>. Pulsa el <b className="text-foreground">botón del micrófono</b> abajo y habla con Arya.</>,
+                 fr: <>Ceci est votre <b className="text-foreground">Page Démo</b>. Appuyez sur le <b className="text-foreground">bouton micro</b> ci-dessous et parlez à Arya.</>,
+                 tr: <>Bu sizin <b className="text-foreground">Demo Sayfanızdır</b>. Aşağıdaki <b className="text-foreground">mikrofon düğmesine</b> basın ve Arya ile konuşun.</>,
+              }[language]}
             </p>
 
             <div className="space-y-3 text-left text-sm bg-muted p-4 rounded-md mb-6">
               <div className="flex items-center gap-3">
                 <Mic className="w-4 h-4 text-primary shrink-0" />
-                <span>"Sen ne ede bilersen?"</span>
+                <span>{{ az: '"Sən nə edə bilərsən?"', ru: '"Что ты умеешь?"', en: '"What can you do?"', es: '"¿Qué puedes hacer?"', fr: '"Que peux-tu faire ?"', tr: '"Ne yapabilirsin?"' }[language]}</span>
               </div>
               <div className="flex items-center gap-3">
                 <MessageSquare className="w-4 h-4 text-primary shrink-0" />
-                <span>"Musterileri nece qarsilayirsan?"</span>
+                <span>{{ az: '"Müştəriləri necə qarşılayırsan?"', ru: '"Как ты встречаешь клиентов?"', en: '"How do you greet customers?"', es: '"¿Cómo recibes a los clientes?"', fr: '"Comment accueillez-vous les clients ?"', tr: '"Müşterileri nasıl karşılıyorsun?"' }[language]}</span>
               </div>
             </div>
 
@@ -660,13 +667,13 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
               onClick={() => setShowTutorial(false)}
               data-testid="button-tutorial-close"
             >
-              Aydindir, Baslayaq
+              {{ az: "Aydındır, Başlayaq", ru: "Понятно, начнём", en: "Got it, let's start", es: "Entendido, empecemos", fr: "Compris, commençons", tr: "Anladım, başlayalım" }[language]}
             </Button>
           </div>
 
           <div className="mt-6 animate-bounce text-white/70 hidden md:flex items-center gap-2 text-sm font-medium">
             <ChevronDown className="w-5 h-5" />
-            Mikrofon asagidadir
+            {{ az: "Mikrofon aşağıdadır", ru: "Микрофон внизу", en: "Microphone is below", es: "El micrófono está abajo", fr: "Le micro est en bas", tr: "Mikrofon aşağıda" }[language]}
           </div>
         </div>
       )}
