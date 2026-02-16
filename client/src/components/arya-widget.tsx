@@ -1626,20 +1626,22 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
             <Sparkles className="w-4 h-4 text-primary" />
             {t.dashboardTitle}
           </h3>
-          <div className="flex items-center gap-1">
-            {LANG_LABELS.map(({ key, label }) => (
-              <Button
-                key={key}
-                size="sm"
-                variant={language === key ? "default" : "ghost"}
-                onClick={() => handleLanguageChange(key)}
-                className="px-2 sm:px-3 text-xs font-medium"
-                data-testid={`button-lang-${key}`}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
+          {!defaultLang && (
+            <div className="flex items-center gap-1">
+              {LANG_LABELS.map(({ key, label }) => (
+                <Button
+                  key={key}
+                  size="sm"
+                  variant={language === key ? "default" : "ghost"}
+                  onClick={() => handleLanguageChange(key)}
+                  className="px-2 sm:px-3 text-xs font-medium"
+                  data-testid={`button-lang-${key}`}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto px-3 sm:px-4 pb-3 space-y-3" data-testid="dashboard-content">
@@ -1870,20 +1872,22 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
             {t.backToProfile}
           </Button>
         )}
-        <div className="flex items-center gap-1 ml-auto">
-          {LANG_LABELS.map(({ key, label }) => (
-            <Button
-              key={key}
-              size="sm"
-              variant={language === key ? "default" : "ghost"}
-              onClick={() => handleLanguageChange(key)}
-              className="px-2 sm:px-3 text-xs font-medium"
-              data-testid={`button-lang-${key}`}
-            >
-              {label}
-            </Button>
-          ))}
-        </div>
+        {!defaultLang && (
+          <div className="flex items-center gap-1 ml-auto">
+            {LANG_LABELS.map(({ key, label }) => (
+              <Button
+                key={key}
+                size="sm"
+                variant={language === key ? "default" : "ghost"}
+                onClick={() => handleLanguageChange(key)}
+                className="px-2 sm:px-3 text-xs font-medium"
+                data-testid={`button-lang-${key}`}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-3 space-y-3" data-testid="widget-messages">
