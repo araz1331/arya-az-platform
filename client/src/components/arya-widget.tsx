@@ -1332,11 +1332,10 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
       recognition.lang = getSpeechLang();
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
-      recognition.continuous = true;
+      recognition.continuous = false;
       recognition.onresult = (event: any) => {
-        const last = event.results[event.results.length - 1];
-        const transcript = last?.[0]?.transcript;
-        if (transcript) setInput(prev => prev ? prev + " " + transcript : transcript);
+        const transcript = event.results[0]?.[0]?.transcript?.trim();
+        if (transcript) setInput(transcript);
         setIsRecording(false);
       };
       recognition.onerror = () => setIsRecording(false);
