@@ -729,25 +729,9 @@ export async function registerRoutes(
         }
       }
 
-      const products = await stripe.products.search({ query: "name:'Founding Member Pass' active:'true'" });
-      let priceId: string;
-      if (products.data.length > 0) {
-        const prices = await stripe.prices.list({ product: products.data[0].id, active: true, limit: 1 });
-        priceId = prices.data[0]?.id;
-        if (!priceId) throw new Error("No active price found for Founding Member Pass");
-      } else {
-        const product = await stripe.products.create({
-          name: "Founding Member Pass",
-          description: "Lifetime access to Arya Pro",
-          metadata: { type: "lifetime", tier: "founder" },
-        });
-        const price = await stripe.prices.create({
-          product: product.id,
-          unit_amount: 9900,
-          currency: "usd",
-        });
-        priceId = price.id;
-      }
+      const prices = await stripe.prices.list({ product: "prod_TzQzjyR84GknRD", active: true, limit: 1 });
+      const priceId = prices.data[0]?.id;
+      if (!priceId) throw new Error("No active price found for Founding Member Pass");
 
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
@@ -778,8 +762,10 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Invalid plan. Must be 'pro' or 'agency'" });
       }
 
-      const productName = plan === "pro" ? "Arya Pro" : "Arya Agency";
-      const fallbackAmount = plan === "pro" ? 2900 : 19900;
+      const PLAN_PRODUCTS: Record<string, string> = {
+        pro: "prod_TzR14TzIwPyEIv",
+        agency: "prod_TzR6nrRNZ82W7F",
+      };
 
       const stripe = await getUncachableStripeClient();
       const [u] = await db.select().from(users).where(eq(users.id, userId));
@@ -800,26 +786,9 @@ export async function registerRoutes(
         }
       }
 
-      const products = await stripe.products.search({ query: `name:'${productName}' active:'true'` });
-      let priceId: string;
-      if (products.data.length > 0) {
-        const prices = await stripe.prices.list({ product: products.data[0].id, active: true, limit: 1 });
-        priceId = prices.data[0]?.id;
-        if (!priceId) throw new Error(`No active price found for ${productName}`);
-      } else {
-        const product = await stripe.products.create({
-          name: productName,
-          description: plan === "pro" ? "AI receptionist with unlimited chat, voice responses, lead capture, and analytics." : "Multi-location AI receptionist with priority support, API access, custom branding, and team management.",
-          metadata: { type: "subscription", tier: plan },
-        });
-        const price = await stripe.prices.create({
-          product: product.id,
-          unit_amount: fallbackAmount,
-          currency: "usd",
-          recurring: { interval: "month" as const },
-        });
-        priceId = price.id;
-      }
+      const prices = await stripe.prices.list({ product: PLAN_PRODUCTS[plan], active: true, limit: 1 });
+      const priceId = prices.data[0]?.id;
+      if (!priceId) throw new Error(`No active price found for ${plan} plan`);
 
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
