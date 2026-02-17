@@ -60,7 +60,7 @@ export default function AboutPage() {
     setStoredGlobalLanguage(l);
   };
 
-  const t = (key: string) => gt(key, lang);
+  const t = (key: string) => gt(lang, key as any);
 
   return (
     <div className="min-h-screen bg-background">

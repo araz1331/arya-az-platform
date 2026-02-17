@@ -687,8 +687,9 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
   const [editingValue, setEditingValue] = useState("");
   const [smartLinkCopied, setSmartLinkCopied] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const recognitionRef = useRef<any>(null);
-  const micPermissionGranted = useRef(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const ocrInputRef = useRef<HTMLInputElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -1307,15 +1308,11 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     }
   };
 
-  const getSpeechLang = () => {
-    const map: Record<string, string> = { az: "az-AZ", ru: "ru-RU", en: "en-US" };
-    return map[language] || "az-AZ";
-  };
-
   const toggleRecording = async () => {
     if (isRecording) {
-      if (recognitionRef.current) recognitionRef.current.stop();
-      setIsRecording(false);
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stop();
+      }
       return;
     }
 
@@ -1325,66 +1322,54 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
       return;
     }
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      toast({ title: language === "az" ? "Bu brauzer səs tanımanı dəstəkləmir" : language === "ru" ? "Браузер не поддерживает распознавание речи" : "Speech recognition not supported in this browser", variant: "destructive" });
-      return;
-    }
-    if (!micPermissionGranted.current) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(tr => tr.stop());
-        micPermissionGranted.current = true;
-      } catch {
-        toast({ title: language === "az" ? "Mikrofona icazə verin" : language === "ru" ? "Разрешите доступ к микрофону" : "Please allow microphone access", variant: "destructive" });
-        return;
-      }
-    }
     try {
-      if (recognitionRef.current) {
-        try { recognitionRef.current.abort(); } catch {}
-      }
-      const recognition = new SpeechRecognition();
-      recognition.lang = getSpeechLang();
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-      recognition.continuous = false;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
 
-      let gotResult = false;
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/mp4")
+          ? "audio/mp4"
+          : "audio/webm";
 
-      recognition.onresult = (event: any) => {
-        gotResult = true;
-        const transcript = event.results[0]?.[0]?.transcript?.trim();
-        console.log("[WIDGET-MIC] onresult:", transcript);
-        if (transcript) setInput(transcript);
-        setIsRecording(false);
+      const recorder = new MediaRecorder(stream, { mimeType });
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
       };
-      recognition.onerror = (event: any) => {
-        console.log("[WIDGET-MIC] onerror:", event.error, event.message);
-        toast({ title: `Mic error: ${event.error}`, variant: "destructive" });
-        if (event.error === "not-allowed") {
-          micPermissionGranted.current = false;
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        setIsRecording(false);
+
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        if (audioBlob.size < 1000) return;
+
+        setIsTranscribing(true);
+        try {
+          const formData = new FormData();
+          formData.append("audio", audioBlob, "recording.webm");
+
+          const res = await fetch("/api/transcribe", { method: "POST", body: formData });
+          if (!res.ok) throw new Error("Transcription failed");
+          const data = await res.json();
+          if (data.text?.trim()) {
+            setInput(data.text.trim());
+          } else {
+            toast({ title: language === "az" ? "Səs tanınmadı. Yenidən cəhd edin." : language === "ru" ? "Речь не распознана. Попробуйте снова." : "Speech not recognized. Please try again." });
+          }
+        } catch {
+          toast({ title: language === "az" ? "Mikrofon xətası" : language === "ru" ? "Ошибка микрофона" : "Microphone error", variant: "destructive" });
+        } finally {
+          setIsTranscribing(false);
         }
-        setIsRecording(false);
-      };
-      recognition.onend = () => {
-        console.log("[WIDGET-MIC] onend, gotResult:", gotResult);
-        if (!gotResult) {
-          toast({ title: `Mic ended without result (lang: ${getSpeechLang()})` });
-        }
-        setIsRecording(false);
       };
 
-      recognition.onaudiostart = () => console.log("[WIDGET-MIC] audiostart");
-      recognition.onsoundstart = () => console.log("[WIDGET-MIC] soundstart");
-      recognition.onspeechstart = () => console.log("[WIDGET-MIC] speechstart");
-
-      recognitionRef.current = recognition;
-      recognition.start();
+      mediaRecorderRef.current = recorder;
+      recorder.start();
       setIsRecording(true);
-      console.log("[WIDGET-MIC] started, lang:", getSpeechLang());
     } catch {
-      toast({ title: language === "az" ? "Mikrofon xətası" : language === "ru" ? "Ошибка микрофона" : "Microphone error", variant: "destructive" });
+      toast({ title: language === "az" ? "Mikrofona icazə verin" : language === "ru" ? "Разрешите доступ к микрофону" : "Please allow microphone access", variant: "destructive" });
     }
   };
 
@@ -2505,11 +2490,11 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
               size="icon"
               variant={isRecording ? "destructive" : "default"}
               onClick={toggleRecording}
-              disabled={isLoading || isCreating || isTranslating}
+              disabled={isLoading || isCreating || isTranslating || isTranscribing}
               data-testid="button-widget-voice"
               className={isRecording ? "ring-2 ring-destructive/30" : ""}
             >
-              {isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              {isTranscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : isRecording ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </Button>
           )}
         </div>

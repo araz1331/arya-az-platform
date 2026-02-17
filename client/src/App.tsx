@@ -14,6 +14,7 @@ import AdminPage from "@/pages/admin";
 import SmartProfile from "@/pages/smart-profile";
 import EmbedChat from "@/pages/embed-chat";
 import GlobalHome from "@/pages/global-home";
+import AboutPage from "@/pages/about";
 import ConsentModal from "@/components/consent-modal";
 
 const LANG_PREFIX = "/az";
@@ -31,6 +32,11 @@ function getEmbedSlug(): string | null {
 function isRootPath(): boolean {
   const path = window.location.pathname;
   return path === "/" || path === "";
+}
+
+function isAboutPath(): boolean {
+  const path = window.location.pathname;
+  return path === "/about" || path === "/about/";
 }
 
 function isDashboardPath(): boolean {
@@ -219,6 +225,17 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <GlobalHome />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (isAboutPath()) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <AboutPage />
         </TooltipProvider>
       </QueryClientProvider>
     );

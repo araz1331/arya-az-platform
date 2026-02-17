@@ -262,6 +262,9 @@ export default function GlobalHome() {
               <Button variant="ghost" size="sm" onClick={() => scrollTo("use-cases")} className="text-white/70" data-testid="link-agencies">
                 {t("navAgencies")}
               </Button>
+              <Button variant="ghost" size="sm" onClick={() => { window.location.href = "/about"; }} className="text-white/70" data-testid="link-our-story">
+                {t("navOurStory")}
+              </Button>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -789,6 +792,7 @@ export default function GlobalHome() {
               <p className="text-sm text-muted-foreground max-w-xs">{t("footerTagline")}</p>
             </div>
             <div className="flex flex-wrap gap-6 text-sm">
+              <a href="/about" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-about">{t("navOurStory")}</a>
               <a href="/az" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-az">Arya Azərbaycan</a>
             </div>
           </div>

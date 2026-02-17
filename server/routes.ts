@@ -255,7 +255,6 @@ export async function registerRoutes(
       const detected = detectAudioFormat(audioBuffer);
       const supportedFormats = ["wav", "mp3", "webm", "mp4", "ogg"] as const;
       const format = supportedFormats.includes(detected as any) ? detected as "wav" | "mp3" | "webm" | "mp4" | "ogg" : "webm";
-      console.log(`[transcribe] detected format: ${detected}, using: ${format}, size: ${audioBuffer.length}`);
       const transcript = await speechToText(audioBuffer, format);
       res.json({ text: transcript.trim() });
     } catch (err: any) {
