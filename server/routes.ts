@@ -1050,6 +1050,87 @@ Your Role - AI Receptionist:
     }
   });
 
+  app.get("/api/owner-chat/history", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const messages = await storage.getOwnerChatHistory(userId, 100);
+      res.json({ messages });
+    } catch (err: any) {
+      console.error("Owner chat history error:", err?.message);
+      res.status(500).json({ error: "Failed to load chat history" });
+    }
+  });
+
+  app.post("/api/owner-chat", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const { message } = req.body;
+      if (!message?.trim()) return res.status(400).json({ error: "Message required" });
+
+      const profile = await storage.getSmartProfileByUserId(userId);
+
+      let businessContext = "No business profile configured yet.";
+      if (profile) {
+        businessContext = `Business Name: ${profile.businessName || "Not set"}
+Profession: ${profile.profession || "Not set"}
+Display Name: ${profile.displayName || "Not set"}
+Profile URL: /u/${profile.slug}
+Knowledge Base: ${profile.knowledgeBase || "Not configured"}
+PRO Status: ${profile.isPro ? "Active" : "Free plan"}
+Profile Active: ${profile.isActive ? "Yes" : "No"}
+Onboarding Complete: ${profile.onboardingComplete ? "Yes" : "No"}`;
+      }
+
+      const history = await storage.getOwnerChatHistory(userId, 20);
+      const chatHistory = history.map(m => ({
+        role: m.role as "user" | "model",
+        parts: [{ text: m.content }],
+      }));
+
+      const systemPrompt = `You are Arya, the Owner's efficient, loyal, and proactive Executive Assistant. Your goal is to help the owner manage their business, remember details, and execute tasks. You have access to the business configuration below.
+
+If the owner asks to change a setting (like the greeting, business hours, services, or prices), guide them on how to do it through the Dashboard's "Edit Info" button, or confirm you have noted the preference.
+
+You should be conversational, helpful, and professional. Keep responses concise but thorough.
+
+Current Business Configuration:
+${businessContext}
+
+Important:
+- You are NOT the customer-facing receptionist. You are the owner's private assistant.
+- Help with business strategy, content ideas, marketing advice, and managing their AI receptionist.
+- If asked about leads or analytics, provide guidance based on what you know.
+- Be proactive: suggest improvements to the knowledge base, new services to add, or ways to attract more customers.
+- Respond in the same language the owner uses.`;
+
+      await storage.createOwnerChatMessage({ userId, role: "user", content: message.trim() });
+
+      const result = await gemini.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          ...chatHistory,
+          { role: "user", parts: [{ text: message }] },
+        ],
+        config: {
+          systemInstruction: systemPrompt,
+          maxOutputTokens: 500,
+        },
+      });
+
+      const reply = result.text || "Sorry, I couldn't process that. Please try again.";
+
+      await storage.createOwnerChatMessage({ userId, role: "model", content: reply });
+
+      res.json({ reply });
+    } catch (err: any) {
+      console.error("Owner chat error:", err?.message);
+      res.status(500).json({ error: "Chat unavailable" });
+    }
+  });
+
   app.get("/api/proxy/leads/:slug", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);

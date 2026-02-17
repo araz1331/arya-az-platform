@@ -6,8 +6,9 @@ import {
   type VoiceDonation, type InsertVoiceDonation,
   type WidgetMessage, type InsertWidgetMessage,
   type SmartProfile, type InsertSmartProfile,
+  type OwnerChatMessage, type InsertOwnerChatMessage,
   profiles, recordings, transactions, vouchers,
-  voiceDonations, widgetMessages, smartProfiles,
+  voiceDonations, widgetMessages, smartProfiles, ownerChatMessages,
 } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { db } from "./db";
@@ -48,6 +49,9 @@ export interface IStorage {
   getSmartProfileBySlug(slug: string): Promise<SmartProfile | undefined>;
   createSmartProfile(profile: InsertSmartProfile): Promise<SmartProfile>;
   updateSmartProfile(id: string, data: Partial<InsertSmartProfile>): Promise<SmartProfile>;
+
+  getOwnerChatHistory(userId: string, limit?: number): Promise<OwnerChatMessage[]>;
+  createOwnerChatMessage(message: InsertOwnerChatMessage): Promise<OwnerChatMessage>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -357,6 +361,18 @@ export class DatabaseStorage implements IStorage {
 
   async getAdminVoiceDonations(): Promise<any[]> {
     return db.select().from(voiceDonations).orderBy(desc(voiceDonations.createdAt)).limit(200);
+  }
+
+  async getOwnerChatHistory(userId: string, limit = 50): Promise<OwnerChatMessage[]> {
+    return db.select().from(ownerChatMessages)
+      .where(eq(ownerChatMessages.userId, userId))
+      .orderBy(ownerChatMessages.createdAt)
+      .limit(limit);
+  }
+
+  async createOwnerChatMessage(message: InsertOwnerChatMessage): Promise<OwnerChatMessage> {
+    const [created] = await db.insert(ownerChatMessages).values(message).returning();
+    return created;
   }
 }
 

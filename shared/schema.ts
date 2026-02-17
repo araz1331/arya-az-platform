@@ -96,6 +96,22 @@ export const smartProfiles = pgTable("smart_profiles", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const ownerChatMessages = pgTable("owner_chat_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  role: text("role").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertOwnerChatMessageSchema = createInsertSchema(ownerChatMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertOwnerChatMessage = z.infer<typeof insertOwnerChatMessageSchema>;
+export type OwnerChatMessage = typeof ownerChatMessages.$inferSelect;
+
 export const insertSmartProfileSchema = createInsertSchema(smartProfiles).omit({
   id: true,
   createdAt: true,

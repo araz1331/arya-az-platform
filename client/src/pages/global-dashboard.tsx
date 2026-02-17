@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sparkles, Users, BarChart3, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, ChevronDown, TrendingUp, Clock, Eye, ArrowUpRight } from "lucide-react";
 import AryaWidget from "@/components/arya-widget";
+import OwnerAssistant from "@/components/owner-assistant";
 import type { Profile } from "@shared/schema";
 import {
   type GlobalLanguage, GLOBAL_LANGUAGES, gt,
