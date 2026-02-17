@@ -84,6 +84,7 @@ export const smartProfiles = pgTable("smart_profiles", {
   themeColor: text("theme_color").notNull().default("#2563EB"),
   profileImageUrl: text("profile_image_url"),
   knowledgeBase: text("knowledge_base"),
+  privateVault: text("private_vault"),
   knowledgeBaseRu: text("knowledge_base_ru"),
   knowledgeBaseEn: text("knowledge_base_en"),
   professionRu: text("profession_ru"),
