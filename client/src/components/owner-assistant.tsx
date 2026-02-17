@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Send, Loader2, X, Sparkles, Mic, Square, CheckCircle2 } from "lucide-react";
+import { Send, Loader2, X, Sparkles, Mic, Square, CheckCircle2, Shield, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -11,6 +11,7 @@ interface Message {
   role: "user" | "model";
   content: string;
   updated?: boolean;
+  updateTarget?: "public" | "private" | "ask" | null;
 }
 
 export default function OwnerAssistant() {
@@ -62,7 +63,7 @@ export default function OwnerAssistant() {
     try {
       const res = await apiRequest("POST", "/api/owner-chat", { message: text });
       const data = await res.json();
-      setMessages(prev => [...prev, { role: "model", content: data.reply, updated: data.updated }]);
+      setMessages(prev => [...prev, { role: "model", content: data.reply, updated: data.updated, updateTarget: data.updateTarget }]);
     } catch {
       setMessages(prev => [...prev, { role: "model", content: "Sorry, something went wrong. Please try again." }]);
     } finally {
@@ -183,7 +184,19 @@ export default function OwnerAssistant() {
               }`}
               data-testid={`message-${msg.role}-${i}`}
             >
-              {msg.updated && (
+              {msg.updated && msg.updateTarget === "public" && (
+                <div className="flex items-center gap-1.5 mb-1.5 text-emerald-400 text-xs font-medium" data-testid={`badge-public-${i}`}>
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>Public knowledge updated</span>
+                </div>
+              )}
+              {msg.updated && msg.updateTarget === "private" && (
+                <div className="flex items-center gap-1.5 mb-1.5 text-amber-400 text-xs font-medium" data-testid={`badge-private-${i}`}>
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>Saved to Private Vault</span>
+                </div>
+              )}
+              {msg.updated && !msg.updateTarget && (
                 <div className="flex items-center gap-1.5 mb-1.5 text-emerald-400 text-xs font-medium" data-testid={`badge-updated-${i}`}>
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Knowledge base updated</span>
