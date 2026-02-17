@@ -3,13 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Send, Loader2, X, Sparkles, Mic, Square } from "lucide-react";
+import { Send, Loader2, X, Sparkles, Mic, Square, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 interface Message {
   role: "user" | "model";
   content: string;
+  updated?: boolean;
 }
 
 export default function OwnerAssistant() {
@@ -61,7 +62,7 @@ export default function OwnerAssistant() {
     try {
       const res = await apiRequest("POST", "/api/owner-chat", { message: text });
       const data = await res.json();
-      setMessages(prev => [...prev, { role: "model", content: data.reply }]);
+      setMessages(prev => [...prev, { role: "model", content: data.reply, updated: data.updated }]);
     } catch {
       setMessages(prev => [...prev, { role: "model", content: "Sorry, something went wrong. Please try again." }]);
     } finally {
@@ -182,6 +183,12 @@ export default function OwnerAssistant() {
               }`}
               data-testid={`message-${msg.role}-${i}`}
             >
+              {msg.updated && (
+                <div className="flex items-center gap-1.5 mb-1.5 text-emerald-400 text-xs font-medium" data-testid={`badge-updated-${i}`}>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Knowledge base updated</span>
+                </div>
+              )}
               <p className="whitespace-pre-wrap">{msg.content}</p>
             </div>
           </div>

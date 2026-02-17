@@ -463,6 +463,7 @@ export default function GlobalDashboard({ onBack }: { onBack: () => void }) {
           </TabsContent>
         </Tabs>
       </main>
+      <OwnerAssistant />
     </div>
   );
 }

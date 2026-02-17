@@ -1073,12 +1073,15 @@ Your Role - AI Receptionist:
       const profile = await storage.getSmartProfileByUserId(userId);
 
       let businessContext = "No business profile configured yet.";
+      let currentKB = "";
       if (profile) {
+        currentKB = profile.knowledgeBase || "";
         businessContext = `Business Name: ${profile.businessName || "Not set"}
 Profession: ${profile.profession || "Not set"}
 Display Name: ${profile.displayName || "Not set"}
 Profile URL: /u/${profile.slug}
-Knowledge Base: ${profile.knowledgeBase || "Not configured"}
+Knowledge Base:
+${currentKB || "(empty)"}
 PRO Status: ${profile.isPro ? "Active" : "Free plan"}
 Profile Active: ${profile.isActive ? "Yes" : "No"}
 Onboarding Complete: ${profile.onboardingComplete ? "Yes" : "No"}`;
@@ -1090,23 +1093,126 @@ Onboarding Complete: ${profile.onboardingComplete ? "Yes" : "No"}`;
         parts: [{ text: m.content }],
       }));
 
-      const systemPrompt = `You are Arya, the Owner's efficient, loyal, and proactive Executive Assistant. Your goal is to help the owner manage their business, remember details, and execute tasks. You have access to the business configuration below.
+      await storage.createOwnerChatMessage({ userId, role: "user", content: message.trim() });
 
-If the owner asks to change a setting (like the greeting, business hours, services, or prices), guide them on how to do it through the Dashboard's "Edit Info" button, or confirm you have noted the preference.
+      let updatedKB: string | null = null;
+      let updateApplied = false;
+      let noProfile = false;
 
-You should be conversational, helpful, and professional. Keep responses concise but thorough.
+      if (!profile) {
+        noProfile = true;
+      } else {
+        const msgLower = message.trim().toLowerCase();
+        const updateKeywords = [
+          /\b(change|update|set|modify|add|remove|delete)\b.*\b(hour|price|service|menu|wifi|password|parking|address|phone|email|offer|discount|policy|schedule|location)\b/i,
+          /\b(remember|note|save)\b.*\b(that|this)\b/i,
+          /\b(opening|closing|work)\s*(hours?|time|schedule)\b/i,
+          /\b(price|cost)\b.*\b(to|is|now)\b.*\d/i,
+          /\b(wifi|wi-fi)\b.*\b(password|pass|code)\b/i,
+          /\b(we (now |also )?(offer|have|provide|accept|do))\b/i,
+          /\b(don'?t|no longer|stop)\b.*\b(offer|have|provide|accept|do)\b/i,
+        ];
+        const keywordMatch = updateKeywords.some(rx => rx.test(msgLower));
+
+        let wantsUpdate = keywordMatch;
+
+        if (!keywordMatch) {
+          const classifyPrompt = `You are a classifier. Analyze the owner's message and determine if they want to UPDATE their business information (knowledge base). This includes:
+- Changing/adding business hours, opening hours, work schedule
+- Changing/adding prices, menu items, services
+- Adding new facts (e.g. "we offer free parking", "wifi password is X")
+- Removing or modifying existing information
+- Updating contact info, address, special offers, policies
+
+Current Knowledge Base:
+${currentKB || "(empty)"}
+
+Owner's message: "${message.trim()}"
+
+Respond with ONLY valid JSON, no markdown:
+{"wants_update": true, "summary": "brief description"} or {"wants_update": false}`;
+
+          try {
+            const classifyResult = await gemini.models.generateContent({
+              model: "gemini-2.5-flash",
+              contents: [{ role: "user", parts: [{ text: classifyPrompt }] }],
+              config: { maxOutputTokens: 150 },
+            });
+            const raw = (classifyResult.text || "").replace(/```json\n?|\n?```/g, "").trim();
+            const parsed = JSON.parse(raw);
+            wantsUpdate = parsed.wants_update === true;
+          } catch {}
+        }
+
+        if (wantsUpdate && currentKB) {
+          const updatePrompt = `You are a knowledge base editor. Update the business knowledge base below based on the owner's instruction.
+
+RULES:
+- Preserve ALL existing information unless the owner explicitly asks to remove or change something
+- Integrate the new information naturally into the existing text
+- Keep the same format and structure as the original
+- If adding new info, append it in the appropriate section or create a logical new section
+- If changing a price, find the old price and replace it
+- If changing hours, find the old hours and replace them
+- Output ONLY the complete updated knowledge base text, nothing else — no explanations, no markdown
+
+Current Knowledge Base:
+${currentKB}
+
+Owner's instruction: "${message.trim()}"
+
+Updated Knowledge Base:`;
+
+          const updateResult = await gemini.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{ role: "user", parts: [{ text: updatePrompt }] }],
+            config: { maxOutputTokens: 2000 },
+          });
+
+          const newKB = (updateResult.text || "").trim();
+          if (newKB && newKB.length > 20 && newKB !== currentKB) {
+            await storage.updateSmartProfile(profile.id, { knowledgeBase: newKB });
+            updatedKB = newKB;
+            updateApplied = true;
+          }
+        } else if (wantsUpdate && !currentKB) {
+          const createPrompt = `Create a knowledge base entry from the owner's instruction. Write it as a clean, professional business description.
+Output ONLY the knowledge base text, nothing else.
+
+Owner's instruction: "${message.trim()}"
+
+Knowledge Base:`;
+
+          const createResult = await gemini.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{ role: "user", parts: [{ text: createPrompt }] }],
+            config: { maxOutputTokens: 1000 },
+          });
+
+          const newKB = (createResult.text || "").trim();
+          if (newKB && newKB.length > 10) {
+            await storage.updateSmartProfile(profile.id, { knowledgeBase: newKB });
+            updatedKB = newKB;
+            updateApplied = true;
+          }
+        }
+      }
+
+      const responseSystemPrompt = `You are Arya, the Owner's efficient, loyal, and proactive Executive Assistant. You have FULL permission to update the business configuration. When the owner gives a fact or instruction, you update the knowledge base immediately and confirm. You are conversational, helpful, and professional. Keep responses concise but thorough.
 
 Current Business Configuration:
 ${businessContext}
+${updateApplied ? `\n*** UPDATE APPLIED: The knowledge base was just updated based on the owner's last message. Confirm the change was applied and mention that customers will see the updated information immediately on the chat page. ***` : ""}
+${noProfile ? `\n*** NO PROFILE: The owner has not set up their business profile yet. If they ask to update anything, tell them to go to the "AI Setup" tab first to create their profile, then they can update info through this chat. ***` : ""}
 
-Important:
+Your capabilities:
+- You can directly update business hours, prices, services, FAQs, wifi passwords, parking info, and any business information — and you DO so when the owner asks.
 - You are NOT the customer-facing receptionist. You are the owner's private assistant.
 - Help with business strategy, content ideas, marketing advice, and managing their AI receptionist.
-- If asked about leads or analytics, provide guidance based on what you know.
-- Be proactive: suggest improvements to the knowledge base, new services to add, or ways to attract more customers.
-- Respond in the same language the owner uses.`;
-
-      await storage.createOwnerChatMessage({ userId, role: "user", content: message.trim() });
+- Be proactive: suggest improvements, new services to add, or ways to attract more customers.
+- Respond in the same language the owner uses.
+- If the owner asks to update something and you applied it, confirm it was done and that it takes effect immediately.
+- If you couldn't apply an update because no profile exists, explain that they need to complete the AI Setup first.`;
 
       const result = await gemini.models.generateContent({
         model: "gemini-2.5-flash",
@@ -1115,7 +1221,7 @@ Important:
           { role: "user", parts: [{ text: message }] },
         ],
         config: {
-          systemInstruction: systemPrompt,
+          systemInstruction: responseSystemPrompt,
           maxOutputTokens: 500,
         },
       });
@@ -1124,7 +1230,7 @@ Important:
 
       await storage.createOwnerChatMessage({ userId, role: "model", content: reply });
 
-      res.json({ reply });
+      res.json({ reply, updated: updateApplied });
     } catch (err: any) {
       console.error("Owner chat error:", err?.message);
       res.status(500).json({ error: "Chat unavailable" });
