@@ -55,7 +55,7 @@ function buildSessionPhrases(recordedIds: Set<string>): Sentence[] {
 export default function Home({ onBack, isAdmin, onAdminClick }: { onBack: () => void; isAdmin?: boolean; onAdminClick?: () => void }) {
   const { toast } = useToast();
   const { user: authUser, logout } = useAuth();
-  const { t } = useLanguage();
+  const { t, language: uiLanguage } = useLanguage();
   const [activeTab, setActiveTab] = useState("record");
   const [recordedIds, setRecordedIds] = useState<Set<string>>(new Set());
   const [sessionPhrases, setSessionPhrases] = useState<Sentence[]>([]);
@@ -381,7 +381,7 @@ export default function Home({ onBack, isAdmin, onAdminClick }: { onBack: () => 
             </TabsContent>
 
             <TabsContent value="chat">
-              <AryaWidget profileId={user?.id ?? ""} />
+              <AryaWidget profileId={user?.id ?? ""} defaultLang={uiLanguage} />
             </TabsContent>
           </Tabs>
         )}
