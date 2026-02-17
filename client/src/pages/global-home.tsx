@@ -374,7 +374,7 @@ export default function GlobalHome() {
           <motion.div variants={fadeInUp} className="mt-10 sm:mt-14 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-16">
             <div className="flex items-center justify-center gap-8 sm:gap-16 text-white/40">
               <div className="text-center">
-                <div className="text-2xl sm:text-3xl font-bold text-white" data-testid="text-global-stat-languages">30+</div>
+                <div className="text-2xl sm:text-3xl font-bold text-white" data-testid="text-global-stat-languages">50+</div>
                 <div className="text-xs sm:text-sm">{t("statsLanguages")}</div>
               </div>
               <div className="w-px h-10 bg-white/20" />
