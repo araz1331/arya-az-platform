@@ -992,16 +992,25 @@ export async function registerRoutes(
       }
 
       const langMap: Record<string, string> = {
-        az: "Respond in Azerbaijani.",
-        ru: "Respond in Russian.",
-        en: "Respond in English.",
-        es: "Respond in Spanish.",
-        fr: "Respond in French.",
-        tr: "Respond in Turkish.",
+        az: "Azerbaijani", ru: "Russian", en: "English", es: "Spanish", fr: "French", tr: "Turkish",
+        ar: "Arabic", zh: "Chinese", hi: "Hindi", bn: "Bengali", pt: "Portuguese", ja: "Japanese",
+        ko: "Korean", de: "German", it: "Italian", vi: "Vietnamese", th: "Thai", pl: "Polish",
+        uk: "Ukrainian", nl: "Dutch", ro: "Romanian", el: "Greek", cs: "Czech", sv: "Swedish",
+        hu: "Hungarian", da: "Danish", fi: "Finnish", no: "Norwegian", he: "Hebrew", id: "Indonesian",
+        ms: "Malay", tl: "Filipino", sw: "Swahili", fa: "Persian", ur: "Urdu", ta: "Tamil",
+        te: "Telugu", mr: "Marathi", gu: "Gujarati", kn: "Kannada", ml: "Malayalam", pa: "Punjabi",
+        my: "Burmese", km: "Khmer", lo: "Lao", ka: "Georgian", am: "Amharic", ne: "Nepali",
+        si: "Sinhala", hr: "Croatian", sr: "Serbian", bg: "Bulgarian", sk: "Slovak", lt: "Lithuanian",
+        lv: "Latvian", et: "Estonian", sl: "Slovenian",
       };
-      const langInstruction = langMap[language] || "Respond in English.";
+      const defaultLang = langMap[language] || "English";
 
-      const systemPrompt = `You are an AI receptionist for ${displayName}, ${profession}. You handle customer inquiries on their profile page. ${langInstruction}
+      const systemPrompt = `You are an AI receptionist for ${displayName}, ${profession}. You handle customer inquiries on their profile page.
+
+LANGUAGE RULES:
+- Your default language is ${defaultLang} (selected by the interface).
+- CRITICAL: If the customer writes in a DIFFERENT language than ${defaultLang}, you MUST detect their language and respond in THAT language instead. Always match the customer's language.
+- You are fluent in all major world languages. Always respond naturally in whichever language the customer uses.
 
 Business Information:
 ${knowledgeBase}
