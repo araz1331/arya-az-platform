@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Mic, Send, Loader2, MapPin, ArrowLeft, Square, Sparkles, MessageSquare, ChevronDown, Pencil, Check, X, Volume2 } from "lucide-react";
+import { Mic, Send, Loader2, MapPin, ArrowLeft, Square, Sparkles, MessageSquare, ChevronDown, Pencil, Check, X, Volume2, Shield } from "lucide-react";
 import samirUstaImg from "@assets/samir-usta_1771161226793.png";
 import ayselTutorImg from "@assets/Aysel-tutor_1771162249994.png";
 import kebabHouseImg from "@assets/kebab_1771162691604.png";
@@ -216,6 +216,8 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
   const profileImageRef = useRef<string | null>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  const isOwnerChat = !!(currentUserId && profile?.user_id && currentUserId === profile.user_id);
+
   useEffect(() => {
     fetch("/api/auth/user", { credentials: "include" })
       .then(r => r.ok ? r.json() : null)
@@ -324,23 +326,41 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
       });
   }, [slug]);
 
+  const ownerGreetings: Record<string, string> = {
+    az: "Salam, sahibkar! Mən sizin Executive Assistant-ınızam. Biznesi idarə etməkdə, məlumatları yeniləməkdə kömək edə bilərəm.",
+    ru: "Здравствуйте! Я ваш Executive Assistant. Могу обновить информацию о бизнесе, помочь со стратегией и управлением.",
+    en: "Hello! I'm your Executive Assistant. I can update your business info, help with strategy, and manage your AI receptionist.",
+    es: "¡Hola! Soy tu Asistente Ejecutivo. Puedo actualizar tu información, ayudar con estrategia y gestionar tu recepcionista IA.",
+    fr: "Bonjour ! Je suis votre Assistant Exécutif. Je peux mettre à jour vos informations et gérer votre réceptionniste IA.",
+    tr: "Merhaba! Ben Yönetici Asistanınızım. İş bilgilerinizi güncelleyebilir, strateji ve yönetimde yardımcı olabilirim.",
+  };
+
   useEffect(() => {
     if (!profile) return;
     const name = profile.display_name;
     const prof = profile.profession;
     const isDemo = profile.id === "demo-id";
-    const greetFn = slug === "new-user"
-      ? (GREETINGS.newUser[language] || GREETINGS.newUser.az)
-      : isDemo
-        ? (GREETINGS.fallback[language] || GREETINGS.fallback.az)
-        : (GREETINGS.known[language] || GREETINGS.known.az);
-    const newGreeting = greetFn(name, prof);
-    setMessages(prev => {
-      if (prev.length <= 1) return [{ role: "assistant", text: newGreeting }];
-      return [{ role: "assistant", text: newGreeting }, ...prev.slice(1)];
-    });
+
+    if (isOwnerChat) {
+      const greeting = ownerGreetings[language] || ownerGreetings.en;
+      setMessages(prev => {
+        if (prev.length <= 1) return [{ role: "assistant", text: greeting }];
+        return [{ role: "assistant", text: greeting }, ...prev.slice(1)];
+      });
+    } else {
+      const greetFn = slug === "new-user"
+        ? (GREETINGS.newUser[language] || GREETINGS.newUser.az)
+        : isDemo
+          ? (GREETINGS.fallback[language] || GREETINGS.fallback.az)
+          : (GREETINGS.known[language] || GREETINGS.known.az);
+      const newGreeting = greetFn(name, prof);
+      setMessages(prev => {
+        if (prev.length <= 1) return [{ role: "assistant", text: newGreeting }];
+        return [{ role: "assistant", text: newGreeting }, ...prev.slice(1)];
+      });
+    }
     demoReplyIndexRef.current = 0;
-  }, [language]);
+  }, [language, isOwnerChat]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -503,30 +523,43 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
     setIsLoading(true);
 
     try {
-      const chatHistory = messages.filter(m => m.text).slice(-6).map(m => ({
-        role: m.role,
-        text: m.text,
-      }));
+      if (isOwnerChat) {
+        const res = await fetch("/api/owner-chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ message: text }),
+        });
+        if (!res.ok) throw new Error("API error");
+        const data = await res.json();
+        const reply = data.reply || "Sorry, please try again.";
+        setMessages(prev => [...prev, { role: "assistant", text: reply }]);
+      } else {
+        const chatHistory = messages.filter(m => m.text).slice(-6).map(m => ({
+          role: m.role,
+          text: m.text,
+        }));
 
-      const res = await fetch("/api/smart-profile/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          slug,
-          message: text,
-          language,
-          history: chatHistory,
-        }),
-      });
-      if (!res.ok) throw new Error("API error");
-      const data = await res.json();
+        const res = await fetch("/api/smart-profile/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slug,
+            message: text,
+            language,
+            history: chatHistory,
+          }),
+        });
+        if (!res.ok) throw new Error("API error");
+        const data = await res.json();
 
-      const reply = data.reply || getDemoReply();
-      setMessages(prev => [...prev, { role: "assistant", text: reply }]);
+        const reply = data.reply || getDemoReply();
+        setMessages(prev => [...prev, { role: "assistant", text: reply }]);
 
-      const pId = profile?.id || "demo-id";
-      logWidgetMessage(pId, sessionIdRef.current, "user", text, "text");
-      logWidgetMessage(pId, sessionIdRef.current, "assistant", reply, "text");
+        const pId = profile?.id || "demo-id";
+        logWidgetMessage(pId, sessionIdRef.current, "user", text, "text");
+        logWidgetMessage(pId, sessionIdRef.current, "assistant", reply, "text");
+      }
     } catch {
       const reply = getDemoReply();
       setMessages(prev => [...prev, { role: "assistant", text: reply }]);
@@ -850,6 +883,14 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
           </div>
         </div>
       </div>
+
+      {isOwnerChat && (
+        <div className="mx-4 mt-1 flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-1.5 text-amber-300 text-xs z-10" data-testid="banner-owner-mode">
+          <Shield className="w-3.5 h-3.5 shrink-0" />
+          <span className="font-medium">Owner Mode</span>
+          <span className="text-amber-300/60">— You have full access. Updates you make here go to your knowledge base.</span>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto px-4 py-3 -mt-2 space-y-3 pb-36 z-0" data-testid="smart-messages">
         {messages.map((m, i) => (
