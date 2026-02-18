@@ -38,6 +38,42 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 1
   }
 }
 
+async function sendWhatsAppNotification(toNumber: string, leadName: string, leadPhone: string, leadEmail: string, businessName: string): Promise<boolean> {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  if (!accountSid || !authToken) {
+    console.error("[whatsapp] Missing TWILIO_ACCOUNT_SID or TWILIO_AUTH_TOKEN");
+    return false;
+  }
+  const fromNumber = "whatsapp:+12792030206";
+  const to = `whatsapp:${toNumber.startsWith("+") ? toNumber : "+" + toNumber}`;
+  const body = `*New Lead — ${businessName}*\n\nName: ${leadName || "—"}\nPhone: ${leadPhone || "—"}\nEmail: ${leadEmail || "—"}\n\n_Sent by Arya AI_`;
+
+  try {
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+    const params = new URLSearchParams({ To: to, From: fromNumber, Body: body });
+    const res = await fetchWithTimeout(url, {
+      method: "POST",
+      headers: {
+        "Authorization": "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64"),
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    }, 15000);
+    if (res.ok) {
+      console.log(`[whatsapp] Notification sent to ${toNumber} for ${businessName}`);
+      return true;
+    } else {
+      const err = await res.text();
+      console.error(`[whatsapp] Failed (${res.status}):`, err);
+      return false;
+    }
+  } catch (e) {
+    console.error("[whatsapp] Error:", e);
+    return false;
+  }
+}
+
 const gemini = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "",
   httpOptions: {
@@ -376,8 +412,9 @@ export async function registerRoutes(
           const profile = await storage.getSmartProfile(profileId);
           const hasAltegio = profile?.altegioAutoSend && profile.altegioPartnerToken && profile.altegioUserToken && profile.altegioCompanyId;
           const hasWebhook = profile?.webhookAutoSend && profile.webhookUrl;
+          const hasWhatsApp = profile?.whatsappAutoNotify && profile.whatsappNumber;
 
-          if (hasAltegio || hasWebhook) {
+          if (hasAltegio || hasWebhook || hasWhatsApp) {
             const allMsgs = await db.execute(sql`
               SELECT role, content FROM widget_messages
               WHERE profile_id = ${profileId} AND session_id = ${sessionId}
@@ -468,6 +505,40 @@ export async function registerRoutes(
                           console.log(`[webhook-auto] Sent lead for ${profile!.slug}: ${json.name} ${json.phone}`);
                         } else {
                           console.error(`[webhook-auto] Failed for ${profile!.slug}:`, whRes.status);
+                        }
+                      }
+                    } catch {}
+                  }
+                }
+
+                if (hasWhatsApp) {
+                  const alreadySentWa = await db.execute(sql`
+                    SELECT 1 FROM widget_messages
+                    WHERE profile_id = ${profileId} AND session_id = ${sessionId}
+                      AND content LIKE '%[whatsapp-sent]%' LIMIT 1
+                  `);
+                  if (!alreadySentWa.rows.length) {
+                    const extractResult = await gemini.models.generateContent({
+                      model: "gemini-2.0-flash",
+                      contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON: {"name":"","phone":"","email":"","comment":""}.\n\n${convoText}`,
+                    });
+                    try {
+                      const raw = extractResult.text?.trim() || "{}";
+                      const json = JSON.parse(raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
+                      if (json.name || json.phone || json.email) {
+                        const sent = await sendWhatsAppNotification(
+                          profile!.whatsappNumber!,
+                          json.name || "",
+                          json.phone || "",
+                          json.email || "",
+                          profile!.businessName
+                        );
+                        if (sent) {
+                          await storage.createWidgetMessage({
+                            profileId, sessionId, role: "system",
+                            content: `[whatsapp-sent] ${json.name} ${json.phone}`,
+                            contentType: "system", audioUrl: null,
+                          });
                         }
                       }
                     } catch {}
@@ -1902,6 +1973,133 @@ Your capabilities:
       res.json({ success: true, extracted: contactInfo });
     } catch (error: any) {
       console.error("[webhook-push] Error:", error);
+      res.status(500).json({ message: error.message || "Server error" });
+    }
+  });
+
+  app.get("/api/smart-profile/whatsapp-settings", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+      res.json({
+        whatsappNumber: profile.whatsappNumber || "",
+        whatsappAutoNotify: profile.whatsappAutoNotify || false,
+      });
+    } catch (error) {
+      console.error("[whatsapp-settings] Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.patch("/api/smart-profile/whatsapp-settings", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+      const { whatsappNumber, whatsappAutoNotify } = req.body;
+      if (whatsappNumber && !/^\+?\d{7,15}$/.test(whatsappNumber.replace(/[\s\-()]/g, ""))) {
+        return res.status(400).json({ message: "Invalid phone number format. Use international format: +994501234567" });
+      }
+      await storage.updateSmartProfile(profile.id, {
+        whatsappNumber: whatsappNumber ?? profile.whatsappNumber,
+        whatsappAutoNotify: whatsappAutoNotify ?? profile.whatsappAutoNotify,
+      });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[whatsapp-settings-update] Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/smart-profile/whatsapp-test", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+      if (!profile.whatsappNumber) {
+        return res.status(400).json({ message: "No WhatsApp number configured" });
+      }
+      const sent = await sendWhatsAppNotification(
+        profile.whatsappNumber,
+        "Test Lead",
+        "+1234567890",
+        "test@example.com",
+        profile.businessName
+      );
+      if (sent) {
+        res.json({ success: true });
+      } else {
+        res.status(502).json({ message: "Failed to send WhatsApp message. Check your number format." });
+      }
+    } catch (error: any) {
+      console.error("[whatsapp-test] Error:", error);
+      res.status(502).json({ message: error.message || "Could not send WhatsApp notification" });
+    }
+  });
+
+  app.post("/api/smart-profile/leads/:sessionId/send-to-whatsapp", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+      if (!profile.whatsappNumber) {
+        return res.status(400).json({ message: "No WhatsApp number configured" });
+      }
+
+      const messages = await db.execute(sql`
+        SELECT role, content FROM widget_messages
+        WHERE profile_id = ${profile.id} AND session_id = ${req.params.sessionId}
+        ORDER BY created_at ASC
+      `);
+
+      if (!messages.rows || messages.rows.length === 0) {
+        return res.status(404).json({ message: "No messages found for this lead" });
+      }
+
+      const conversationText = messages.rows.map((m: any) => `${m.role}: ${m.content}`).join("\n");
+
+      const extractResult = await gemini.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON: {"name":"","phone":"","email":"","comment":""}.\n\n${conversationText}`,
+      });
+
+      let contactInfo: { name: string; phone: string; email: string; comment: string };
+      try {
+        const rawText = extractResult.text?.trim() || "{}";
+        const jsonStr = rawText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        contactInfo = JSON.parse(jsonStr);
+      } catch {
+        return res.status(422).json({ message: "Could not extract contact info" });
+      }
+
+      const sent = await sendWhatsAppNotification(
+        profile.whatsappNumber,
+        contactInfo.name || "",
+        contactInfo.phone || "",
+        contactInfo.email || "",
+        profile.businessName
+      );
+
+      if (!sent) {
+        return res.status(502).json({ message: "Failed to send WhatsApp notification" });
+      }
+
+      const sid = req.params.sessionId as string;
+      await storage.createWidgetMessage({
+        profileId: profile.id, sessionId: sid, role: "system",
+        content: `[whatsapp-sent] ${contactInfo.name} ${contactInfo.phone}`,
+        contentType: "system", audioUrl: null,
+      });
+
+      console.log(`[whatsapp-push] Lead sent for ${profile.slug}: ${contactInfo.name} ${contactInfo.phone}`);
+      res.json({ success: true, extracted: contactInfo });
+    } catch (error: any) {
+      console.error("[whatsapp-push] Error:", error);
       res.status(500).json({ message: error.message || "Server error" });
     }
   });

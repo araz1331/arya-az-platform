@@ -699,6 +699,13 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
   const [webhookSending, setWebhookSending] = useState<string | null>(null);
   const [webhookSentSessions, setWebhookSentSessions] = useState<Set<string>>(new Set());
   const webhookFormSynced = useRef(false);
+  const [showWhatsappSettings, setShowWhatsappSettings] = useState(false);
+  const [whatsappForm, setWhatsappForm] = useState({ whatsappNumber: "", whatsappAutoNotify: false });
+  const [whatsappSaving, setWhatsappSaving] = useState(false);
+  const [whatsappTesting, setWhatsappTesting] = useState(false);
+  const [whatsappSending, setWhatsappSending] = useState<string | null>(null);
+  const [whatsappSentSessions, setWhatsappSentSessions] = useState<Set<string>>(new Set());
+  const whatsappFormSynced = useRef(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -735,6 +742,11 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     enabled: !!smartProfile?.id,
   });
 
+  const { data: whatsappSettings } = useQuery<{ whatsappNumber: string; whatsappAutoNotify: boolean }>({
+    queryKey: ["/api/smart-profile/whatsapp-settings"],
+    enabled: !!smartProfile?.id,
+  });
+
   useEffect(() => {
     if (altegioSettings && showAltegioSettings && !altegioFormSynced.current) {
       setAltegioForm({
@@ -759,6 +771,17 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     }
     if (!showWebhookSettings) webhookFormSynced.current = false;
   }, [webhookSettings, showWebhookSettings]);
+
+  useEffect(() => {
+    if (whatsappSettings && showWhatsappSettings && !whatsappFormSynced.current) {
+      setWhatsappForm({
+        whatsappNumber: whatsappSettings.whatsappNumber || "",
+        whatsappAutoNotify: whatsappSettings.whatsappAutoNotify || false,
+      });
+      whatsappFormSynced.current = true;
+    }
+    if (!showWhatsappSettings) whatsappFormSynced.current = false;
+  }, [whatsappSettings, showWhatsappSettings]);
 
   const { data: hirearyaLeads } = useQuery<any[]>({
     queryKey: ["/api/proxy/leads", smartProfile?.slug],
@@ -1965,6 +1988,127 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     );
   }
 
+  if (profileReady && showWhatsappSettings) {
+    const whatsappConfigured = !!whatsappSettings?.whatsappNumber;
+
+    const handleWhatsappSave = async () => {
+      setWhatsappSaving(true);
+      try {
+        await apiRequest("PATCH", "/api/smart-profile/whatsapp-settings", whatsappForm);
+        queryClient.invalidateQueries({ queryKey: ["/api/smart-profile/whatsapp-settings"] });
+        toast({ title: language === "az" ? "WhatsApp parametrləri yadda saxlanıldı" : language === "ru" ? "Настройки WhatsApp сохранены" : "WhatsApp settings saved" });
+      } catch {
+        toast({ title: language === "az" ? "Xəta baş verdi" : language === "ru" ? "Ошибка сохранения" : "Save failed", variant: "destructive" });
+      }
+      setWhatsappSaving(false);
+    };
+
+    const handleWhatsappTest = async () => {
+      setWhatsappTesting(true);
+      try {
+        const res = await fetch("/api/smart-profile/whatsapp-test", { method: "POST", credentials: "include" });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          toast({ title: language === "az" ? "Test mesajı göndərildi!" : language === "ru" ? "Тестовое сообщение отправлено!" : "Test message sent!" });
+        } else {
+          toast({ title: data.message || "Test failed", variant: "destructive" });
+        }
+      } catch {
+        toast({ title: language === "az" ? "WhatsApp mesajı göndərmək mümkün olmadı" : language === "ru" ? "Не удалось отправить сообщение WhatsApp" : "Could not send WhatsApp message", variant: "destructive" });
+      }
+      setWhatsappTesting(false);
+    };
+
+    return (
+      <Card className="flex flex-col h-[calc(100svh-12rem)] sm:h-[500px] min-h-[350px] max-h-[600px] overflow-visible">
+        <div className="flex items-center gap-2 px-3 sm:px-4 pt-3 pb-2 border-b">
+          <Button size="icon" variant="ghost" onClick={() => setShowWhatsappSettings(false)} data-testid="button-whatsapp-back">
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <h3 className="font-semibold text-sm flex items-center gap-1.5" data-testid="text-whatsapp-title">
+            <MessageCircle className="w-4 h-4 text-green-500" />
+            WhatsApp
+          </h3>
+          {whatsappConfigured && <Badge className="bg-emerald-500 text-white border-transparent text-[10px] ml-auto">
+            {language === "az" ? "Qoşulub" : language === "ru" ? "Подключено" : "Connected"}
+          </Badge>}
+        </div>
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 space-y-3">
+          <p className="text-xs text-muted-foreground">
+            {language === "az" ? "Yeni lid gələndə WhatsApp-a bildiriş göndərilsin. Nömrənizi beynəlxalq formatda daxil edin."
+              : language === "ru" ? "Получайте уведомления в WhatsApp о новых лидах. Введите номер в международном формате."
+              : "Get notified on WhatsApp when a new lead comes in. Enter your number in international format."}
+          </p>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium">
+              {language === "az" ? "WhatsApp nömrəniz" : language === "ru" ? "Ваш номер WhatsApp" : "Your WhatsApp number"}
+            </label>
+            <Input
+              placeholder="+994501234567"
+              value={whatsappForm.whatsappNumber}
+              onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappNumber: e.target.value }))}
+              data-testid="input-whatsapp-number"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              {language === "az" ? "Beynəlxalq format: +994, +7, +1 və s." : language === "ru" ? "Международный формат: +994, +7, +1 и т.д." : "International format: +994, +7, +1, etc."}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50">
+            <input
+              type="checkbox"
+              id="whatsapp-auto-notify"
+              checked={whatsappForm.whatsappAutoNotify}
+              onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappAutoNotify: e.target.checked }))}
+              className="rounded"
+              data-testid="checkbox-whatsapp-auto-notify"
+            />
+            <label htmlFor="whatsapp-auto-notify" className="text-xs cursor-pointer">
+              {language === "az" ? "Yeni lidlər avtomatik bildiriş göndərilsin" : language === "ru" ? "Автоматически уведомлять о новых лидах" : "Auto-notify on new leads"}
+            </label>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={handleWhatsappSave}
+              disabled={whatsappSaving}
+              className="flex-1"
+              data-testid="button-whatsapp-save"
+            >
+              {whatsappSaving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
+              {language === "az" ? "Yadda saxla" : language === "ru" ? "Сохранить" : "Save"}
+            </Button>
+            {whatsappConfigured && (
+              <Button
+                variant="outline"
+                onClick={handleWhatsappTest}
+                disabled={whatsappTesting}
+                data-testid="button-whatsapp-test"
+              >
+                {whatsappTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                Test
+              </Button>
+            )}
+          </div>
+
+          <div className="bg-green-500/10 border border-green-500/20 rounded-md p-2.5 text-[10px]">
+            <p className="font-medium text-green-600 dark:text-green-400 mb-1">
+              {language === "az" ? "Necə işləyir?" : language === "ru" ? "Как это работает?" : "How it works?"}
+            </p>
+            <p className="text-muted-foreground">
+              {language === "az"
+                ? "AI müştəridən əlaqə məlumatlarını aşkar etdikdə (telefon, email), WhatsApp-a bildiriş göndərilir. Hər lid üçün yalnız bir dəfə göndərilir."
+                : language === "ru"
+                ? "Когда AI обнаруживает контактные данные клиента (телефон, email), отправляется уведомление в WhatsApp. Отправляется только один раз для каждого лида."
+                : "When the AI detects contact info from a customer (phone, email), a WhatsApp notification is sent. Only sent once per lead."}
+            </p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   if (profileReady && showWidgetGuide && smartProfile) {
     const COLOR_PRESETS = [
       { hex: "#2563EB", label: t.widgetColorDefault },
@@ -2318,6 +2462,35 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
                 >
                   {webhookSending === selectedLead ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
                   {language === "az" ? "Webhook ilə göndər" : language === "ru" ? "Отправить через Webhook" : "Send via Webhook"}
+                </Button>
+              )}
+              {whatsappSettings?.whatsappNumber && !whatsappSentSessions.has(selectedLead) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1.5 text-xs"
+                  disabled={whatsappSending === selectedLead}
+                  onClick={async () => {
+                    setWhatsappSending(selectedLead);
+                    try {
+                      const res = await fetch(`/api/smart-profile/leads/${selectedLead}/send-to-whatsapp`, { method: "POST", credentials: "include" });
+                      const data = await res.json();
+                      if (res.ok && data.success) {
+                        setWhatsappSentSessions(prev => new Set(prev).add(selectedLead));
+                        queryClient.invalidateQueries({ queryKey: ["/api/smart-profile/leads", selectedLead] });
+                        toast({ title: language === "az" ? `${data.extracted?.name || "Lead"} WhatsApp ilə göndərildi` : language === "ru" ? `${data.extracted?.name || "Лид"} отправлен через WhatsApp` : `${data.extracted?.name || "Lead"} sent via WhatsApp` });
+                      } else {
+                        toast({ title: data.message || (language === "az" ? "Göndərmə uğursuz" : language === "ru" ? "Ошибка отправки" : "Send failed"), variant: "destructive" });
+                      }
+                    } catch {
+                      toast({ title: language === "az" ? "Göndərmə uğursuz" : language === "ru" ? "Ошибка отправки" : "Send failed", variant: "destructive" });
+                    }
+                    setWhatsappSending(null);
+                  }}
+                  data-testid="button-send-to-whatsapp"
+                >
+                  {whatsappSending === selectedLead ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
+                  {language === "az" ? "WhatsApp ilə göndər" : language === "ru" ? "Отправить через WhatsApp" : "Send via WhatsApp"}
                 </Button>
               )}
             </div>
@@ -2715,6 +2888,40 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
                 </span>
               </div>
               {webhookSettings?.webhookUrl
+                ? <Badge className="bg-emerald-500 text-white border-transparent text-[10px] shrink-0">
+                    {language === "az" ? "Aktiv" : language === "ru" ? "Активно" : "Active"}
+                  </Badge>
+                : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+            </div>
+          </Button>
+
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setShowWhatsappSettings(true);
+              if (whatsappSettings) {
+                setWhatsappForm({
+                  whatsappNumber: whatsappSettings.whatsappNumber || "",
+                  whatsappAutoNotify: whatsappSettings.whatsappAutoNotify || false,
+                });
+              }
+            }}
+            className="w-full h-auto p-0 justify-start font-normal"
+            data-testid="button-whatsapp-settings"
+          >
+            <div className="flex items-center gap-3 p-3 rounded-md bg-green-500/10 border border-green-500/20 w-full">
+              <div className="w-10 h-10 rounded-md bg-green-500/20 flex items-center justify-center shrink-0">
+                <MessageCircle className="w-5 h-5 text-green-600" />
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <span className="text-sm font-medium">WhatsApp</span>
+                <span className="text-xs text-muted-foreground block">
+                  {whatsappSettings?.whatsappNumber
+                    ? (language === "az" ? "Qoşulub" : language === "ru" ? "Подключено" : "Connected")
+                    : (language === "az" ? "Lid bildirişləri" : language === "ru" ? "Уведомления о лидах" : "Lead notifications")}
+                </span>
+              </div>
+              {whatsappSettings?.whatsappNumber
                 ? <Badge className="bg-emerald-500 text-white border-transparent text-[10px] shrink-0">
                     {language === "az" ? "Aktiv" : language === "ru" ? "Активно" : "Active"}
                   </Badge>
