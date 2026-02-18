@@ -333,15 +333,7 @@ async function handleOwnerReply(profile: any, body: string) {
 }
 
 async function handleCustomerMessage(waNumber: string, body: string, profileId?: string) {
-  let conversation = await db.execute(sql`
-    SELECT * FROM whatsapp_conversations
-    WHERE wa_number = ${waNumber}
-    ORDER BY last_inbound_at DESC NULLS LAST
-    LIMIT 1
-  `);
-
-  let convRow = conversation.rows[0] as any;
-  let targetProfileId = profileId || convRow?.profile_id;
+  let targetProfileId = profileId;
 
   if (!targetProfileId) {
     const slugMatch = body.trim().match(/^(?:Hi|Hello|Hey|Salam)\s+(\S+)/i);
@@ -358,15 +350,32 @@ async function handleCustomerMessage(waNumber: string, body: string, profileId?:
   }
 
   if (!targetProfileId) {
-    const anyProfile = await db.execute(sql`
-      SELECT id FROM smart_profiles
-      WHERE whatsapp_chat_enabled = true AND is_active = true
+    const existingConv = await db.execute(sql`
+      SELECT profile_id FROM whatsapp_conversations
+      WHERE wa_number = ${waNumber}
+      ORDER BY last_inbound_at DESC NULLS LAST
       LIMIT 1
     `);
-    if (!anyProfile.rows.length) {
-      return { handled: false, reason: "no-profile-found" };
+    if (existingConv.rows.length) {
+      targetProfileId = (existingConv.rows[0] as any).profile_id;
+      console.log(`[whatsapp] Resuming existing conversation for ${waNumber}`);
     }
-    targetProfileId = (anyProfile.rows[0] as any).id;
+  }
+
+  if (!targetProfileId) {
+    const masterProfile = await db.execute(sql`
+      SELECT id FROM smart_profiles
+      WHERE is_master = true AND whatsapp_chat_enabled = true AND is_active = true
+      LIMIT 1
+    `);
+    if (masterProfile.rows.length) {
+      targetProfileId = (masterProfile.rows[0] as any).id;
+      console.log(`[whatsapp] Routed to master profile as fallback`);
+    }
+  }
+
+  if (!targetProfileId) {
+    return { handled: false, reason: "no-profile-found" };
   }
 
   const profile = await db.execute(sql`
@@ -382,11 +391,19 @@ async function handleCustomerMessage(waNumber: string, body: string, profileId?:
   const p = profile.rows[0] as any;
   let sessionId: string;
 
-  if (convRow && convRow.profile_id === targetProfileId) {
-    sessionId = convRow.session_id;
+  const existingSession = await db.execute(sql`
+    SELECT id, session_id FROM whatsapp_conversations
+    WHERE wa_number = ${waNumber} AND profile_id = ${targetProfileId}
+    ORDER BY last_inbound_at DESC NULLS LAST
+    LIMIT 1
+  `);
+
+  if (existingSession.rows.length) {
+    const conv = existingSession.rows[0] as any;
+    sessionId = conv.session_id;
     await db.execute(sql`
       UPDATE whatsapp_conversations SET last_inbound_at = NOW()
-      WHERE id = ${convRow.id}
+      WHERE id = ${conv.id}
     `);
   } else {
     sessionId = `wa-${waNumber}-${Date.now()}`;
@@ -448,7 +465,7 @@ Your Role:
       ],
       config: {
         systemInstruction: systemPrompt,
-        maxOutputTokens: 250,
+        maxOutputTokens: 500,
       },
     });
 
