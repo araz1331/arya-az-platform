@@ -2008,7 +2008,7 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
   }
 
   if (profileReady && showWhatsappSettings) {
-    const whatsappConfigured = !!whatsappSettings?.whatsappNumber;
+    const whatsappConfigured = !!whatsappSettings?.whatsappNumber && !!whatsappForm.whatsappNumber;
 
     const handleWhatsappSave = async () => {
       setWhatsappSaving(true);
@@ -2038,6 +2038,8 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
       setWhatsappTesting(false);
     };
 
+    const waConnectLink = `https://wa.me/12792030206?text=Hi%20${smartProfile?.slug || ""}`;
+
     return (
       <Card className="flex flex-col h-[calc(100svh-12rem)] sm:h-[500px] min-h-[350px] max-h-[600px] overflow-visible">
         <div className="flex items-center gap-2 px-3 sm:px-4 pt-3 pb-2 border-b">
@@ -2053,176 +2055,247 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
           </Badge>}
         </div>
         <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 space-y-3">
-          <p className="text-xs text-muted-foreground">
-            {language === "az" ? "Yeni lid gələndə WhatsApp-a bildiriş göndərilsin. Nömrənizi beynəlxalq formatda daxil edin."
-              : language === "ru" ? "Получайте уведомления в WhatsApp о новых лидах. Введите номер в международном формате."
-              : "Get notified on WhatsApp when a new lead comes in. Enter your number in international format."}
-          </p>
 
-          <div className="space-y-2">
-            <label className="text-xs font-medium">
-              {language === "az" ? "WhatsApp nömrəniz" : language === "ru" ? "Ваш номер WhatsApp" : "Your WhatsApp number"}
-            </label>
-            <Input
-              placeholder="+994501234567"
-              value={whatsappForm.whatsappNumber}
-              onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappNumber: e.target.value }))}
-              data-testid="input-whatsapp-number"
-            />
-            <p className="text-[10px] text-muted-foreground">
-              {language === "az" ? "Beynəlxalq format: +994, +7, +1 və s." : language === "ru" ? "Международный формат: +994, +7, +1 и т.д." : "International format: +994, +7, +1, etc."}
-            </p>
-          </div>
-
-          <div className="space-y-1.5">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-              {language === "az" ? "Bildirişlər" : language === "ru" ? "Уведомления" : "Notifications"}
-            </p>
-            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
-              <input type="checkbox" id="wa-auto-notify" checked={whatsappForm.whatsappAutoNotify}
-                onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappAutoNotify: e.target.checked }))}
-                className="rounded" data-testid="checkbox-whatsapp-auto-notify" />
-              <label htmlFor="wa-auto-notify" className="text-xs cursor-pointer">
-                {language === "az" ? "Yeni lidlər haqqında bildiriş" : language === "ru" ? "Уведомление о новых лидах" : "New lead notifications"}
-              </label>
-            </div>
-            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
-              <input type="checkbox" id="wa-missed-alerts" checked={whatsappForm.whatsappMissedAlertsEnabled}
-                onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappMissedAlertsEnabled: e.target.checked }))}
-                className="rounded" data-testid="checkbox-whatsapp-missed-alerts" />
-              <label htmlFor="wa-missed-alerts" className="text-xs cursor-pointer">
-                {language === "az" ? "AI cavab verə bilmədikdə xəbərdarlıq" : language === "ru" ? "Оповещение, когда AI не может ответить" : "Alert when AI can't answer"}
-              </label>
-            </div>
-            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
-              <input type="checkbox" id="wa-appointment" checked={whatsappForm.whatsappAppointmentConfirm}
-                onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappAppointmentConfirm: e.target.checked }))}
-                className="rounded" data-testid="checkbox-whatsapp-appointment" />
-              <label htmlFor="wa-appointment" className="text-xs cursor-pointer">
-                {language === "az" ? "Randevu təsdiqini müştəriyə göndər" : language === "ru" ? "Отправить подтверждение записи клиенту" : "Send appointment confirmation to customer"}
-              </label>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-              {language === "az" ? "Hesabatlar" : language === "ru" ? "Отчёты" : "Reports"}
-            </p>
-            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
-              <input type="checkbox" id="wa-summary" checked={whatsappForm.whatsappSummaryEnabled}
-                onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappSummaryEnabled: e.target.checked }))}
-                className="rounded" data-testid="checkbox-whatsapp-summary" />
-              <label htmlFor="wa-summary" className="text-xs cursor-pointer">
-                {language === "az" ? "Gündəlik/həftəlik hesabat" : language === "ru" ? "Ежедневный/еженедельный отчёт" : "Daily/weekly summary report"}
-              </label>
-            </div>
-            {whatsappForm.whatsappSummaryEnabled && (
-              <div className="flex gap-2 pl-6">
-                <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                  <input type="radio" name="wa-freq" value="daily" checked={whatsappForm.whatsappSummaryFrequency === "daily"}
-                    onChange={() => setWhatsappForm(prev => ({ ...prev, whatsappSummaryFrequency: "daily" }))}
-                    data-testid="radio-whatsapp-daily" />
-                  {language === "az" ? "Gündəlik" : language === "ru" ? "Ежедневно" : "Daily"}
-                </label>
-                <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                  <input type="radio" name="wa-freq" value="weekly" checked={whatsappForm.whatsappSummaryFrequency === "weekly"}
-                    onChange={() => setWhatsappForm(prev => ({ ...prev, whatsappSummaryFrequency: "weekly" }))}
-                    data-testid="radio-whatsapp-weekly" />
-                  {language === "az" ? "Həftəlik" : language === "ru" ? "Еженедельно" : "Weekly"}
-                </label>
+          {!whatsappConfigured ? (
+            <>
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-md p-3 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-bold shrink-0">1</div>
+                  <p className="text-xs font-medium">
+                    {language === "az" ? "WhatsApp nömrənizi daxil edin" : language === "ru" ? "Введите ваш номер WhatsApp" : "Enter your WhatsApp number"}
+                  </p>
+                </div>
+                <Input
+                  placeholder="+994501234567"
+                  value={whatsappForm.whatsappNumber}
+                  onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappNumber: e.target.value }))}
+                  data-testid="input-whatsapp-number"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  {language === "az" ? "Beynəlxalq format: +994, +7, +1 və s." : language === "ru" ? "Международный формат: +994, +7, +1 и т.д." : "International format: +994, +7, +1, etc."}
+                </p>
               </div>
-            )}
-          </div>
 
-          <div className="space-y-1.5">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-              {language === "az" ? "Avtomatlaşdırma" : language === "ru" ? "Автоматизация" : "Automation"}
-            </p>
-            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
-              <input type="checkbox" id="wa-followup" checked={whatsappForm.whatsappFollowupEnabled}
-                onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappFollowupEnabled: e.target.checked }))}
-                className="rounded" data-testid="checkbox-whatsapp-followup" />
-              <label htmlFor="wa-followup" className="text-xs cursor-pointer">
-                {language === "az" ? "Cavabsız lidlər üçün xatırlatma" : language === "ru" ? "Напоминание о неотвеченных лидах" : "Follow-up reminder for unconverted leads"}
-              </label>
-            </div>
-            {whatsappForm.whatsappFollowupEnabled && (
-              <div className="flex items-center gap-2 pl-6">
-                <label className="text-xs text-muted-foreground">
-                  {language === "az" ? "Sonra:" : language === "ru" ? "Через:" : "After:"}
-                </label>
-                <select value={whatsappForm.whatsappFollowupHours}
-                  onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappFollowupHours: parseInt(e.target.value) }))}
-                  className="text-xs border rounded px-2 py-1 bg-background"
-                  data-testid="select-whatsapp-followup-hours">
-                  <option value={6}>6h</option>
-                  <option value={12}>12h</option>
-                  <option value={24}>24h</option>
-                  <option value={48}>48h</option>
-                  <option value={72}>72h</option>
-                </select>
-              </div>
-            )}
-            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
-              <input type="checkbox" id="wa-chat-channel" checked={whatsappForm.whatsappChatEnabled}
-                onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappChatEnabled: e.target.checked }))}
-                className="rounded" data-testid="checkbox-whatsapp-chat-channel" />
-              <label htmlFor="wa-chat-channel" className="text-xs cursor-pointer">
-                {language === "az" ? "WhatsApp-dan AI ilə söhbət (müştərilər birbaşa yaza bilər)" : language === "ru" ? "Чат с AI через WhatsApp (клиенты пишут напрямую)" : "WhatsApp AI chat channel (customers message directly)"}
-              </label>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Button onClick={handleWhatsappSave} disabled={whatsappSaving} className="flex-1" data-testid="button-whatsapp-save">
-              {whatsappSaving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
-              {language === "az" ? "Yadda saxla" : language === "ru" ? "Сохранить" : "Save"}
-            </Button>
-            {whatsappConfigured && (
-              <Button variant="outline" onClick={handleWhatsappTest} disabled={whatsappTesting} data-testid="button-whatsapp-test">
-                {whatsappTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                Test
-              </Button>
-            )}
-          </div>
-
-          {whatsappForm.whatsappChatEnabled && (
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-md p-2.5 text-[10px] space-y-1.5">
-              <p className="font-medium text-blue-600 dark:text-blue-400">
-                {language === "az" ? "WhatsApp AI Kanal aktiv" : language === "ru" ? "WhatsApp AI канал активен" : "WhatsApp AI Channel active"}
-              </p>
-              <p className="text-muted-foreground">
-                {language === "az"
-                  ? "Müştəriləriniz aşağıdakı linkə klikləyərək WhatsApp-dan AI ilə söhbət edə bilərlər. Bu linki saytınızda və ya sosial şəbəkələrdə paylaşın."
-                  : language === "ru"
-                  ? "Ваши клиенты могут общаться с AI через WhatsApp по ссылке ниже. Поделитесь этой ссылкой на сайте или в соцсетях."
-                  : "Your customers can chat with your AI via WhatsApp using the link below. Share it on your website or social media."}
-              </p>
-              <div className="flex items-center gap-1.5">
-                <code className="text-[9px] bg-muted px-1.5 py-0.5 rounded break-all select-all flex-1" data-testid="text-whatsapp-link">
-                  https://wa.me/12792030206?text=Hi%20{smartProfile?.slug || ""}
-                </code>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6 shrink-0"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`https://wa.me/12792030206?text=Hi%20${smartProfile?.slug || ""}`);
-                    toast({ title: language === "az" ? "Link kopyalandı" : language === "ru" ? "Ссылка скопирована" : "Link copied" });
-                  }}
-                  data-testid="button-copy-whatsapp-link"
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-md p-3 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-bold shrink-0">2</div>
+                  <p className="text-xs font-medium">
+                    {language === "az" ? "WhatsApp-ı qoşun" : language === "ru" ? "Подключите WhatsApp" : "Connect your WhatsApp"}
+                  </p>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  {language === "az"
+                    ? "Aşağıdakı düyməyə basın — WhatsApp açılacaq. \"Göndər\" düyməsinə basaraq Arya AI ilə bağlantınızı aktivləşdirin."
+                    : language === "ru"
+                    ? "Нажмите кнопку ниже — откроется WhatsApp. Нажмите «Отправить», чтобы активировать связь с Arya AI."
+                    : "Tap the button below — WhatsApp will open. Press \"Send\" to activate your connection with Arya AI."}
+                </p>
+                <a
+                  href={waConnectLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 w-full rounded-md bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium py-2.5 px-4 transition-colors"
+                  data-testid="link-whatsapp-connect"
                 >
-                  <Copy className="w-3 h-3" />
+                  <MessageCircle className="w-4 h-4" />
+                  {language === "az" ? "WhatsApp-da açın və göndərin" : language === "ru" ? "Открыть в WhatsApp и отправить" : "Open in WhatsApp & Send"}
+                </a>
+              </div>
+
+              <div className="bg-muted/50 rounded-md p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground text-xs font-bold shrink-0 border">3</div>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {language === "az" ? "Yadda saxla" : language === "ru" ? "Сохраните настройки" : "Save settings"}
+                  </p>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  {language === "az"
+                    ? "WhatsApp-da mesaj göndərdikdən sonra bu düyməyə basın."
+                    : language === "ru"
+                    ? "После отправки сообщения в WhatsApp нажмите эту кнопку."
+                    : "After sending the message in WhatsApp, click this button."}
+                </p>
+              </div>
+
+              <Button onClick={handleWhatsappSave} disabled={whatsappSaving || !whatsappForm.whatsappNumber} className="w-full" data-testid="button-whatsapp-save">
+                {whatsappSaving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
+                {language === "az" ? "Yadda saxla və qoşul" : language === "ru" ? "Сохранить и подключить" : "Save & Connect"}
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-md p-2.5 flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                    {language === "az" ? "WhatsApp qoşulub" : language === "ru" ? "WhatsApp подключён" : "WhatsApp connected"}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground truncate">{whatsappForm.whatsappNumber}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-[10px] shrink-0"
+                  onClick={() => {
+                    setWhatsappForm(prev => ({ ...prev, whatsappNumber: "" }));
+                    whatsappFormSynced.current = false;
+                  }}
+                  data-testid="button-whatsapp-change-number"
+                >
+                  {language === "az" ? "Dəyiş" : language === "ru" ? "Изменить" : "Change"}
                 </Button>
               </div>
-              <p className="text-muted-foreground">
-                {language === "az"
-                  ? "Müştəri bu nömrəyə yazdıqda, AI sizin bilik bazanıza əsasən avtomatik cavab verəcək."
-                  : language === "ru"
-                  ? "Когда клиент напишет на этот номер, AI автоматически ответит на основе вашей базы знаний."
-                  : "When a customer messages this number, the AI will automatically respond based on your knowledge base."}
-              </p>
-            </div>
+
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  {language === "az" ? "Bildirişlər" : language === "ru" ? "Уведомления" : "Notifications"}
+                </p>
+                <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+                  <input type="checkbox" id="wa-auto-notify" checked={whatsappForm.whatsappAutoNotify}
+                    onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappAutoNotify: e.target.checked }))}
+                    className="rounded" data-testid="checkbox-whatsapp-auto-notify" />
+                  <label htmlFor="wa-auto-notify" className="text-xs cursor-pointer">
+                    {language === "az" ? "Yeni lidlər haqqında bildiriş" : language === "ru" ? "Уведомление о новых лидах" : "New lead notifications"}
+                  </label>
+                </div>
+                <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+                  <input type="checkbox" id="wa-missed-alerts" checked={whatsappForm.whatsappMissedAlertsEnabled}
+                    onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappMissedAlertsEnabled: e.target.checked }))}
+                    className="rounded" data-testid="checkbox-whatsapp-missed-alerts" />
+                  <label htmlFor="wa-missed-alerts" className="text-xs cursor-pointer">
+                    {language === "az" ? "AI cavab verə bilmədikdə xəbərdarlıq" : language === "ru" ? "Оповещение, когда AI не может ответить" : "Alert when AI can't answer"}
+                  </label>
+                </div>
+                <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+                  <input type="checkbox" id="wa-appointment" checked={whatsappForm.whatsappAppointmentConfirm}
+                    onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappAppointmentConfirm: e.target.checked }))}
+                    className="rounded" data-testid="checkbox-whatsapp-appointment" />
+                  <label htmlFor="wa-appointment" className="text-xs cursor-pointer">
+                    {language === "az" ? "Randevu təsdiqini müştəriyə göndər" : language === "ru" ? "Отправить подтверждение записи клиенту" : "Send appointment confirmation to customer"}
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  {language === "az" ? "Hesabatlar" : language === "ru" ? "Отчёты" : "Reports"}
+                </p>
+                <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+                  <input type="checkbox" id="wa-summary" checked={whatsappForm.whatsappSummaryEnabled}
+                    onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappSummaryEnabled: e.target.checked }))}
+                    className="rounded" data-testid="checkbox-whatsapp-summary" />
+                  <label htmlFor="wa-summary" className="text-xs cursor-pointer">
+                    {language === "az" ? "Gündəlik/həftəlik hesabat" : language === "ru" ? "Ежедневный/еженедельный отчёт" : "Daily/weekly summary report"}
+                  </label>
+                </div>
+                {whatsappForm.whatsappSummaryEnabled && (
+                  <div className="flex gap-2 pl-6">
+                    <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                      <input type="radio" name="wa-freq" value="daily" checked={whatsappForm.whatsappSummaryFrequency === "daily"}
+                        onChange={() => setWhatsappForm(prev => ({ ...prev, whatsappSummaryFrequency: "daily" }))}
+                        data-testid="radio-whatsapp-daily" />
+                      {language === "az" ? "Gündəlik" : language === "ru" ? "Ежедневно" : "Daily"}
+                    </label>
+                    <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                      <input type="radio" name="wa-freq" value="weekly" checked={whatsappForm.whatsappSummaryFrequency === "weekly"}
+                        onChange={() => setWhatsappForm(prev => ({ ...prev, whatsappSummaryFrequency: "weekly" }))}
+                        data-testid="radio-whatsapp-weekly" />
+                      {language === "az" ? "Həftəlik" : language === "ru" ? "Еженедельно" : "Weekly"}
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  {language === "az" ? "Avtomatlaşdırma" : language === "ru" ? "Автоматизация" : "Automation"}
+                </p>
+                <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+                  <input type="checkbox" id="wa-followup" checked={whatsappForm.whatsappFollowupEnabled}
+                    onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappFollowupEnabled: e.target.checked }))}
+                    className="rounded" data-testid="checkbox-whatsapp-followup" />
+                  <label htmlFor="wa-followup" className="text-xs cursor-pointer">
+                    {language === "az" ? "Cavabsız lidlər üçün xatırlatma" : language === "ru" ? "Напоминание о неотвеченных лидах" : "Follow-up reminder for unconverted leads"}
+                  </label>
+                </div>
+                {whatsappForm.whatsappFollowupEnabled && (
+                  <div className="flex items-center gap-2 pl-6">
+                    <label className="text-xs text-muted-foreground">
+                      {language === "az" ? "Sonra:" : language === "ru" ? "Через:" : "After:"}
+                    </label>
+                    <select value={whatsappForm.whatsappFollowupHours}
+                      onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappFollowupHours: parseInt(e.target.value) }))}
+                      className="text-xs border rounded px-2 py-1 bg-background"
+                      data-testid="select-whatsapp-followup-hours">
+                      <option value={6}>6h</option>
+                      <option value={12}>12h</option>
+                      <option value={24}>24h</option>
+                      <option value={48}>48h</option>
+                      <option value={72}>72h</option>
+                    </select>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+                  <input type="checkbox" id="wa-chat-channel" checked={whatsappForm.whatsappChatEnabled}
+                    onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappChatEnabled: e.target.checked }))}
+                    className="rounded" data-testid="checkbox-whatsapp-chat-channel" />
+                  <label htmlFor="wa-chat-channel" className="text-xs cursor-pointer">
+                    {language === "az" ? "WhatsApp-dan AI ilə söhbət (müştərilər birbaşa yaza bilər)" : language === "ru" ? "Чат с AI через WhatsApp (клиенты пишут напрямую)" : "WhatsApp AI chat channel (customers message directly)"}
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button onClick={handleWhatsappSave} disabled={whatsappSaving} className="flex-1" data-testid="button-whatsapp-save">
+                  {whatsappSaving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
+                  {language === "az" ? "Yadda saxla" : language === "ru" ? "Сохранить" : "Save"}
+                </Button>
+                <Button variant="outline" onClick={handleWhatsappTest} disabled={whatsappTesting} data-testid="button-whatsapp-test">
+                  {whatsappTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                  Test
+                </Button>
+              </div>
+
+              {whatsappForm.whatsappChatEnabled && (
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-md p-2.5 text-[10px] space-y-1.5">
+                  <p className="font-medium text-blue-600 dark:text-blue-400">
+                    {language === "az" ? "WhatsApp AI Kanal aktiv" : language === "ru" ? "WhatsApp AI канал активен" : "WhatsApp AI Channel active"}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {language === "az"
+                      ? "Müştəriləriniz aşağıdakı linkə klikləyərək WhatsApp-dan AI ilə söhbət edə bilərlər. Bu linki saytınızda və ya sosial şəbəkələrdə paylaşın."
+                      : language === "ru"
+                      ? "Ваши клиенты могут общаться с AI через WhatsApp по ссылке ниже. Поделитесь этой ссылкой на сайте или в соцсетях."
+                      : "Your customers can chat with your AI via WhatsApp using the link below. Share it on your website or social media."}
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <code className="text-[9px] bg-muted px-1.5 py-0.5 rounded break-all select-all flex-1" data-testid="text-whatsapp-link">
+                      {waConnectLink}
+                    </code>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 shrink-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText(waConnectLink);
+                        toast({ title: language === "az" ? "Link kopyalandı" : language === "ru" ? "Ссылка скопирована" : "Link copied" });
+                      }}
+                      data-testid="button-copy-whatsapp-link"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  <p className="text-muted-foreground">
+                    {language === "az"
+                      ? "Müştəri bu nömrəyə yazdıqda, AI sizin bilik bazanıza əsasən avtomatik cavab verəcək."
+                      : language === "ru"
+                      ? "Когда клиент напишет на этот номер, AI автоматически ответит на основе вашей базы знаний."
+                      : "When a customer messages this number, the AI will automatically respond based on your knowledge base."}
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </Card>
