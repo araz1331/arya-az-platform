@@ -14,6 +14,9 @@ export const profiles = pgTable("profiles", {
   recordingsCount: integer("recordings_count").notNull().default(0),
   milestone1Claimed: boolean("milestone1_claimed").notNull().default(false),
   milestone2Claimed: boolean("milestone2_claimed").notNull().default(false),
+  whatsappNumber: text("whatsapp_number"),
+  whatsappReminderEnabled: boolean("whatsapp_reminder_enabled").notNull().default(false),
+  whatsappReminderLastSent: timestamp("whatsapp_reminder_last_sent"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -103,8 +106,34 @@ export const smartProfiles = pgTable("smart_profiles", {
   webhookAutoSend: boolean("webhook_auto_send").notNull().default(false),
   whatsappNumber: text("whatsapp_number"),
   whatsappAutoNotify: boolean("whatsapp_auto_notify").notNull().default(false),
+  whatsappSummaryEnabled: boolean("whatsapp_summary_enabled").notNull().default(false),
+  whatsappSummaryFrequency: text("whatsapp_summary_frequency").notNull().default("daily"),
+  whatsappSummaryLastSent: timestamp("whatsapp_summary_last_sent"),
+  whatsappMissedAlertsEnabled: boolean("whatsapp_missed_alerts_enabled").notNull().default(false),
+  whatsappChatEnabled: boolean("whatsapp_chat_enabled").notNull().default(false),
+  whatsappFollowupEnabled: boolean("whatsapp_followup_enabled").notNull().default(false),
+  whatsappFollowupHours: integer("whatsapp_followup_hours").notNull().default(24),
+  whatsappAppointmentConfirm: boolean("whatsapp_appointment_confirm").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const whatsappConversations = pgTable("whatsapp_conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  profileId: varchar("profile_id").notNull(),
+  waNumber: text("wa_number").notNull(),
+  sessionId: text("session_id").notNull(),
+  lastInboundAt: timestamp("last_inbound_at"),
+  lastOutboundAt: timestamp("last_outbound_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertWhatsappConversationSchema = createInsertSchema(whatsappConversations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertWhatsappConversation = z.infer<typeof insertWhatsappConversationSchema>;
+export type WhatsappConversation = typeof whatsappConversations.$inferSelect;
 
 export const ownerChatMessages = pgTable("owner_chat_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

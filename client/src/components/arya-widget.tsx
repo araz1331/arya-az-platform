@@ -700,7 +700,13 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
   const [webhookSentSessions, setWebhookSentSessions] = useState<Set<string>>(new Set());
   const webhookFormSynced = useRef(false);
   const [showWhatsappSettings, setShowWhatsappSettings] = useState(false);
-  const [whatsappForm, setWhatsappForm] = useState({ whatsappNumber: "", whatsappAutoNotify: false });
+  const [whatsappForm, setWhatsappForm] = useState({
+    whatsappNumber: "", whatsappAutoNotify: false,
+    whatsappSummaryEnabled: false, whatsappSummaryFrequency: "daily",
+    whatsappMissedAlertsEnabled: false, whatsappChatEnabled: false,
+    whatsappFollowupEnabled: false, whatsappFollowupHours: 24,
+    whatsappAppointmentConfirm: false,
+  });
   const [whatsappSaving, setWhatsappSaving] = useState(false);
   const [whatsappTesting, setWhatsappTesting] = useState(false);
   const [whatsappSending, setWhatsappSending] = useState<string | null>(null);
@@ -742,7 +748,13 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     enabled: !!smartProfile?.id,
   });
 
-  const { data: whatsappSettings } = useQuery<{ whatsappNumber: string; whatsappAutoNotify: boolean }>({
+  const { data: whatsappSettings } = useQuery<{
+    whatsappNumber: string; whatsappAutoNotify: boolean;
+    whatsappSummaryEnabled: boolean; whatsappSummaryFrequency: string;
+    whatsappMissedAlertsEnabled: boolean; whatsappChatEnabled: boolean;
+    whatsappFollowupEnabled: boolean; whatsappFollowupHours: number;
+    whatsappAppointmentConfirm: boolean;
+  }>({
     queryKey: ["/api/smart-profile/whatsapp-settings"],
     enabled: !!smartProfile?.id,
   });
@@ -777,6 +789,13 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
       setWhatsappForm({
         whatsappNumber: whatsappSettings.whatsappNumber || "",
         whatsappAutoNotify: whatsappSettings.whatsappAutoNotify || false,
+        whatsappSummaryEnabled: whatsappSettings.whatsappSummaryEnabled || false,
+        whatsappSummaryFrequency: whatsappSettings.whatsappSummaryFrequency || "daily",
+        whatsappMissedAlertsEnabled: whatsappSettings.whatsappMissedAlertsEnabled || false,
+        whatsappChatEnabled: whatsappSettings.whatsappChatEnabled || false,
+        whatsappFollowupEnabled: whatsappSettings.whatsappFollowupEnabled || false,
+        whatsappFollowupHours: whatsappSettings.whatsappFollowupHours || 24,
+        whatsappAppointmentConfirm: whatsappSettings.whatsappAppointmentConfirm || false,
       });
       whatsappFormSynced.current = true;
     }
@@ -2055,55 +2074,142 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
             </p>
           </div>
 
-          <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50">
-            <input
-              type="checkbox"
-              id="whatsapp-auto-notify"
-              checked={whatsappForm.whatsappAutoNotify}
-              onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappAutoNotify: e.target.checked }))}
-              className="rounded"
-              data-testid="checkbox-whatsapp-auto-notify"
-            />
-            <label htmlFor="whatsapp-auto-notify" className="text-xs cursor-pointer">
-              {language === "az" ? "Yeni lidlər avtomatik bildiriş göndərilsin" : language === "ru" ? "Автоматически уведомлять о новых лидах" : "Auto-notify on new leads"}
-            </label>
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              {language === "az" ? "Bildirişlər" : language === "ru" ? "Уведомления" : "Notifications"}
+            </p>
+            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+              <input type="checkbox" id="wa-auto-notify" checked={whatsappForm.whatsappAutoNotify}
+                onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappAutoNotify: e.target.checked }))}
+                className="rounded" data-testid="checkbox-whatsapp-auto-notify" />
+              <label htmlFor="wa-auto-notify" className="text-xs cursor-pointer">
+                {language === "az" ? "Yeni lidlər haqqında bildiriş" : language === "ru" ? "Уведомление о новых лидах" : "New lead notifications"}
+              </label>
+            </div>
+            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+              <input type="checkbox" id="wa-missed-alerts" checked={whatsappForm.whatsappMissedAlertsEnabled}
+                onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappMissedAlertsEnabled: e.target.checked }))}
+                className="rounded" data-testid="checkbox-whatsapp-missed-alerts" />
+              <label htmlFor="wa-missed-alerts" className="text-xs cursor-pointer">
+                {language === "az" ? "AI cavab verə bilmədikdə xəbərdarlıq" : language === "ru" ? "Оповещение, когда AI не может ответить" : "Alert when AI can't answer"}
+              </label>
+            </div>
+            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+              <input type="checkbox" id="wa-appointment" checked={whatsappForm.whatsappAppointmentConfirm}
+                onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappAppointmentConfirm: e.target.checked }))}
+                className="rounded" data-testid="checkbox-whatsapp-appointment" />
+              <label htmlFor="wa-appointment" className="text-xs cursor-pointer">
+                {language === "az" ? "Randevu təsdiqini müştəriyə göndər" : language === "ru" ? "Отправить подтверждение записи клиенту" : "Send appointment confirmation to customer"}
+              </label>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              {language === "az" ? "Hesabatlar" : language === "ru" ? "Отчёты" : "Reports"}
+            </p>
+            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+              <input type="checkbox" id="wa-summary" checked={whatsappForm.whatsappSummaryEnabled}
+                onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappSummaryEnabled: e.target.checked }))}
+                className="rounded" data-testid="checkbox-whatsapp-summary" />
+              <label htmlFor="wa-summary" className="text-xs cursor-pointer">
+                {language === "az" ? "Gündəlik/həftəlik hesabat" : language === "ru" ? "Ежедневный/еженедельный отчёт" : "Daily/weekly summary report"}
+              </label>
+            </div>
+            {whatsappForm.whatsappSummaryEnabled && (
+              <div className="flex gap-2 pl-6">
+                <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                  <input type="radio" name="wa-freq" value="daily" checked={whatsappForm.whatsappSummaryFrequency === "daily"}
+                    onChange={() => setWhatsappForm(prev => ({ ...prev, whatsappSummaryFrequency: "daily" }))}
+                    data-testid="radio-whatsapp-daily" />
+                  {language === "az" ? "Gündəlik" : language === "ru" ? "Ежедневно" : "Daily"}
+                </label>
+                <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                  <input type="radio" name="wa-freq" value="weekly" checked={whatsappForm.whatsappSummaryFrequency === "weekly"}
+                    onChange={() => setWhatsappForm(prev => ({ ...prev, whatsappSummaryFrequency: "weekly" }))}
+                    data-testid="radio-whatsapp-weekly" />
+                  {language === "az" ? "Həftəlik" : language === "ru" ? "Еженедельно" : "Weekly"}
+                </label>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              {language === "az" ? "Avtomatlaşdırma" : language === "ru" ? "Автоматизация" : "Automation"}
+            </p>
+            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+              <input type="checkbox" id="wa-followup" checked={whatsappForm.whatsappFollowupEnabled}
+                onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappFollowupEnabled: e.target.checked }))}
+                className="rounded" data-testid="checkbox-whatsapp-followup" />
+              <label htmlFor="wa-followup" className="text-xs cursor-pointer">
+                {language === "az" ? "Cavabsız lidlər üçün xatırlatma" : language === "ru" ? "Напоминание о неотвеченных лидах" : "Follow-up reminder for unconverted leads"}
+              </label>
+            </div>
+            {whatsappForm.whatsappFollowupEnabled && (
+              <div className="flex items-center gap-2 pl-6">
+                <label className="text-xs text-muted-foreground">
+                  {language === "az" ? "Sonra:" : language === "ru" ? "Через:" : "After:"}
+                </label>
+                <select value={whatsappForm.whatsappFollowupHours}
+                  onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappFollowupHours: parseInt(e.target.value) }))}
+                  className="text-xs border rounded px-2 py-1 bg-background"
+                  data-testid="select-whatsapp-followup-hours">
+                  <option value={6}>6h</option>
+                  <option value={12}>12h</option>
+                  <option value={24}>24h</option>
+                  <option value={48}>48h</option>
+                  <option value={72}>72h</option>
+                </select>
+              </div>
+            )}
+            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+              <input type="checkbox" id="wa-chat-channel" checked={whatsappForm.whatsappChatEnabled}
+                onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappChatEnabled: e.target.checked }))}
+                className="rounded" data-testid="checkbox-whatsapp-chat-channel" />
+              <label htmlFor="wa-chat-channel" className="text-xs cursor-pointer">
+                {language === "az" ? "WhatsApp-dan AI ilə söhbət (müştərilər birbaşa yaza bilər)" : language === "ru" ? "Чат с AI через WhatsApp (клиенты пишут напрямую)" : "WhatsApp AI chat channel (customers message directly)"}
+              </label>
+            </div>
           </div>
 
           <div className="flex gap-2">
-            <Button
-              onClick={handleWhatsappSave}
-              disabled={whatsappSaving}
-              className="flex-1"
-              data-testid="button-whatsapp-save"
-            >
+            <Button onClick={handleWhatsappSave} disabled={whatsappSaving} className="flex-1" data-testid="button-whatsapp-save">
               {whatsappSaving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
               {language === "az" ? "Yadda saxla" : language === "ru" ? "Сохранить" : "Save"}
             </Button>
             {whatsappConfigured && (
-              <Button
-                variant="outline"
-                onClick={handleWhatsappTest}
-                disabled={whatsappTesting}
-                data-testid="button-whatsapp-test"
-              >
+              <Button variant="outline" onClick={handleWhatsappTest} disabled={whatsappTesting} data-testid="button-whatsapp-test">
                 {whatsappTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
                 Test
               </Button>
             )}
           </div>
 
-          <div className="bg-green-500/10 border border-green-500/20 rounded-md p-2.5 text-[10px]">
-            <p className="font-medium text-green-600 dark:text-green-400 mb-1">
-              {language === "az" ? "Necə işləyir?" : language === "ru" ? "Как это работает?" : "How it works?"}
-            </p>
-            <p className="text-muted-foreground">
-              {language === "az"
-                ? "AI müştəridən əlaqə məlumatlarını aşkar etdikdə (telefon, email), WhatsApp-a bildiriş göndərilir. Hər lid üçün yalnız bir dəfə göndərilir."
-                : language === "ru"
-                ? "Когда AI обнаруживает контактные данные клиента (телефон, email), отправляется уведомление в WhatsApp. Отправляется только один раз для каждого лида."
-                : "When the AI detects contact info from a customer (phone, email), a WhatsApp notification is sent. Only sent once per lead."}
-            </p>
-          </div>
+          {whatsappForm.whatsappChatEnabled && (
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-md p-2.5 text-[10px]">
+              <p className="font-medium text-blue-600 dark:text-blue-400 mb-1">
+                {language === "az" ? "WhatsApp Kanal Quraşdırması" : language === "ru" ? "Настройка канала WhatsApp" : "WhatsApp Channel Setup"}
+              </p>
+              <p className="text-muted-foreground mb-1">
+                {language === "az"
+                  ? "Twilio konsolunda webhook URL-ni qeyd edin:"
+                  : language === "ru"
+                  ? "Укажите webhook URL в консоли Twilio:"
+                  : "Set the webhook URL in your Twilio console:"}
+              </p>
+              <code className="text-[9px] bg-muted px-1.5 py-0.5 rounded break-all select-all" data-testid="text-webhook-url">
+                {window.location.origin}/api/whatsapp/webhook
+              </code>
+              <p className="text-muted-foreground mt-1">
+                {language === "az"
+                  ? "Müştərilər sizin Twilio WhatsApp nömrəsinə mesaj yazdıqda AI cavab verəcək."
+                  : language === "ru"
+                  ? "Когда клиенты пишут на ваш номер Twilio WhatsApp, AI будет отвечать."
+                  : "When customers message your Twilio WhatsApp number, the AI will respond."}
+              </p>
+            </div>
+          )}
         </div>
       </Card>
     );
@@ -2903,6 +3009,13 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
                 setWhatsappForm({
                   whatsappNumber: whatsappSettings.whatsappNumber || "",
                   whatsappAutoNotify: whatsappSettings.whatsappAutoNotify || false,
+                  whatsappSummaryEnabled: whatsappSettings.whatsappSummaryEnabled || false,
+                  whatsappSummaryFrequency: whatsappSettings.whatsappSummaryFrequency || "daily",
+                  whatsappMissedAlertsEnabled: whatsappSettings.whatsappMissedAlertsEnabled || false,
+                  whatsappChatEnabled: whatsappSettings.whatsappChatEnabled || false,
+                  whatsappFollowupEnabled: whatsappSettings.whatsappFollowupEnabled || false,
+                  whatsappFollowupHours: whatsappSettings.whatsappFollowupHours || 24,
+                  whatsappAppointmentConfirm: whatsappSettings.whatsappAppointmentConfirm || false,
                 });
               }
             }}
@@ -2918,7 +3031,7 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
                 <span className="text-xs text-muted-foreground block">
                   {whatsappSettings?.whatsappNumber
                     ? (language === "az" ? "Qoşulub" : language === "ru" ? "Подключено" : "Connected")
-                    : (language === "az" ? "Lid bildirişləri" : language === "ru" ? "Уведомления о лидах" : "Lead notifications")}
+                    : (language === "az" ? "Bildirişlər, hesabatlar, AI kanal" : language === "ru" ? "Уведомления, отчёты, AI канал" : "Notifications, reports, AI channel")}
                 </span>
               </div>
               {whatsappSettings?.whatsappNumber

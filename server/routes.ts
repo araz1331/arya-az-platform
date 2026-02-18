@@ -12,6 +12,7 @@ import { getUncachableStripeClient } from "./stripeClient";
 import * as fs from "fs";
 import * as path from "path";
 import { detectAudioFormat, speechToText } from "./replit_integrations/audio/client";
+import { handleInboundWhatsApp, sendMissedLeadAlert, detectAndSendAppointmentConfirmation, startWhatsAppScheduler, sendWhatsAppMessage } from "./whatsapp-service";
 
 function isValidWebhookUrl(urlStr: string): boolean {
   try {
@@ -1257,6 +1258,17 @@ Your Role - AI Receptionist:
 
       const fallbacks: Record<string, string> = { az: "Bağışlayın, yenidən cəhd edin.", ru: "Извините, попробуйте снова.", en: "Sorry, please try again.", es: "Lo siento, inténtelo de nuevo.", fr: "Désolé, veuillez réessayer.", tr: "Üzgünüm, tekrar deneyin." };
       const reply = result.text || fallbacks[language] || fallbacks.en;
+
+      if (profile && req.body.sessionId) {
+        const missedPatterns = /I don't have (that |this )?information|I'm not sure|I can't answer|contact .* directly|check with the team|don't have access/i;
+        if (missedPatterns.test(reply)) {
+          sendMissedLeadAlert(profile.id, req.body.sessionId, message).catch(() => {});
+        }
+
+        const convoForAppt = (history || []).map((m: any) => `${m.role}: ${m.text}`).join("\n") + `\nuser: ${message}\nassistant: ${reply}`;
+        detectAndSendAppointmentConfirmation(profile.id, req.body.sessionId, reply, convoForAppt).catch(() => {});
+      }
+
       res.json({ reply });
     } catch (err: any) {
       console.error("Chat error:", err?.message);
@@ -1986,6 +1998,13 @@ Your capabilities:
       res.json({
         whatsappNumber: profile.whatsappNumber || "",
         whatsappAutoNotify: profile.whatsappAutoNotify || false,
+        whatsappSummaryEnabled: profile.whatsappSummaryEnabled || false,
+        whatsappSummaryFrequency: profile.whatsappSummaryFrequency || "daily",
+        whatsappMissedAlertsEnabled: profile.whatsappMissedAlertsEnabled || false,
+        whatsappChatEnabled: profile.whatsappChatEnabled || false,
+        whatsappFollowupEnabled: profile.whatsappFollowupEnabled || false,
+        whatsappFollowupHours: profile.whatsappFollowupHours || 24,
+        whatsappAppointmentConfirm: profile.whatsappAppointmentConfirm || false,
       });
     } catch (error) {
       console.error("[whatsapp-settings] Error:", error);
@@ -1999,14 +2018,23 @@ Your capabilities:
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
       const profile = await storage.getSmartProfileByUserId(userId);
       if (!profile) return res.status(404).json({ message: "No profile found" });
-      const { whatsappNumber, whatsappAutoNotify } = req.body;
+      const { whatsappNumber, whatsappAutoNotify, whatsappSummaryEnabled, whatsappSummaryFrequency,
+              whatsappMissedAlertsEnabled, whatsappChatEnabled, whatsappFollowupEnabled,
+              whatsappFollowupHours, whatsappAppointmentConfirm } = req.body;
       if (whatsappNumber && !/^\+?\d{7,15}$/.test(whatsappNumber.replace(/[\s\-()]/g, ""))) {
         return res.status(400).json({ message: "Invalid phone number format. Use international format: +994501234567" });
       }
-      await storage.updateSmartProfile(profile.id, {
-        whatsappNumber: whatsappNumber ?? profile.whatsappNumber,
-        whatsappAutoNotify: whatsappAutoNotify ?? profile.whatsappAutoNotify,
-      });
+      const updates: any = {};
+      if (whatsappNumber !== undefined) updates.whatsappNumber = whatsappNumber;
+      if (whatsappAutoNotify !== undefined) updates.whatsappAutoNotify = whatsappAutoNotify;
+      if (whatsappSummaryEnabled !== undefined) updates.whatsappSummaryEnabled = whatsappSummaryEnabled;
+      if (whatsappSummaryFrequency !== undefined) updates.whatsappSummaryFrequency = whatsappSummaryFrequency;
+      if (whatsappMissedAlertsEnabled !== undefined) updates.whatsappMissedAlertsEnabled = whatsappMissedAlertsEnabled;
+      if (whatsappChatEnabled !== undefined) updates.whatsappChatEnabled = whatsappChatEnabled;
+      if (whatsappFollowupEnabled !== undefined) updates.whatsappFollowupEnabled = whatsappFollowupEnabled;
+      if (whatsappFollowupHours !== undefined) updates.whatsappFollowupHours = whatsappFollowupHours;
+      if (whatsappAppointmentConfirm !== undefined) updates.whatsappAppointmentConfirm = whatsappAppointmentConfirm;
+      await storage.updateSmartProfile(profile.id, updates);
       res.json({ success: true });
     } catch (error) {
       console.error("[whatsapp-settings-update] Error:", error);
@@ -2103,6 +2131,108 @@ Your capabilities:
       res.status(500).json({ message: error.message || "Server error" });
     }
   });
+
+  app.post("/api/whatsapp/webhook", async (req: Request, res: Response) => {
+    try {
+      const authToken = process.env.TWILIO_AUTH_TOKEN;
+      if (authToken) {
+        const crypto = await import("crypto");
+        const twilioSig = req.headers["x-twilio-signature"] as string;
+        if (!twilioSig) {
+          console.warn("[whatsapp-webhook] Missing X-Twilio-Signature header");
+          return res.status(403).send("Forbidden");
+        }
+        const protocol = req.headers["x-forwarded-proto"] || req.protocol;
+        const host = req.headers["host"] || "";
+        const webhookUrl = `${protocol}://${host}${req.originalUrl}`;
+        const sortedParams = Object.keys(req.body).sort().reduce((acc: string, key: string) => acc + key + req.body[key], "");
+        const expectedSig = crypto.createHmac("sha1", authToken).update(webhookUrl + sortedParams).digest("base64");
+        if (twilioSig !== expectedSig) {
+          console.warn("[whatsapp-webhook] Invalid Twilio signature");
+          return res.status(403).send("Forbidden");
+        }
+      }
+
+      const from = req.body.From || "";
+      const body = req.body.Body || "";
+
+      if (!from || !body) {
+        return res.status(200).type("text/xml").send("<Response></Response>");
+      }
+
+      console.log(`[whatsapp-webhook] Inbound from ${from}: ${body.substring(0, 100)}`);
+
+      const result = await handleInboundWhatsApp(from, body);
+
+      res.status(200).type("text/xml").send("<Response></Response>");
+    } catch (error) {
+      console.error("[whatsapp-webhook] Error:", error);
+      res.status(200).type("text/xml").send("<Response></Response>");
+    }
+  });
+
+  app.get("/api/smart-profile/whatsapp-conversations", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+
+      const conversations = await db.execute(sql`
+        SELECT wc.*, 
+          (SELECT COUNT(*) FROM widget_messages WHERE profile_id = ${profile.id} AND session_id = wc.session_id AND role = 'user') as message_count
+        FROM whatsapp_conversations wc
+        WHERE wc.profile_id = ${profile.id}
+        ORDER BY wc.last_inbound_at DESC NULLS LAST
+        LIMIT 50
+      `);
+
+      res.json(conversations.rows);
+    } catch (error) {
+      console.error("[whatsapp-conversations] Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/profiles/whatsapp-reminder", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const { whatsappNumber, whatsappReminderEnabled } = req.body;
+      if (whatsappNumber && !/^\+?\d{7,15}$/.test(whatsappNumber.replace(/[\s\-()]/g, ""))) {
+        return res.status(400).json({ message: "Invalid phone number format" });
+      }
+      await db.execute(sql`
+        UPDATE profiles SET
+          whatsapp_number = ${whatsappNumber || null},
+          whatsapp_reminder_enabled = ${whatsappReminderEnabled || false}
+        WHERE id = ${userId}
+      `);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[profile-reminder] Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.get("/api/profiles/whatsapp-reminder", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const result = await db.execute(sql`
+        SELECT whatsapp_number, whatsapp_reminder_enabled FROM profiles WHERE id = ${userId}
+      `);
+      const p = result.rows[0] as any;
+      res.json({
+        whatsappNumber: p?.whatsapp_number || "",
+        whatsappReminderEnabled: p?.whatsapp_reminder_enabled || false,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  startWhatsAppScheduler();
 
   seedDemoProfiles().catch(err => console.error("[seed] Demo profiles seed error:", err));
 
