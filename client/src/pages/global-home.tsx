@@ -7,7 +7,7 @@ import {
   Globe, Wrench, GraduationCap, UtensilsCrossed, Camera, Paintbrush, Link2,
   ChevronDown, ArrowRight, Check, Waves, MessageSquare, Zap, Star, Quote,
   Settings, Languages, UserPlus, Code, Mic, BarChart3, Volume2, VolumeX,
-  Flame, ShieldCheck, Crown, AlertTriangle, Lock
+  Flame, ShieldCheck, Crown, AlertTriangle, Lock, PlugZap, Smartphone
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -600,8 +600,8 @@ export default function GlobalHome() {
               { icon: Languages, title: t("featGrid2Title"), desc: t("featGrid2Desc") },
               { icon: UserPlus, title: t("featGrid3Title"), desc: t("featGrid3Desc") },
               { icon: Code, title: t("featGrid4Title"), desc: t("featGrid4Desc") },
-              { icon: Mic, title: t("featGrid5Title"), desc: t("featGrid5Desc") },
-              { icon: BarChart3, title: t("featGrid6Title"), desc: t("featGrid6Desc") },
+              { icon: PlugZap, title: t("featGrid5Title"), desc: t("featGrid5Desc") },
+              { icon: Smartphone, title: t("featGrid6Title"), desc: t("featGrid6Desc") },
             ].map((feat, i) => (
               <motion.div key={i} variants={fadeInUp}>
                 <Card className="p-6 h-full hover-elevate" data-testid={`card-feat-${i}`}>
