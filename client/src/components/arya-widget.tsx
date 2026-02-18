@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Loader2, ExternalLink, Sparkles, Camera, Languages, ArrowLeft, Upload, MapPin, Crown, Pencil, Eye, Globe, Users, MessageCircle, Clock, ChevronRight, Mic, Square, Code, Copy, Check, Link2, Smartphone, QrCode, Megaphone, Download, Trash2, X, Plus } from "lucide-react";
+import { Send, Loader2, ExternalLink, Sparkles, Camera, Languages, ArrowLeft, Upload, MapPin, Crown, Pencil, Eye, Globe, Users, MessageCircle, Clock, ChevronRight, Mic, Square, Code, Copy, Check, Link2, Smartphone, QrCode, Megaphone, Download, Trash2, X, Plus, Settings, PlugZap } from "lucide-react";
 import QRCode from "qrcode";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
@@ -686,6 +686,12 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
   const [smartLinkCopied, setSmartLinkCopied] = useState(false);
+  const [showAltegioSettings, setShowAltegioSettings] = useState(false);
+  const [altegioForm, setAltegioForm] = useState({ altegioPartnerToken: "", altegioUserToken: "", altegioCompanyId: "", altegioAutoSend: false });
+  const [altegioSaving, setAltegioSaving] = useState(false);
+  const [altegioSending, setAltegioSending] = useState<string | null>(null);
+  const [altegioSentSessions, setAltegioSentSessions] = useState<Set<string>>(new Set());
+  const altegioFormSynced = useRef(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -711,6 +717,24 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     queryKey: ["/api/smart-profile/leads"],
     enabled: !!smartProfile?.id,
   });
+
+  const { data: altegioSettings } = useQuery<{ altegioPartnerToken: string; altegioUserToken: string; altegioCompanyId: string; altegioAutoSend: boolean }>({
+    queryKey: ["/api/smart-profile/altegio-settings"],
+    enabled: !!smartProfile?.id,
+  });
+
+  useEffect(() => {
+    if (altegioSettings && showAltegioSettings && !altegioFormSynced.current) {
+      setAltegioForm({
+        altegioPartnerToken: altegioSettings.altegioPartnerToken || "",
+        altegioUserToken: altegioSettings.altegioUserToken || "",
+        altegioCompanyId: altegioSettings.altegioCompanyId || "",
+        altegioAutoSend: altegioSettings.altegioAutoSend || false,
+      });
+      altegioFormSynced.current = true;
+    }
+    if (!showAltegioSettings) altegioFormSynced.current = false;
+  }, [altegioSettings, showAltegioSettings]);
 
   const { data: hirearyaLeads } = useQuery<any[]>({
     queryKey: ["/api/proxy/leads", smartProfile?.slug],
@@ -1602,6 +1626,108 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
 
   const hasTranslations = !!(smartProfile?.knowledgeBaseRu || smartProfile?.knowledgeBaseEn);
 
+  if (profileReady && showAltegioSettings) {
+    const altegioConfigured = !!(altegioSettings?.altegioPartnerToken && altegioSettings?.altegioUserToken && altegioSettings?.altegioCompanyId);
+
+    const handleAltegioSave = async () => {
+      setAltegioSaving(true);
+      try {
+        await apiRequest("PATCH", "/api/smart-profile/altegio-settings", altegioForm);
+        queryClient.invalidateQueries({ queryKey: ["/api/smart-profile/altegio-settings"] });
+        toast({ title: language === "az" ? "Altegio parametrləri yadda saxlanıldı" : language === "ru" ? "Настройки Altegio сохранены" : "Altegio settings saved" });
+      } catch {
+        toast({ title: language === "az" ? "Xəta baş verdi" : language === "ru" ? "Ошибка сохранения" : "Save failed", variant: "destructive" });
+      }
+      setAltegioSaving(false);
+    };
+
+    return (
+      <Card className="flex flex-col h-[calc(100svh-12rem)] sm:h-[500px] min-h-[350px] max-h-[600px] overflow-visible">
+        <div className="flex items-center gap-2 px-3 sm:px-4 pt-3 pb-2 border-b">
+          <Button size="icon" variant="ghost" onClick={() => setShowAltegioSettings(false)} data-testid="button-altegio-back">
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <h3 className="font-semibold text-sm flex items-center gap-1.5" data-testid="text-altegio-title">
+            <PlugZap className="w-4 h-4 text-violet-500" />
+            Altegio CRM
+          </h3>
+          {altegioConfigured && <Badge className="bg-emerald-500 text-white border-transparent text-[10px] ml-auto">
+            {language === "az" ? "Qoşulub" : language === "ru" ? "Подключено" : "Connected"}
+          </Badge>}
+        </div>
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 space-y-3">
+          <p className="text-xs text-muted-foreground">
+            {language === "az" ? "Altegio (YCLIENTS) hesabınızı qoşun ki, müştəri məlumatları avtomatik CRM-ə göndərilsin."
+              : language === "ru" ? "Подключите ваш аккаунт Altegio (YCLIENTS), чтобы лиды автоматически отправлялись в CRM."
+              : "Connect your Altegio (YCLIENTS) account so leads are automatically sent to your CRM."}
+          </p>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium">Partner Token (API Key)</label>
+            <Input
+              type="password"
+              placeholder="xxxxxxxx-xxxx-xxxx..."
+              value={altegioForm.altegioPartnerToken}
+              onChange={(e) => setAltegioForm(prev => ({ ...prev, altegioPartnerToken: e.target.value }))}
+              data-testid="input-altegio-partner-token"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium">User Token</label>
+            <Input
+              type="password"
+              placeholder="xxxxxxxx-xxxx-xxxx..."
+              value={altegioForm.altegioUserToken}
+              onChange={(e) => setAltegioForm(prev => ({ ...prev, altegioUserToken: e.target.value }))}
+              data-testid="input-altegio-user-token"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium">Company ID</label>
+            <Input
+              placeholder="123456"
+              value={altegioForm.altegioCompanyId}
+              onChange={(e) => setAltegioForm(prev => ({ ...prev, altegioCompanyId: e.target.value }))}
+              data-testid="input-altegio-company-id"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50">
+            <input
+              type="checkbox"
+              id="altegio-auto-send"
+              checked={altegioForm.altegioAutoSend}
+              onChange={(e) => setAltegioForm(prev => ({ ...prev, altegioAutoSend: e.target.checked }))}
+              className="rounded"
+              data-testid="checkbox-altegio-auto-send"
+            />
+            <label htmlFor="altegio-auto-send" className="text-xs cursor-pointer">
+              {language === "az" ? "Lidlər avtomatik göndərilsin" : language === "ru" ? "Автоматически отправлять лиды" : "Auto-send leads"}
+            </label>
+          </div>
+
+          <Button
+            onClick={handleAltegioSave}
+            disabled={altegioSaving}
+            className="w-full"
+            data-testid="button-altegio-save"
+          >
+            {altegioSaving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
+            {language === "az" ? "Yadda saxla" : language === "ru" ? "Сохранить" : "Save"}
+          </Button>
+
+          <p className="text-[10px] text-muted-foreground text-center">
+            {language === "az" ? "API açarlarını Altegio hesabınızdan → Parametrlər → API bölməsindən tapa bilərsiniz"
+              : language === "ru" ? "API ключи можно найти в Altegio → Настройки → API"
+              : "Find API keys in your Altegio account → Settings → API"}
+          </p>
+        </div>
+      </Card>
+    );
+  }
+
   if (profileReady && showWidgetGuide && smartProfile) {
     const COLOR_PRESETS = [
       { hex: "#2563EB", label: t.widgetColorDefault },
@@ -1871,7 +1997,7 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
             <h3 className="font-semibold text-sm">{t.leadsTitle}</h3>
           </div>
           <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 space-y-2" data-testid="leads-detail">
-            {leadMessages.map((msg: any, i: number) => (
+            {leadMessages.filter((msg: any) => msg.role !== "system").map((msg: any, i: number) => (
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[80%] rounded-md px-3 py-2 text-xs ${msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                   {msg.content_type === "voice" ? (
@@ -1884,6 +2010,43 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
               </div>
             ))}
           </div>
+          {altegioSettings?.altegioPartnerToken && altegioSettings?.altegioUserToken && altegioSettings?.altegioCompanyId && (
+            <div className="px-3 sm:px-4 pb-2 pt-1 border-t">
+              {altegioSentSessions.has(selectedLead) || leadMessages.some((m: any) => m.content?.includes("[altegio-sent]")) ? (
+                <div className="flex items-center justify-center gap-1.5 text-xs text-emerald-600 py-1" data-testid="altegio-sent-status">
+                  <Check className="w-3.5 h-3.5" />
+                  {language === "az" ? "Altegio-ya göndərilib" : language === "ru" ? "Отправлено в Altegio" : "Sent to Altegio"}
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1.5 text-xs"
+                  disabled={altegioSending === selectedLead}
+                  onClick={async () => {
+                    setAltegioSending(selectedLead);
+                    try {
+                      const res = await fetch(`/api/smart-profile/leads/${selectedLead}/send-to-altegio`, { method: "POST", credentials: "include" });
+                      const data = await res.json();
+                      if (res.ok && data.success) {
+                        setAltegioSentSessions(prev => new Set(prev).add(selectedLead));
+                        toast({ title: language === "az" ? `${data.extracted?.name || "Lead"} Altegio-ya göndərildi` : language === "ru" ? `${data.extracted?.name || "Лид"} отправлен в Altegio` : `${data.extracted?.name || "Lead"} sent to Altegio` });
+                      } else {
+                        toast({ title: data.message || (language === "az" ? "Göndərmə uğursuz" : language === "ru" ? "Ошибка отправки" : "Send failed"), variant: "destructive" });
+                      }
+                    } catch {
+                      toast({ title: language === "az" ? "Göndərmə uğursuz" : language === "ru" ? "Ошибка отправки" : "Send failed", variant: "destructive" });
+                    }
+                    setAltegioSending(null);
+                  }}
+                  data-testid="button-send-to-altegio"
+                >
+                  {altegioSending === selectedLead ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PlugZap className="w-3.5 h-3.5" />}
+                  {language === "az" ? "Altegio-ya göndər" : language === "ru" ? "Отправить в Altegio" : "Send to Altegio"}
+                </Button>
+              )}
+            </div>
+          )}
         </Card>
       );
     }
@@ -2208,6 +2371,42 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
                 <span className="text-xs text-muted-foreground block">{t.widgetGuideSubtitle}</span>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            </div>
+          </Button>
+
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setShowAltegioSettings(true);
+              if (altegioSettings) {
+                setAltegioForm({
+                  altegioPartnerToken: altegioSettings.altegioPartnerToken || "",
+                  altegioUserToken: altegioSettings.altegioUserToken || "",
+                  altegioCompanyId: altegioSettings.altegioCompanyId || "",
+                  altegioAutoSend: altegioSettings.altegioAutoSend || false,
+                });
+              }
+            }}
+            className="w-full h-auto p-0 justify-start font-normal"
+            data-testid="button-altegio-settings"
+          >
+            <div className="flex items-center gap-3 p-3 rounded-md bg-violet-500/10 border border-violet-500/20 w-full">
+              <div className="w-10 h-10 rounded-md bg-violet-500/20 flex items-center justify-center shrink-0">
+                <PlugZap className="w-5 h-5 text-violet-600" />
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <span className="text-sm font-medium">Altegio CRM</span>
+                <span className="text-xs text-muted-foreground block">
+                  {altegioSettings?.altegioPartnerToken && altegioSettings?.altegioUserToken && altegioSettings?.altegioCompanyId
+                    ? (language === "az" ? "Qoşulub" : language === "ru" ? "Подключено" : "Connected")
+                    : (language === "az" ? "CRM inteqrasiyası" : language === "ru" ? "Интеграция с CRM" : "CRM integration")}
+                </span>
+              </div>
+              {altegioSettings?.altegioPartnerToken && altegioSettings?.altegioUserToken && altegioSettings?.altegioCompanyId
+                ? <Badge className="bg-emerald-500 text-white border-transparent text-[10px] shrink-0">
+                    {language === "az" ? "Aktiv" : language === "ru" ? "Активно" : "Active"}
+                  </Badge>
+                : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
             </div>
           </Button>
 

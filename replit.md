@@ -34,3 +34,4 @@ The platform is built with a **React + Vite (TypeScript)** frontend, leveraging 
 - **Google Gemini AI:** Used for AI chat functionality, knowledge base translation, and data classification (public vs. private).
 - **2GIS Places API:** For location search and auto-filling business addresses and working hours in the smart profile onboarding.
 - **hirearya.com API:** Proxied API for industry templates, OCR scanning services, and fetching demo profiles.
+- **Altegio (YCLIENTS) API:** CRM integration for smart profiles. Leads collected by the AI chat can be automatically or manually sent to Altegio as new client records. Settings stored per smart profile (partner_token, user_token, company_id, auto_send flag). API: `https://api.alteg.io/api/v1/client/{company_id}`.

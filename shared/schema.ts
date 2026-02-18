@@ -94,6 +94,10 @@ export const smartProfiles = pgTable("smart_profiles", {
   isPro: boolean("is_pro").notNull().default(false),
   proExpiresAt: timestamp("pro_expires_at"),
   stripeCustomerId: text("stripe_customer_id"),
+  altegioPartnerToken: text("altegio_partner_token"),
+  altegioUserToken: text("altegio_user_token"),
+  altegioCompanyId: text("altegio_company_id"),
+  altegioAutoSend: boolean("altegio_auto_send").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

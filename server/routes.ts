@@ -345,6 +345,69 @@ export async function registerRoutes(
         contentType,
         audioUrl: audioUrl || null,
       });
+
+      if (role === "assistant" && profileId && sessionId) {
+        try {
+          const profile = await storage.getSmartProfile(profileId);
+          if (profile?.altegioAutoSend && profile.altegioPartnerToken && profile.altegioUserToken && profile.altegioCompanyId) {
+            const allMsgs = await db.execute(sql`
+              SELECT role, content FROM widget_messages
+              WHERE profile_id = ${profileId} AND session_id = ${sessionId}
+              ORDER BY created_at ASC
+            `);
+            const userMsgs = allMsgs.rows.filter((m: any) => m.role === "user");
+            if (userMsgs.length >= 2) {
+              const convoText = allMsgs.rows.map((m: any) => `${m.role}: ${m.content}`).join("\n");
+              const hasContact = /(\+?\d[\d\s\-()]{7,})|(\b\d{10,}\b)/.test(convoText);
+              if (hasContact) {
+                const alreadySent = await db.execute(sql`
+                  SELECT 1 FROM widget_messages
+                  WHERE profile_id = ${profileId} AND session_id = ${sessionId}
+                    AND content LIKE '%[altegio-sent]%' LIMIT 1
+                `);
+                if (!alreadySent.rows.length) {
+                  const extractResult = await gemini.models.generateContent({
+                    model: "gemini-2.0-flash",
+                    contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON: {"name":"","phone":"","comment":""}.\n\n${convoText}`,
+                  });
+                  try {
+                    const raw = extractResult.text?.trim() || "{}";
+                    const json = JSON.parse(raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
+                    if (json.name || json.phone) {
+                      const altRes = await fetch(`https://api.alteg.io/api/v1/client/${profile.altegioCompanyId}`, {
+                        method: "POST",
+                        headers: {
+                          "Authorization": `Bearer ${profile.altegioPartnerToken}, User ${profile.altegioUserToken}`,
+                          "Accept": "application/vnd.api.v2+json",
+                          "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                          name: json.name || "Arya Lead",
+                          phone: json.phone || "",
+                          comment: `[Arya AI Lead] ${json.comment || ""}`.trim(),
+                        }),
+                      });
+                      if (altRes.ok) {
+                        await storage.createWidgetMessage({
+                          profileId, sessionId, role: "system",
+                          content: `[altegio-sent] ${json.name} ${json.phone}`,
+                          contentType: "system", audioUrl: null,
+                        });
+                        console.log(`[altegio-auto] Sent lead for ${profile.slug}: ${json.name} ${json.phone}`);
+                      } else {
+                        console.error(`[altegio-auto] Failed for ${profile.slug}:`, altRes.status);
+                      }
+                    }
+                  } catch {}
+                }
+              }
+            }
+          }
+        } catch (autoErr) {
+          console.error("[altegio-auto] Error:", autoErr);
+        }
+      }
+
       res.json({ success: true, id: msg.id });
     } catch (error) {
       console.error("[widget-messages] Error:", error);
@@ -1486,6 +1549,123 @@ Your capabilities:
     } catch (error) {
       console.error("[leads-detail] Error:", error);
       res.status(500).json({ message: "Server xətası" });
+    }
+  });
+
+  app.get("/api/smart-profile/altegio-settings", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+      res.json({
+        altegioPartnerToken: profile.altegioPartnerToken || "",
+        altegioUserToken: profile.altegioUserToken || "",
+        altegioCompanyId: profile.altegioCompanyId || "",
+        altegioAutoSend: profile.altegioAutoSend || false,
+      });
+    } catch (error) {
+      console.error("[altegio-settings] Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.patch("/api/smart-profile/altegio-settings", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+      const { altegioPartnerToken, altegioUserToken, altegioCompanyId, altegioAutoSend } = req.body;
+      const updated = await storage.updateSmartProfile(profile.id, {
+        altegioPartnerToken: altegioPartnerToken ?? profile.altegioPartnerToken,
+        altegioUserToken: altegioUserToken ?? profile.altegioUserToken,
+        altegioCompanyId: altegioCompanyId ?? profile.altegioCompanyId,
+        altegioAutoSend: altegioAutoSend ?? profile.altegioAutoSend,
+      });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[altegio-settings-update] Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/smart-profile/leads/:sessionId/send-to-altegio", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+
+      if (!profile.altegioPartnerToken || !profile.altegioUserToken || !profile.altegioCompanyId) {
+        return res.status(400).json({ message: "Altegio settings not configured. Please add your Altegio API credentials first." });
+      }
+
+      const messages = await db.execute(sql`
+        SELECT role, content FROM widget_messages
+        WHERE profile_id = ${profile.id} AND session_id = ${req.params.sessionId}
+        ORDER BY created_at ASC
+      `);
+
+      if (!messages.rows || messages.rows.length === 0) {
+        return res.status(404).json({ message: "No messages found for this lead" });
+      }
+
+      const conversationText = messages.rows
+        .map((m: any) => `${m.role}: ${m.content}`)
+        .join("\n");
+
+      const extractResult = await gemini.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON with these fields: {"name": "client name or empty string", "phone": "phone number or empty string", "comment": "brief summary of what they want"}. Do not include any other text.\n\nConversation:\n${conversationText}`,
+      });
+
+      let contactInfo: { name: string; phone: string; comment: string };
+      try {
+        const rawText = extractResult.text?.trim() || "{}";
+        const jsonStr = rawText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        contactInfo = JSON.parse(jsonStr);
+      } catch {
+        return res.status(422).json({ message: "Could not extract contact info from conversation" });
+      }
+
+      if (!contactInfo.name && !contactInfo.phone) {
+        return res.status(422).json({ message: "No name or phone found in the conversation" });
+      }
+
+      const altegioResponse = await fetch(`https://api.alteg.io/api/v1/client/${profile.altegioCompanyId}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${profile.altegioPartnerToken}, User ${profile.altegioUserToken}`,
+          "Accept": "application/vnd.api.v2+json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: contactInfo.name || "Arya Lead",
+          phone: contactInfo.phone || "",
+          comment: `[Arya AI Lead] ${contactInfo.comment || ""}`.trim(),
+        }),
+      });
+
+      const altegioData = await altegioResponse.json().catch(() => null);
+
+      if (!altegioResponse.ok) {
+        console.error("[altegio-push] Error:", altegioResponse.status, altegioData);
+        return res.status(502).json({
+          message: "Altegio API error",
+          detail: altegioData?.meta?.message || `Status ${altegioResponse.status}`,
+        });
+      }
+
+      console.log(`[altegio-push] Lead sent successfully for ${profile.slug}: ${contactInfo.name} ${contactInfo.phone}`);
+      res.json({
+        success: true,
+        client: altegioData?.data || altegioData,
+        extracted: contactInfo,
+      });
+    } catch (error) {
+      console.error("[altegio-push] Error:", error);
+      res.status(500).json({ message: "Server error" });
     }
   });
 

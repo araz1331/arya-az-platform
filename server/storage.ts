@@ -45,6 +45,7 @@ export interface IStorage {
   createVoiceDonation(donation: InsertVoiceDonation): Promise<VoiceDonation>;
   createWidgetMessage(message: InsertWidgetMessage): Promise<WidgetMessage>;
 
+  getSmartProfile(id: string): Promise<SmartProfile | undefined>;
   getSmartProfileByUserId(userId: string): Promise<SmartProfile | undefined>;
   getSmartProfileBySlug(slug: string): Promise<SmartProfile | undefined>;
   createSmartProfile(profile: InsertSmartProfile): Promise<SmartProfile>;
@@ -223,6 +224,11 @@ export class DatabaseStorage implements IStorage {
   async createWidgetMessage(message: InsertWidgetMessage): Promise<WidgetMessage> {
     const [m] = await db.insert(widgetMessages).values(message).returning();
     return m;
+  }
+
+  async getSmartProfile(id: string): Promise<SmartProfile | undefined> {
+    const [profile] = await db.select().from(smartProfiles).where(eq(smartProfiles.id, id));
+    return profile;
   }
 
   async getSmartProfileByUserId(userId: string): Promise<SmartProfile | undefined> {
