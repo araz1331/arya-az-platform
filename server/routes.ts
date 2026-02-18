@@ -2199,7 +2199,18 @@ Your capabilities:
 
       console.log(`[whatsapp-webhook] Inbound from ${from}: ${body.substring(0, 100)}`);
 
-      const result = await handleInboundWhatsApp(from, body);
+      let profileId: string | undefined;
+      const slugMatch = body.trim().match(/^Hi\s+(\S+)$/i);
+      if (slugMatch) {
+        const slug = slugMatch[1].toLowerCase();
+        const profileResult = await db.execute(sql`SELECT id FROM smart_profiles WHERE LOWER(slug) = ${slug} LIMIT 1`);
+        if (profileResult.rows.length) {
+          profileId = (profileResult.rows[0] as any).id;
+          console.log(`[whatsapp-webhook] Matched slug "${slug}" to profile ${profileId}`);
+        }
+      }
+
+      const result = await handleInboundWhatsApp(from, body, profileId);
 
       res.status(200).type("text/xml").send("<Response></Response>");
     } catch (error) {

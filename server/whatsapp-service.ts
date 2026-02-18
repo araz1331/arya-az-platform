@@ -343,6 +343,20 @@ async function handleCustomerMessage(waNumber: string, body: string, profileId?:
   let targetProfileId = profileId || convRow?.profile_id;
 
   if (!targetProfileId) {
+    const slugMatch = body.trim().match(/^(?:Hi|Hello|Hey|Salam)\s+(\S+)/i);
+    if (slugMatch) {
+      const slug = slugMatch[1].toLowerCase();
+      const slugProfile = await db.execute(sql`
+        SELECT id FROM smart_profiles WHERE LOWER(slug) = ${slug} AND whatsapp_chat_enabled = true AND is_active = true LIMIT 1
+      `);
+      if (slugProfile.rows.length) {
+        targetProfileId = (slugProfile.rows[0] as any).id;
+        console.log(`[whatsapp] Matched slug "${slug}" from message body`);
+      }
+    }
+  }
+
+  if (!targetProfileId) {
     const anyProfile = await db.execute(sql`
       SELECT id FROM smart_profiles
       WHERE whatsapp_chat_enabled = true AND is_active = true
