@@ -2187,26 +2187,40 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
           </div>
 
           {whatsappForm.whatsappChatEnabled && (
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-md p-2.5 text-[10px]">
-              <p className="font-medium text-blue-600 dark:text-blue-400 mb-1">
-                {language === "az" ? "WhatsApp Kanal Quraşdırması" : language === "ru" ? "Настройка канала WhatsApp" : "WhatsApp Channel Setup"}
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-md p-2.5 text-[10px] space-y-1.5">
+              <p className="font-medium text-blue-600 dark:text-blue-400">
+                {language === "az" ? "WhatsApp AI Kanal aktiv" : language === "ru" ? "WhatsApp AI канал активен" : "WhatsApp AI Channel active"}
               </p>
-              <p className="text-muted-foreground mb-1">
+              <p className="text-muted-foreground">
                 {language === "az"
-                  ? "Twilio konsolunda webhook URL-ni qeyd edin:"
+                  ? "Müştəriləriniz aşağıdakı linkə klikləyərək WhatsApp-dan AI ilə söhbət edə bilərlər. Bu linki saytınızda və ya sosial şəbəkələrdə paylaşın."
                   : language === "ru"
-                  ? "Укажите webhook URL в консоли Twilio:"
-                  : "Set the webhook URL in your Twilio console:"}
+                  ? "Ваши клиенты могут общаться с AI через WhatsApp по ссылке ниже. Поделитесь этой ссылкой на сайте или в соцсетях."
+                  : "Your customers can chat with your AI via WhatsApp using the link below. Share it on your website or social media."}
               </p>
-              <code className="text-[9px] bg-muted px-1.5 py-0.5 rounded break-all select-all" data-testid="text-webhook-url">
-                {window.location.origin}/api/whatsapp/webhook
-              </code>
-              <p className="text-muted-foreground mt-1">
+              <div className="flex items-center gap-1.5">
+                <code className="text-[9px] bg-muted px-1.5 py-0.5 rounded break-all select-all flex-1" data-testid="text-whatsapp-link">
+                  https://wa.me/12792030206?text=Hi%20{smartProfile?.slug || ""}
+                </code>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6 shrink-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`https://wa.me/12792030206?text=Hi%20${smartProfile?.slug || ""}`);
+                    toast({ title: language === "az" ? "Link kopyalandı" : language === "ru" ? "Ссылка скопирована" : "Link copied" });
+                  }}
+                  data-testid="button-copy-whatsapp-link"
+                >
+                  <Copy className="w-3 h-3" />
+                </Button>
+              </div>
+              <p className="text-muted-foreground">
                 {language === "az"
-                  ? "Müştərilər sizin Twilio WhatsApp nömrəsinə mesaj yazdıqda AI cavab verəcək."
+                  ? "Müştəri bu nömrəyə yazdıqda, AI sizin bilik bazanıza əsasən avtomatik cavab verəcək."
                   : language === "ru"
-                  ? "Когда клиенты пишут на ваш номер Twilio WhatsApp, AI будет отвечать."
-                  : "When customers message your Twilio WhatsApp number, the AI will respond."}
+                  ? "Когда клиент напишет на этот номер, AI автоматически ответит на основе вашей базы знаний."
+                  : "When a customer messages this number, the AI will automatically respond based on your knowledge base."}
               </p>
             </div>
           )}
