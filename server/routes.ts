@@ -1203,6 +1203,8 @@ export async function registerRoutes(
         return res.status(404).json({ error: "no_knowledge_base", fallback: true });
       }
 
+      const globalKB = await storage.getGlobalKnowledgeBase();
+
       const langMap: Record<string, string> = {
         az: "Azerbaijani", ru: "Russian", en: "English", es: "Spanish", fr: "French", tr: "Turkish",
         ar: "Arabic", zh: "Chinese", hi: "Hindi", bn: "Bengali", pt: "Portuguese", ja: "Japanese",
@@ -1233,7 +1235,7 @@ PRIVACY FIREWALL — STRICT RULES:
 
 Public Business Information:
 ${knowledgeBase}
-
+${globalKB ? `\nGlobal Platform Knowledge (About Arya AI — shared across all agents):\n${globalKB}\n` : ""}
 Your Role - AI Receptionist:
 - You ARE the receptionist. Speak in first person as the business representative ("We offer...", "Our prices...", "I can help you with that...")
 - Answer questions about services, prices, hours, and location using the public business info above
@@ -1332,13 +1334,57 @@ Onboarding Complete: ${profile.onboardingComplete ? "Yes" : "No"}`;
 
       let updateApplied = false;
       let noProfile = false;
-      let updateTarget: "public" | "private" | "ask" | null = null;
+      let updateTarget: "public" | "private" | "ask" | "global" | null = null;
 
       const currentPrivateVault = profile?.privateVault || "";
+      const globalKBContent = await storage.getGlobalKnowledgeBase();
 
       if (!profile) {
         noProfile = true;
-      } else {
+      } else if (profile.isMaster) {
+        const globalUpdatePattern = /^(update|set|change|add to|modify|replace)\s+(the\s+)?(global\s+)?(knowledge\s*base|kb|platform\s*info|product\s*info)\s*[:\-]?\s*/i;
+        const globalMatch = message.trim().match(globalUpdatePattern);
+        if (globalMatch) {
+          const newContent = message.trim().replace(globalUpdatePattern, "").trim();
+          if (newContent.length > 5) {
+            if (globalKBContent) {
+              const updatePrompt = `You are a Global Knowledge Base editor. Update the platform-wide knowledge base based on the Master Agent's instruction.
+
+RULES:
+- Preserve ALL existing information unless explicitly asked to remove something
+- Integrate new information naturally
+- Keep the same format and structure
+- Output ONLY the complete updated text, nothing else
+
+Current Global Knowledge Base:
+${globalKBContent}
+
+Master Agent's instruction: "${newContent}"
+
+Updated Global Knowledge Base:`;
+
+              const updateResult = await gemini.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: [{ role: "user", parts: [{ text: updatePrompt }] }],
+                config: { maxOutputTokens: 2000 },
+              });
+
+              const updatedGKB = (updateResult.text || "").trim();
+              if (updatedGKB && updatedGKB.length > 10) {
+                await storage.setGlobalKnowledgeBase(updatedGKB, profile.id);
+                updateApplied = true;
+                updateTarget = "global";
+              }
+            } else {
+              await storage.setGlobalKnowledgeBase(newContent, profile.id);
+              updateApplied = true;
+              updateTarget = "global";
+            }
+          }
+        }
+      }
+
+      if (!noProfile && !updateApplied && profile) {
         const msgLower = message.trim().toLowerCase();
 
         const privateKeywords = [
@@ -1482,8 +1528,10 @@ ${currentPrivateVault || "(empty)"}
 ${businessContext}
 ${updateApplied && updateTarget === "public" ? `\n*** PUBLIC UPDATE APPLIED: The public knowledge base was just updated. Confirm the change and mention that customers will see it immediately. Use the label "Public" when confirming. ***` : ""}
 ${updateApplied && updateTarget === "private" ? `\n*** PRIVATE UPDATE APPLIED: The private vault was just updated. Confirm the change and reassure the owner that this info is PRIVATE — customers will NEVER see it. Use the label "Private" when confirming. ***` : ""}
+${updateApplied && updateTarget === "global" ? `\n*** GLOBAL KB UPDATE APPLIED: The Global Knowledge Base was just updated. This knowledge is now shared across ALL Arya agents on the platform. Confirm the change and mention that all agents will immediately reference this updated information. ***` : ""}
 ${updateTarget === "ask" ? `\n*** CLASSIFICATION NEEDED: The owner said something that looks like an update, but I'm not sure if it should be PUBLIC or PRIVATE. Ask the owner: "Should I save this as public info (customers can see) or private (only for you)?" ***` : ""}
 ${noProfile ? `\n*** NO PROFILE: The owner has not set up their business profile yet. Tell them to go to the "AI Setup" tab first. ***` : ""}
+${profile?.isMaster ? `\n*** MASTER AGENT STATUS: You are the King Arya — the Master Agent. You have special powers:\n- Update the Global Knowledge Base with: "Update global knowledge base: [content]"\n- The Global KB is shared across ALL Arya agents on the platform\n- Current Global KB: ${globalKBContent ? globalKBContent.slice(0, 500) + (globalKBContent.length > 500 ? "..." : "") : "(empty)"}\n***` : ""}
 
 Your capabilities:
 - You classify and store information in the correct vault (public or private).

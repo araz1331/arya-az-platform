@@ -114,8 +114,19 @@ export const smartProfiles = pgTable("smart_profiles", {
   whatsappFollowupEnabled: boolean("whatsapp_followup_enabled").notNull().default(false),
   whatsappFollowupHours: integer("whatsapp_followup_hours").notNull().default(24),
   whatsappAppointmentConfirm: boolean("whatsapp_appointment_confirm").notNull().default(false),
+  isMaster: boolean("is_master").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const globalKnowledgeBase = pgTable("global_knowledge_base", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  content: text("content").notNull(),
+  updatedBy: varchar("updated_by"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type GlobalKnowledgeBase = typeof globalKnowledgeBase.$inferSelect;
 
 export const whatsappConversations = pgTable("whatsapp_conversations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

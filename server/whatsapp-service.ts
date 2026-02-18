@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { GoogleGenAI } from "@google/genai";
+import { storage } from "./storage";
 
 const gemini = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "",
@@ -418,6 +419,8 @@ async function handleCustomerMessage(waNumber: string, body: string, profileId?:
     return { handled: true, type: "no-kb" };
   }
 
+  const globalKB = await storage.getGlobalKnowledgeBase();
+
   const systemPrompt = `You are an AI receptionist for ${p.display_name || p.slug}, ${p.profession || ""}.
 You are chatting with a customer via WhatsApp.
 
@@ -428,7 +431,7 @@ PRIVACY FIREWALL:
 
 Public Business Information:
 ${knowledgeBase}
-
+${globalKB ? `\nGlobal Platform Knowledge (About Arya AI):\n${globalKB}\n` : ""}
 Your Role:
 - Answer questions about services, prices, hours, location
 - When customer wants to book/order, collect their name and preferred time

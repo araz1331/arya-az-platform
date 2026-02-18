@@ -7,8 +7,10 @@ import {
   type WidgetMessage, type InsertWidgetMessage,
   type SmartProfile, type InsertSmartProfile,
   type OwnerChatMessage, type InsertOwnerChatMessage,
+  type GlobalKnowledgeBase,
   profiles, recordings, transactions, vouchers,
   voiceDonations, widgetMessages, smartProfiles, ownerChatMessages,
+  globalKnowledgeBase,
 } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { db } from "./db";
@@ -53,6 +55,10 @@ export interface IStorage {
 
   getOwnerChatHistory(userId: string, limit?: number): Promise<OwnerChatMessage[]>;
   createOwnerChatMessage(message: InsertOwnerChatMessage): Promise<OwnerChatMessage>;
+
+  getGlobalKnowledgeBase(): Promise<string | null>;
+  setGlobalKnowledgeBase(content: string, updatedBy: string): Promise<void>;
+  getAllSmartProfiles(): Promise<SmartProfile[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -379,6 +385,24 @@ export class DatabaseStorage implements IStorage {
   async createOwnerChatMessage(message: InsertOwnerChatMessage): Promise<OwnerChatMessage> {
     const [created] = await db.insert(ownerChatMessages).values(message).returning();
     return created;
+  }
+
+  async getGlobalKnowledgeBase(): Promise<string | null> {
+    const [row] = await db.select().from(globalKnowledgeBase).orderBy(desc(globalKnowledgeBase.updatedAt)).limit(1);
+    return row?.content ?? null;
+  }
+
+  async setGlobalKnowledgeBase(content: string, updatedBy: string): Promise<void> {
+    const [existing] = await db.select().from(globalKnowledgeBase).orderBy(desc(globalKnowledgeBase.updatedAt)).limit(1);
+    if (existing) {
+      await db.update(globalKnowledgeBase).set({ content, updatedBy, updatedAt: new Date() }).where(eq(globalKnowledgeBase.id, existing.id));
+    } else {
+      await db.insert(globalKnowledgeBase).values({ content, updatedBy });
+    }
+  }
+
+  async getAllSmartProfiles(): Promise<SmartProfile[]> {
+    return db.select().from(smartProfiles).orderBy(desc(smartProfiles.createdAt));
   }
 }
 

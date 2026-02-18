@@ -28,6 +28,14 @@ The platform is built with a **React + Vite (TypeScript)** frontend, leveraging 
 - **Smart Profile Management (Arya Widget):** Onboarding wizard with industry templates, OCR scanning for price lists, 2GIS location integration, profile image upload, and knowledge base translation.
 - **API Endpoints:** Comprehensive set of RESTful APIs for user management, voice donations, transactions, smart profiles, and AI interactions.
 
+- **Master Agent System:** Hierarchical agent management where one smart profile (currently `aryaai`) is designated as the platform-wide "King" agent via `isMaster=true` flag. The master agent can:
+  - Update the **Global Knowledge Base** (`global_knowledge_base` table) — shared info about Arya AI that ALL agents reference in their prompts
+  - Command format: "Update global knowledge base: [content]" via owner chat
+  - Global KB is injected into all AI prompts (widget chat, owner chat, WhatsApp chat)
+  - Only the master profile can write to the global KB; all others can only read
+  - **Database:** `smart_profiles.is_master` (boolean), `global_knowledge_base` table (single-row, stores content + updatedBy + timestamps)
+  - **IMPORTANT:** App uses `SUPABASE_DB_URL` (not `DATABASE_URL`) for the production database. Schema changes must be pushed to Supabase directly, not via `npm run db:push` which targets the Replit built-in DB.
+
 ## External Dependencies
 - **AWS S3:** For object storage of profile images and voice donations.
 - **Stripe:** For payment processing, subscriptions (Arya Pro, Arya Agency), and one-time purchases (Founding Member Pass). Integrated via `stripe-replit-sync`.
