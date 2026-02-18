@@ -98,6 +98,9 @@ export const smartProfiles = pgTable("smart_profiles", {
   altegioUserToken: text("altegio_user_token"),
   altegioCompanyId: text("altegio_company_id"),
   altegioAutoSend: boolean("altegio_auto_send").notNull().default(false),
+  webhookUrl: text("webhook_url"),
+  webhookSecret: text("webhook_secret"),
+  webhookAutoSend: boolean("webhook_auto_send").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

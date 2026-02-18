@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Loader2, ExternalLink, Sparkles, Camera, Languages, ArrowLeft, Upload, MapPin, Crown, Pencil, Eye, Globe, Users, MessageCircle, Clock, ChevronRight, Mic, Square, Code, Copy, Check, Link2, Smartphone, QrCode, Megaphone, Download, Trash2, X, Plus, Settings, PlugZap } from "lucide-react";
+import { Send, Loader2, ExternalLink, Sparkles, Camera, Languages, ArrowLeft, Upload, MapPin, Crown, Pencil, Eye, Globe, Users, MessageCircle, Clock, ChevronRight, Mic, Square, Code, Copy, Check, Link2, Smartphone, QrCode, Megaphone, Download, Trash2, X, Plus, Settings, PlugZap, Zap } from "lucide-react";
 import QRCode from "qrcode";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
@@ -692,6 +692,13 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
   const [altegioSending, setAltegioSending] = useState<string | null>(null);
   const [altegioSentSessions, setAltegioSentSessions] = useState<Set<string>>(new Set());
   const altegioFormSynced = useRef(false);
+  const [showWebhookSettings, setShowWebhookSettings] = useState(false);
+  const [webhookForm, setWebhookForm] = useState({ webhookUrl: "", webhookSecret: "", webhookAutoSend: false });
+  const [webhookSaving, setWebhookSaving] = useState(false);
+  const [webhookTesting, setWebhookTesting] = useState(false);
+  const [webhookSending, setWebhookSending] = useState<string | null>(null);
+  const [webhookSentSessions, setWebhookSentSessions] = useState<Set<string>>(new Set());
+  const webhookFormSynced = useRef(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -723,6 +730,11 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     enabled: !!smartProfile?.id,
   });
 
+  const { data: webhookSettings } = useQuery<{ webhookUrl: string; webhookSecret: string; webhookAutoSend: boolean }>({
+    queryKey: ["/api/smart-profile/webhook-settings"],
+    enabled: !!smartProfile?.id,
+  });
+
   useEffect(() => {
     if (altegioSettings && showAltegioSettings && !altegioFormSynced.current) {
       setAltegioForm({
@@ -735,6 +747,18 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     }
     if (!showAltegioSettings) altegioFormSynced.current = false;
   }, [altegioSettings, showAltegioSettings]);
+
+  useEffect(() => {
+    if (webhookSettings && showWebhookSettings && !webhookFormSynced.current) {
+      setWebhookForm({
+        webhookUrl: webhookSettings.webhookUrl || "",
+        webhookSecret: webhookSettings.webhookSecret || "",
+        webhookAutoSend: webhookSettings.webhookAutoSend || false,
+      });
+      webhookFormSynced.current = true;
+    }
+    if (!showWebhookSettings) webhookFormSynced.current = false;
+  }, [webhookSettings, showWebhookSettings]);
 
   const { data: hirearyaLeads } = useQuery<any[]>({
     queryKey: ["/api/proxy/leads", smartProfile?.slug],
@@ -1728,6 +1752,143 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     );
   }
 
+  if (profileReady && showWebhookSettings) {
+    const webhookConfigured = !!webhookSettings?.webhookUrl;
+
+    const handleWebhookSave = async () => {
+      setWebhookSaving(true);
+      try {
+        await apiRequest("PATCH", "/api/smart-profile/webhook-settings", webhookForm);
+        queryClient.invalidateQueries({ queryKey: ["/api/smart-profile/webhook-settings"] });
+        toast({ title: language === "az" ? "Webhook parametrləri yadda saxlanıldı" : language === "ru" ? "Настройки вебхука сохранены" : "Webhook settings saved" });
+      } catch {
+        toast({ title: language === "az" ? "Xəta baş verdi" : language === "ru" ? "Ошибка сохранения" : "Save failed", variant: "destructive" });
+      }
+      setWebhookSaving(false);
+    };
+
+    const handleWebhookTest = async () => {
+      setWebhookTesting(true);
+      try {
+        const res = await fetch("/api/smart-profile/webhook-test", { method: "POST", credentials: "include" });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          toast({ title: language === "az" ? "Test uğurlu! Status: " + data.status : language === "ru" ? "Тест успешен! Статус: " + data.status : "Test successful! Status: " + data.status });
+        } else {
+          toast({ title: data.message || "Test failed", variant: "destructive" });
+        }
+      } catch {
+        toast({ title: language === "az" ? "Webhook-a qoşulmaq mümkün olmadı" : language === "ru" ? "Не удалось подключиться к вебхуку" : "Could not reach webhook URL", variant: "destructive" });
+      }
+      setWebhookTesting(false);
+    };
+
+    return (
+      <Card className="flex flex-col h-[calc(100svh-12rem)] sm:h-[500px] min-h-[350px] max-h-[600px] overflow-visible">
+        <div className="flex items-center gap-2 px-3 sm:px-4 pt-3 pb-2 border-b">
+          <Button size="icon" variant="ghost" onClick={() => setShowWebhookSettings(false)} data-testid="button-webhook-back">
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <h3 className="font-semibold text-sm flex items-center gap-1.5" data-testid="text-webhook-title">
+            <Globe className="w-4 h-4 text-blue-500" />
+            {language === "az" ? "Universal Webhook" : language === "ru" ? "Универсальный Вебхук" : "Universal Webhook"}
+          </h3>
+          {webhookConfigured && <Badge className="bg-emerald-500 text-white border-transparent text-[10px] ml-auto">
+            {language === "az" ? "Qoşulub" : language === "ru" ? "Подключено" : "Connected"}
+          </Badge>}
+        </div>
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 space-y-3">
+          <p className="text-xs text-muted-foreground">
+            {language === "az" ? "İstənilən CRM-ə (Bitrix24, AmoCRM, HubSpot, Zapier və s.) lidləri göndərmək üçün webhook URL daxil edin."
+              : language === "ru" ? "Введите webhook URL для отправки лидов в любую CRM (Bitrix24, AmoCRM, HubSpot, Zapier и др.)."
+              : "Enter a webhook URL to send leads to any CRM (Bitrix24, AmoCRM, HubSpot, Zapier, Make, and more)."}
+          </p>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium">Webhook URL</label>
+            <Input
+              placeholder="https://hooks.zapier.com/... or https://your-crm.com/webhook"
+              value={webhookForm.webhookUrl}
+              onChange={(e) => setWebhookForm(prev => ({ ...prev, webhookUrl: e.target.value }))}
+              data-testid="input-webhook-url"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium">
+              {language === "az" ? "Secret Key (ixtiyari)" : language === "ru" ? "Секретный ключ (необязательно)" : "Secret Key (optional)"}
+            </label>
+            <Input
+              type="password"
+              placeholder="your-secret-key"
+              value={webhookForm.webhookSecret}
+              onChange={(e) => setWebhookForm(prev => ({ ...prev, webhookSecret: e.target.value }))}
+              data-testid="input-webhook-secret"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              {language === "az" ? "HMAC-SHA256 imzası X-Arya-Signature başlığında göndərilir"
+                : language === "ru" ? "HMAC-SHA256 подпись отправляется в заголовке X-Arya-Signature"
+                : "HMAC-SHA256 signature sent in X-Arya-Signature header"}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/50">
+            <input
+              type="checkbox"
+              id="webhook-auto-send"
+              checked={webhookForm.webhookAutoSend}
+              onChange={(e) => setWebhookForm(prev => ({ ...prev, webhookAutoSend: e.target.checked }))}
+              className="rounded"
+              data-testid="checkbox-webhook-auto-send"
+            />
+            <label htmlFor="webhook-auto-send" className="text-xs cursor-pointer">
+              {language === "az" ? "Lidlər avtomatik göndərilsin" : language === "ru" ? "Автоматически отправлять лиды" : "Auto-send leads"}
+            </label>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={handleWebhookSave}
+              disabled={webhookSaving}
+              className="flex-1"
+              data-testid="button-webhook-save"
+            >
+              {webhookSaving && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
+              {language === "az" ? "Yadda saxla" : language === "ru" ? "Сохранить" : "Save"}
+            </Button>
+            {webhookConfigured && (
+              <Button
+                variant="outline"
+                onClick={handleWebhookTest}
+                disabled={webhookTesting}
+                data-testid="button-webhook-test"
+              >
+                {webhookTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                Test
+              </Button>
+            )}
+          </div>
+
+          <div className="bg-muted/30 rounded-md p-2.5 space-y-1.5">
+            <p className="text-[10px] font-medium">
+              {language === "az" ? "JSON formatı:" : language === "ru" ? "Формат JSON:" : "JSON payload format:"}
+            </p>
+            <pre className="text-[9px] text-muted-foreground overflow-x-auto whitespace-pre-wrap">{`{
+  "event": "new_lead",
+  "profile": { "slug": "...", "businessName": "..." },
+  "lead": {
+    "name": "...", "phone": "...",
+    "email": "...", "comment": "..."
+  },
+  "conversation": [...],
+  "timestamp": "2025-..."
+}`}</pre>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   if (profileReady && showWidgetGuide && smartProfile) {
     const COLOR_PRESETS = [
       { hex: "#2563EB", label: t.widgetColorDefault },
@@ -2043,6 +2204,44 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
                 >
                   {altegioSending === selectedLead ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PlugZap className="w-3.5 h-3.5" />}
                   {language === "az" ? "Altegio-ya göndər" : language === "ru" ? "Отправить в Altegio" : "Send to Altegio"}
+                </Button>
+              )}
+            </div>
+          )}
+          {webhookSettings?.webhookUrl && (
+            <div className="px-3 sm:px-4 pb-2 pt-1 border-t">
+              {webhookSentSessions.has(selectedLead) || leadMessages.some((m: any) => m.content?.includes("[webhook-sent]")) ? (
+                <div className="flex items-center justify-center gap-1.5 text-xs text-emerald-600 py-1" data-testid="webhook-sent-status">
+                  <Check className="w-3.5 h-3.5" />
+                  {language === "az" ? "Webhook ilə göndərilib" : language === "ru" ? "Отправлено через Webhook" : "Sent via Webhook"}
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1.5 text-xs"
+                  disabled={webhookSending === selectedLead}
+                  onClick={async () => {
+                    setWebhookSending(selectedLead);
+                    try {
+                      const res = await fetch(`/api/smart-profile/leads/${selectedLead}/send-to-webhook`, { method: "POST", credentials: "include" });
+                      const data = await res.json();
+                      if (res.ok && data.success) {
+                        setWebhookSentSessions(prev => new Set(prev).add(selectedLead));
+                        queryClient.invalidateQueries({ queryKey: ["/api/smart-profile/leads", selectedLead] });
+                        toast({ title: language === "az" ? `${data.extracted?.name || "Lead"} webhook ilə göndərildi` : language === "ru" ? `${data.extracted?.name || "Лид"} отправлен через webhook` : `${data.extracted?.name || "Lead"} sent via webhook` });
+                      } else {
+                        toast({ title: data.message || (language === "az" ? "Göndərmə uğursuz" : language === "ru" ? "Ошибка отправки" : "Send failed"), variant: "destructive" });
+                      }
+                    } catch {
+                      toast({ title: language === "az" ? "Göndərmə uğursuz" : language === "ru" ? "Ошибка отправки" : "Send failed", variant: "destructive" });
+                    }
+                    setWebhookSending(null);
+                  }}
+                  data-testid="button-send-to-webhook"
+                >
+                  {webhookSending === selectedLead ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
+                  {language === "az" ? "Webhook ilə göndər" : language === "ru" ? "Отправить через Webhook" : "Send via Webhook"}
                 </Button>
               )}
             </div>
@@ -2403,6 +2602,43 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
                 </span>
               </div>
               {altegioSettings?.altegioPartnerToken && altegioSettings?.altegioUserToken && altegioSettings?.altegioCompanyId
+                ? <Badge className="bg-emerald-500 text-white border-transparent text-[10px] shrink-0">
+                    {language === "az" ? "Aktiv" : language === "ru" ? "Активно" : "Active"}
+                  </Badge>
+                : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+            </div>
+          </Button>
+
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setShowWebhookSettings(true);
+              if (webhookSettings) {
+                setWebhookForm({
+                  webhookUrl: webhookSettings.webhookUrl || "",
+                  webhookSecret: webhookSettings.webhookSecret || "",
+                  webhookAutoSend: webhookSettings.webhookAutoSend || false,
+                });
+              }
+            }}
+            className="w-full h-auto p-0 justify-start font-normal"
+            data-testid="button-webhook-settings"
+          >
+            <div className="flex items-center gap-3 p-3 rounded-md bg-blue-500/10 border border-blue-500/20 w-full">
+              <div className="w-10 h-10 rounded-md bg-blue-500/20 flex items-center justify-center shrink-0">
+                <Globe className="w-5 h-5 text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <span className="text-sm font-medium">
+                  {language === "az" ? "Universal Webhook" : language === "ru" ? "Универсальный Вебхук" : "Universal Webhook"}
+                </span>
+                <span className="text-xs text-muted-foreground block">
+                  {webhookSettings?.webhookUrl
+                    ? (language === "az" ? "Qoşulub" : language === "ru" ? "Подключено" : "Connected")
+                    : (language === "az" ? "İstənilən CRM" : language === "ru" ? "Любая CRM" : "Any CRM")}
+                </span>
+              </div>
+              {webhookSettings?.webhookUrl
                 ? <Badge className="bg-emerald-500 text-white border-transparent text-[10px] shrink-0">
                     {language === "az" ? "Aktiv" : language === "ru" ? "Активно" : "Active"}
                   </Badge>

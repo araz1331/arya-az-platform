@@ -13,6 +13,31 @@ import * as fs from "fs";
 import * as path from "path";
 import { detectAudioFormat, speechToText } from "./replit_integrations/audio/client";
 
+function isValidWebhookUrl(urlStr: string): boolean {
+  try {
+    const u = new URL(urlStr);
+    if (u.protocol !== "https:" && u.protocol !== "http:") return false;
+    const hostname = u.hostname.toLowerCase();
+    const blocked = ["localhost", "127.0.0.1", "0.0.0.0", "::1", "metadata.google.internal", "169.254.169.254"];
+    if (blocked.includes(hostname)) return false;
+    if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/.test(hostname)) return false;
+    if (hostname.endsWith(".internal") || hostname.endsWith(".local")) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 10000): Promise<globalThis.Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 const gemini = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "",
   httpOptions: {
@@ -349,7 +374,10 @@ export async function registerRoutes(
       if (role === "assistant" && profileId && sessionId) {
         try {
           const profile = await storage.getSmartProfile(profileId);
-          if (profile?.altegioAutoSend && profile.altegioPartnerToken && profile.altegioUserToken && profile.altegioCompanyId) {
+          const hasAltegio = profile?.altegioAutoSend && profile.altegioPartnerToken && profile.altegioUserToken && profile.altegioCompanyId;
+          const hasWebhook = profile?.webhookAutoSend && profile.webhookUrl;
+
+          if (hasAltegio || hasWebhook) {
             const allMsgs = await db.execute(sql`
               SELECT role, content FROM widget_messages
               WHERE profile_id = ${profileId} AND session_id = ${sessionId}
@@ -360,51 +388,96 @@ export async function registerRoutes(
               const convoText = allMsgs.rows.map((m: any) => `${m.role}: ${m.content}`).join("\n");
               const hasContact = /(\+?\d[\d\s\-()]{7,})|(\b\d{10,}\b)/.test(convoText);
               if (hasContact) {
-                const alreadySent = await db.execute(sql`
-                  SELECT 1 FROM widget_messages
-                  WHERE profile_id = ${profileId} AND session_id = ${sessionId}
-                    AND content LIKE '%[altegio-sent]%' LIMIT 1
-                `);
-                if (!alreadySent.rows.length) {
-                  const extractResult = await gemini.models.generateContent({
-                    model: "gemini-2.0-flash",
-                    contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON: {"name":"","phone":"","comment":""}.\n\n${convoText}`,
-                  });
-                  try {
-                    const raw = extractResult.text?.trim() || "{}";
-                    const json = JSON.parse(raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
-                    if (json.name || json.phone) {
-                      const altRes = await fetch(`https://api.alteg.io/api/v1/client/${profile.altegioCompanyId}`, {
-                        method: "POST",
-                        headers: {
-                          "Authorization": `Bearer ${profile.altegioPartnerToken}, User ${profile.altegioUserToken}`,
-                          "Accept": "application/vnd.api.v2+json",
-                          "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                          name: json.name || "Arya Lead",
-                          phone: json.phone || "",
-                          comment: `[Arya AI Lead] ${json.comment || ""}`.trim(),
-                        }),
-                      });
-                      if (altRes.ok) {
-                        await storage.createWidgetMessage({
-                          profileId, sessionId, role: "system",
-                          content: `[altegio-sent] ${json.name} ${json.phone}`,
-                          contentType: "system", audioUrl: null,
+                if (hasAltegio) {
+                  const alreadySent = await db.execute(sql`
+                    SELECT 1 FROM widget_messages
+                    WHERE profile_id = ${profileId} AND session_id = ${sessionId}
+                      AND content LIKE '%[altegio-sent]%' LIMIT 1
+                  `);
+                  if (!alreadySent.rows.length) {
+                    const extractResult = await gemini.models.generateContent({
+                      model: "gemini-2.0-flash",
+                      contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON: {"name":"","phone":"","comment":""}.\n\n${convoText}`,
+                    });
+                    try {
+                      const raw = extractResult.text?.trim() || "{}";
+                      const json = JSON.parse(raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
+                      if (json.name || json.phone) {
+                        const altRes = await fetch(`https://api.alteg.io/api/v1/client/${profile!.altegioCompanyId!}`, {
+                          method: "POST",
+                          headers: {
+                            "Authorization": `Bearer ${profile!.altegioPartnerToken}, User ${profile!.altegioUserToken}`,
+                            "Accept": "application/vnd.api.v2+json",
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            name: json.name || "Arya Lead",
+                            phone: json.phone || "",
+                            comment: `[Arya AI Lead] ${json.comment || ""}`.trim(),
+                          }),
                         });
-                        console.log(`[altegio-auto] Sent lead for ${profile.slug}: ${json.name} ${json.phone}`);
-                      } else {
-                        console.error(`[altegio-auto] Failed for ${profile.slug}:`, altRes.status);
+                        if (altRes.ok) {
+                          await storage.createWidgetMessage({
+                            profileId, sessionId, role: "system",
+                            content: `[altegio-sent] ${json.name} ${json.phone}`,
+                            contentType: "system", audioUrl: null,
+                          });
+                          console.log(`[altegio-auto] Sent lead for ${profile!.slug}: ${json.name} ${json.phone}`);
+                        } else {
+                          console.error(`[altegio-auto] Failed for ${profile!.slug}:`, altRes.status);
+                        }
                       }
-                    }
-                  } catch {}
+                    } catch {}
+                  }
+                }
+
+                if (hasWebhook) {
+                  const alreadySentWh = await db.execute(sql`
+                    SELECT 1 FROM widget_messages
+                    WHERE profile_id = ${profileId} AND session_id = ${sessionId}
+                      AND content LIKE '%[webhook-sent]%' LIMIT 1
+                  `);
+                  if (!alreadySentWh.rows.length) {
+                    const extractResult = await gemini.models.generateContent({
+                      model: "gemini-2.0-flash",
+                      contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON: {"name":"","phone":"","email":"","comment":""}.\n\n${convoText}`,
+                    });
+                    try {
+                      const raw = extractResult.text?.trim() || "{}";
+                      const json = JSON.parse(raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
+                      if (json.name || json.phone || json.email) {
+                        const payload = {
+                          event: "new_lead",
+                          profile: { slug: profile!.slug, businessName: profile!.businessName },
+                          lead: { name: json.name || "", phone: json.phone || "", email: json.email || "", comment: json.comment || "", sessionId },
+                          timestamp: new Date().toISOString(),
+                        };
+                        const whHeaders: Record<string, string> = { "Content-Type": "application/json", "User-Agent": "Arya-Webhook/1.0" };
+                        if (profile!.webhookSecret) {
+                          const crypto = await import("crypto");
+                          const signature = crypto.createHmac("sha256", profile!.webhookSecret!).update(JSON.stringify(payload)).digest("hex");
+                          whHeaders["X-Arya-Signature"] = signature;
+                        }
+                        const whRes = await fetchWithTimeout(profile!.webhookUrl!, { method: "POST", headers: whHeaders, body: JSON.stringify(payload) });
+                        if (whRes.ok) {
+                          await storage.createWidgetMessage({
+                            profileId, sessionId, role: "system",
+                            content: `[webhook-sent] ${json.name} ${json.phone}`,
+                            contentType: "system", audioUrl: null,
+                          });
+                          console.log(`[webhook-auto] Sent lead for ${profile!.slug}: ${json.name} ${json.phone}`);
+                        } else {
+                          console.error(`[webhook-auto] Failed for ${profile!.slug}:`, whRes.status);
+                        }
+                      }
+                    } catch {}
+                  }
                 }
               }
             }
           }
         } catch (autoErr) {
-          console.error("[altegio-auto] Error:", autoErr);
+          console.error("[crm-auto] Error:", autoErr);
         }
       }
 
@@ -1666,6 +1739,170 @@ Your capabilities:
     } catch (error) {
       console.error("[altegio-push] Error:", error);
       res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.get("/api/smart-profile/webhook-settings", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+      res.json({
+        webhookUrl: profile.webhookUrl || "",
+        webhookSecret: profile.webhookSecret || "",
+        webhookAutoSend: profile.webhookAutoSend || false,
+      });
+    } catch (error) {
+      console.error("[webhook-settings] Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.patch("/api/smart-profile/webhook-settings", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+      const { webhookUrl, webhookSecret, webhookAutoSend } = req.body;
+      if (webhookUrl && !isValidWebhookUrl(webhookUrl)) {
+        return res.status(400).json({ message: "Invalid webhook URL. Only public HTTPS/HTTP URLs are allowed." });
+      }
+      await storage.updateSmartProfile(profile.id, {
+        webhookUrl: webhookUrl ?? profile.webhookUrl,
+        webhookSecret: webhookSecret ?? profile.webhookSecret,
+        webhookAutoSend: webhookAutoSend ?? profile.webhookAutoSend,
+      });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[webhook-settings-update] Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/smart-profile/webhook-test", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+
+      if (!profile.webhookUrl) {
+        return res.status(400).json({ message: "No webhook URL configured" });
+      }
+      if (!isValidWebhookUrl(profile.webhookUrl)) {
+        return res.status(400).json({ message: "Invalid webhook URL" });
+      }
+
+      const testPayload = {
+        event: "test",
+        profile: { slug: profile.slug, businessName: profile.businessName },
+        lead: { name: "Test Lead", phone: "+1234567890", email: "test@example.com", comment: "This is a test webhook from Arya AI" },
+        timestamp: new Date().toISOString(),
+      };
+
+      const headers: Record<string, string> = { "Content-Type": "application/json", "User-Agent": "Arya-Webhook/1.0" };
+      if (profile.webhookSecret) {
+        const crypto = await import("crypto");
+        const signature = crypto.createHmac("sha256", profile.webhookSecret).update(JSON.stringify(testPayload)).digest("hex");
+        headers["X-Arya-Signature"] = signature;
+      }
+
+      const webhookRes = await fetchWithTimeout(profile.webhookUrl, { method: "POST", headers, body: JSON.stringify(testPayload) });
+
+      if (webhookRes.ok) {
+        res.json({ success: true, status: webhookRes.status });
+      } else {
+        res.status(502).json({ message: `Webhook returned ${webhookRes.status}`, status: webhookRes.status });
+      }
+    } catch (error: any) {
+      console.error("[webhook-test] Error:", error);
+      res.status(502).json({ message: error.message || "Could not reach webhook URL" });
+    }
+  });
+
+  app.post("/api/smart-profile/leads/:sessionId/send-to-webhook", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+
+      if (!profile.webhookUrl) {
+        return res.status(400).json({ message: "No webhook URL configured" });
+      }
+
+      const messages = await db.execute(sql`
+        SELECT role, content FROM widget_messages
+        WHERE profile_id = ${profile.id} AND session_id = ${req.params.sessionId}
+        ORDER BY created_at ASC
+      `);
+
+      if (!messages.rows || messages.rows.length === 0) {
+        return res.status(404).json({ message: "No messages found for this lead" });
+      }
+
+      const conversationText = messages.rows.map((m: any) => `${m.role}: ${m.content}`).join("\n");
+
+      const extractResult = await gemini.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON with these fields: {"name": "client name or empty string", "phone": "phone number or empty string", "email": "email or empty string", "comment": "brief summary of what they want"}. Do not include any other text.\n\nConversation:\n${conversationText}`,
+      });
+
+      let contactInfo: { name: string; phone: string; email?: string; comment: string };
+      try {
+        const rawText = extractResult.text?.trim() || "{}";
+        const jsonStr = rawText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        contactInfo = JSON.parse(jsonStr);
+      } catch {
+        return res.status(422).json({ message: "Could not extract contact info from conversation" });
+      }
+
+      const payload = {
+        event: "new_lead",
+        profile: { slug: profile.slug, businessName: profile.businessName },
+        lead: {
+          name: contactInfo.name || "",
+          phone: contactInfo.phone || "",
+          email: contactInfo.email || "",
+          comment: contactInfo.comment || "",
+          sessionId: req.params.sessionId,
+        },
+        conversation: messages.rows.filter((m: any) => m.role !== "system").map((m: any) => ({ role: m.role, content: m.content })),
+        timestamp: new Date().toISOString(),
+      };
+
+      const headers: Record<string, string> = { "Content-Type": "application/json", "User-Agent": "Arya-Webhook/1.0" };
+      if (profile.webhookSecret) {
+        const crypto = await import("crypto");
+        const signature = crypto.createHmac("sha256", profile.webhookSecret).update(JSON.stringify(payload)).digest("hex");
+        headers["X-Arya-Signature"] = signature;
+      }
+
+      if (!isValidWebhookUrl(profile.webhookUrl)) {
+        return res.status(400).json({ message: "Invalid webhook URL" });
+      }
+
+      const webhookRes = await fetchWithTimeout(profile.webhookUrl, { method: "POST", headers, body: JSON.stringify(payload) });
+
+      if (!webhookRes.ok) {
+        console.error("[webhook-push] Error:", webhookRes.status);
+        return res.status(502).json({ message: `Webhook returned ${webhookRes.status}` });
+      }
+
+      const sid = req.params.sessionId as string;
+      await storage.createWidgetMessage({
+        profileId: profile.id, sessionId: sid, role: "system",
+        content: `[webhook-sent] ${contactInfo.name} ${contactInfo.phone}`,
+        contentType: "system", audioUrl: null,
+      });
+
+      console.log(`[webhook-push] Lead sent for ${profile.slug}: ${contactInfo.name} ${contactInfo.phone}`);
+      res.json({ success: true, extracted: contactInfo });
+    } catch (error: any) {
+      console.error("[webhook-push] Error:", error);
+      res.status(500).json({ message: error.message || "Server error" });
     }
   });
 
