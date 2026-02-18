@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import {
   Users, Mic, HardDrive, Clock, ArrowLeft, Waves, Download,
   MessageSquare, Globe, Crown, TrendingUp, Briefcase,
   ExternalLink, Languages, CheckCircle, XCircle, Loader2,
+  Play, Pause, Volume2,
 } from "lucide-react";
 
 type Tab = "overview" | "users" | "profiles" | "leads" | "voice";
@@ -91,6 +92,7 @@ interface AdminVoiceDonation {
   fileSize: number;
   wordCount: number;
   createdAt: string;
+  audioStreamUrl?: string | null;
 }
 
 function formatBytes(bytes: number): string {
@@ -463,45 +465,128 @@ function LeadsTab({ leads, isLoading }: { leads: AdminLead[]; isLoading: boolean
 }
 
 function VoiceTab({ donations, isLoading }: { donations: AdminVoiceDonation[]; isLoading: boolean }) {
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  const getAudioUrl = (d: AdminVoiceDonation) => d.audioStreamUrl || null;
+
+  const handlePlay = (d: AdminVoiceDonation) => {
+    const url = getAudioUrl(d);
+    if (!url) return;
+    if (playingId === d.id) {
+      audioRef.current?.pause();
+      setPlayingId(null);
+      return;
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    const audio = new Audio(url);
+    audio.onended = () => { setPlayingId(null); };
+    audio.onerror = () => { setPlayingId(null); };
+    audio.play().catch(() => { setPlayingId(null); });
+    audioRef.current = audio;
+    setPlayingId(d.id);
+  };
+
+  const handleDownload = (d: AdminVoiceDonation) => {
+    const url = getAudioUrl(d);
+    if (!url) return;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `voice-${d.speakerName || "unknown"}-${d.id.slice(0, 8)}.webm`;
+    a.click();
+  };
+
   if (isLoading) return <p className="text-muted-foreground text-sm p-4">Loading...</p>;
   if (donations.length === 0) return <p className="text-muted-foreground text-sm p-4">No voice donations yet.</p>;
+
+  const totalDuration = donations.reduce((sum, d) => sum + (d.duration || 0), 0);
+  const totalSize = donations.reduce((sum, d) => sum + (d.fileSize || 0), 0);
+
   return (
-    <Card className="overflow-hidden">
-      <div className="p-4 border-b">
-        <h3 className="font-semibold">Voice Donations ({donations.length})</h3>
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard icon={Mic} label="Total Donations" value={donations.length} />
+        <StatCard icon={Clock} label="Total Duration" value={formatDuration(totalDuration)} />
+        <StatCard icon={HardDrive} label="Total Size" value={formatBytes(totalSize)} />
+        <StatCard icon={Volume2} label="With Audio" value={donations.filter(d => d.audioStreamUrl).length} color="bg-green-500/10 text-green-500" />
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/30">
-              <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Speaker</th>
-              <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Text</th>
-              <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Category</th>
-              <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Duration</th>
-              <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Words</th>
-              <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {donations.map((d) => (
-              <tr key={d.id} className="border-b last:border-b-0" data-testid={`row-donation-${d.id}`}>
-                <td className="py-2.5 px-4">
-                  <div className="font-medium text-xs">{d.speakerName || "—"}</div>
-                  <div className="text-[10px] text-muted-foreground">{d.age ? `${d.age}y` : ""} {d.gender || ""}</div>
-                </td>
-                <td className="py-2.5 px-4 text-xs text-muted-foreground max-w-[250px] truncate">{d.transcription || "—"}</td>
-                <td className="py-2.5 px-4">
-                  {d.category && <Badge variant="outline" className="text-[10px]">{d.category}</Badge>}
-                </td>
-                <td className="py-2.5 px-4 text-right tabular-nums text-xs">{formatDuration(d.duration || 0)}</td>
-                <td className="py-2.5 px-4 text-right tabular-nums text-xs">{d.wordCount || 0}</td>
-                <td className="py-2.5 px-4 text-right text-xs text-muted-foreground">{formatDateShort(d.createdAt)}</td>
+
+      <Card className="overflow-hidden">
+        <div className="p-4 border-b">
+          <h3 className="font-semibold">Voice Donations ({donations.length})</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/30">
+                <th className="py-2.5 px-4 text-left font-medium text-muted-foreground w-10"></th>
+                <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Speaker</th>
+                <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Text</th>
+                <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Category</th>
+                <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Duration</th>
+                <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Size</th>
+                <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Date</th>
+                <th className="py-2.5 px-4 text-right font-medium text-muted-foreground w-10"></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
+            </thead>
+            <tbody>
+              {donations.map((d) => (
+                <tr key={d.id} className="border-b last:border-b-0" data-testid={`row-donation-${d.id}`}>
+                  <td className="py-2.5 px-4">
+                    {d.audioStreamUrl ? (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handlePlay(d)}
+                        data-testid={`button-play-${d.id}`}
+                      >
+                        {playingId === d.id ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                      </Button>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
+                  </td>
+                  <td className="py-2.5 px-4">
+                    <div className="font-medium text-xs">{d.speakerName || "—"}</div>
+                    <div className="text-[10px] text-muted-foreground">{d.age ? `${d.age}y` : ""} {d.gender || ""}</div>
+                  </td>
+                  <td className="py-2.5 px-4 text-xs text-muted-foreground max-w-[250px] truncate">{d.transcription || "—"}</td>
+                  <td className="py-2.5 px-4">
+                    {d.category && <Badge variant="outline" className="text-[10px]">{d.category}</Badge>}
+                  </td>
+                  <td className="py-2.5 px-4 text-right tabular-nums text-xs">{formatDuration(d.duration || 0)}</td>
+                  <td className="py-2.5 px-4 text-right tabular-nums text-xs">{formatBytes(d.fileSize || 0)}</td>
+                  <td className="py-2.5 px-4 text-right text-xs text-muted-foreground">{formatDateShort(d.createdAt)}</td>
+                  <td className="py-2.5 px-4 text-right">
+                    {d.audioStreamUrl && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => handleDownload(d)}
+                        data-testid={`button-download-${d.id}`}
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
   );
 }
 
