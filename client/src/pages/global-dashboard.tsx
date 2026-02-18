@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Sparkles, Users, BarChart3, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, ChevronDown, TrendingUp, Clock, Eye, ArrowUpRight } from "lucide-react";
+import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye } from "lucide-react";
 import AryaWidget from "@/components/arya-widget";
 import OwnerAssistant from "@/components/owner-assistant";
 import type { Profile } from "@shared/schema";
@@ -82,72 +82,32 @@ interface LeadMessage {
   created_at: string;
 }
 
-function AnalyticsPanel({ profileId, t }: { profileId: string; t: (key: any) => string }) {
+function AnalyticsSummary({ profileId, t }: { profileId: string; t: (key: any) => string }) {
   const { data, isLoading } = useQuery<AnalyticsData>({
     queryKey: ["/api/smart-profile/analytics"],
     enabled: !!profileId,
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="animate-pulse text-muted-foreground text-sm">{t("dashLeadsLoading")}</div>
-      </div>
-    );
-  }
+  if (isLoading || !data || data.totalMessages === 0) return null;
 
-  if (!data || data.totalMessages === 0) {
-    return (
-      <Card className="p-8">
-        <div className="flex flex-col items-center text-center text-muted-foreground">
-          <BarChart3 className="w-12 h-12 mb-4 opacity-30" />
-          <h3 className="text-lg font-medium mb-2" data-testid="text-analytics-empty">{t("dashAnalyticsTitle")}</h3>
-          <p className="text-sm max-w-md">{t("dashAnalyticsNoData")}</p>
-        </div>
-      </Card>
-    );
-  }
-
-  const maxMessages = Math.max(...(data.daily.map(d => d.messages)), 1);
+  const stats = [
+    { label: t("dashAnalyticsMessages"), value: data.totalMessages, icon: MessageCircle },
+    { label: t("dashAnalyticsConversations"), value: data.totalConversations, icon: Users },
+    { label: t("dashAnalyticsAvgResponse"), value: data.totalConversations > 0 ? Math.round(data.assistantMessages / data.totalConversations) : 0, icon: Clock },
+    { label: t("dashAnalyticsConversion"), value: `${data.totalMessages > 0 ? Math.round((data.userMessages / data.totalMessages) * 100) : 0}%`, icon: TrendingUp },
+  ];
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: t("dashAnalyticsMessages"), value: data.totalMessages, icon: MessageCircle, desc: t("dashAnalyticsMessagesDesc") },
-          { label: t("dashAnalyticsConversations"), value: data.totalConversations, icon: Users, desc: t("dashAnalyticsConversationsDesc") },
-          { label: t("dashAnalyticsAvgResponse"), value: data.totalConversations > 0 ? `${Math.round(data.assistantMessages / data.totalConversations)}` : "0", icon: Clock, desc: t("dashAnalyticsAvgResponseDesc") },
-          { label: t("dashAnalyticsConversion"), value: `${data.totalMessages > 0 ? Math.round((data.userMessages / data.totalMessages) * 100) : 0}%`, icon: TrendingUp, desc: t("dashAnalyticsConversionDesc") },
-        ].map((stat, i) => (
-          <Card key={i} className="p-4" data-testid={`card-stat-${i}`}>
-            <div className="flex items-center gap-2 mb-2">
-              <stat.icon className="w-4 h-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">{stat.label}</span>
-            </div>
-            <div className="text-2xl font-bold" data-testid={`text-stat-value-${i}`}>{stat.value}</div>
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{stat.desc}</p>
-          </Card>
-        ))}
-      </div>
-
-      {data.daily.length > 0 && (
-        <Card className="p-4">
-          <h3 className="text-sm font-semibold mb-4" data-testid="text-chart-title">{t("dashAnalyticsChart")}</h3>
-          <div className="flex items-end gap-1 h-32">
-            {data.daily.slice(-14).map((day, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1" data-testid={`bar-day-${i}`}>
-                <div
-                  className="w-full bg-primary/80 rounded-sm min-h-[2px] transition-all"
-                  style={{ height: `${(day.messages / maxMessages) * 100}%` }}
-                />
-                <span className="text-[9px] text-muted-foreground">
-                  {new Date(day.date).toLocaleDateString(undefined, { day: "numeric" })}
-                </span>
-              </div>
-            ))}
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4" data-testid="container-analytics-summary">
+      {stats.map((stat, i) => (
+        <Card key={i} className="p-3" data-testid={`card-stat-${i}`}>
+          <div className="flex items-center gap-1.5 mb-1">
+            <stat.icon className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-[10px] text-muted-foreground truncate">{stat.label}</span>
           </div>
+          <div className="text-lg font-bold" data-testid={`text-stat-value-${i}`}>{stat.value}</div>
         </Card>
-      )}
+      ))}
     </div>
   );
 }
@@ -258,36 +218,36 @@ function LeadsPanel({ profileId, t }: { profileId: string; t: (key: any) => stri
   );
 }
 
-function EmbedCodePanel({ slug, t }: { slug: string; t: (key: any) => string }) {
-  const [copied, setCopied] = useState(false);
+function EmbedCodeSection({ slug, t }: { slug: string; t: (key: any) => string }) {
+  const [copied, setCopied] = useState<string | null>(null);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const embedCode = `<script src="${origin}/widget.js" data-slug="${slug}" data-color="#2563EB"></script>`;
   const profileUrl = `${origin}/u/${slug}`;
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopied(key);
+    setTimeout(() => setCopied(null), 2000);
   };
 
   return (
-    <div className="space-y-6">
-      <Card className="p-5">
+    <div className="space-y-4 mt-6 pt-6 border-t" data-testid="container-embed-section">
+      <Card className="p-4">
         <div className="flex items-center gap-2 mb-3">
-          <Link2 className="w-5 h-5 text-muted-foreground" />
-          <h3 className="font-semibold" data-testid="text-profile-link-title">{t("dashProfileLink")}</h3>
+          <Link2 className="w-4 h-4 text-muted-foreground" />
+          <h3 className="font-semibold text-sm" data-testid="text-profile-link-title">{t("dashProfileLink")}</h3>
         </div>
         <div className="flex items-center gap-2">
-          <code className="flex-1 text-sm bg-muted px-3 py-2 rounded-md truncate" data-testid="text-profile-url">
+          <code className="flex-1 text-xs bg-muted px-3 py-2 rounded-md truncate" data-testid="text-profile-url">
             {profileUrl}
           </code>
           <Button
             size="icon"
             variant="outline"
-            onClick={() => copyToClipboard(profileUrl)}
+            onClick={() => copyToClipboard(profileUrl, "link")}
             data-testid="button-copy-profile-link"
           >
-            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            {copied === "link" ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           </Button>
           <Button
             size="icon"
@@ -300,27 +260,27 @@ function EmbedCodePanel({ slug, t }: { slug: string; t: (key: any) => string }) 
         </div>
       </Card>
 
-      <Card className="p-5">
+      <Card className="p-4">
         <div className="flex items-center gap-2 mb-3">
-          <Code className="w-5 h-5 text-muted-foreground" />
-          <h3 className="font-semibold" data-testid="text-embed-code-title">{t("dashEmbedWidget")}</h3>
+          <Code className="w-4 h-4 text-muted-foreground" />
+          <h3 className="font-semibold text-sm" data-testid="text-embed-code-title">{t("dashEmbedWidget")}</h3>
         </div>
-        <p className="text-sm text-muted-foreground mb-3" data-testid="text-embed-desc">
+        <p className="text-xs text-muted-foreground mb-3" data-testid="text-embed-desc">
           {t("dashEmbedDesc")}
         </p>
         <div className="relative">
-          <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto" data-testid="text-embed-code">
+          <pre className="text-[11px] bg-muted p-3 rounded-md overflow-x-auto" data-testid="text-embed-code">
             {embedCode}
           </pre>
           <Button
             size="sm"
             variant="outline"
             className="absolute top-2 right-2"
-            onClick={() => copyToClipboard(embedCode)}
+            onClick={() => copyToClipboard(embedCode, "embed")}
             data-testid="button-copy-embed-code"
           >
-            {copied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
-            {copied ? t("dashCopied") : t("dashCopy")}
+            {copied === "embed" ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+            {copied === "embed" ? t("dashCopied") : t("dashCopy")}
           </Button>
         </div>
       </Card>
@@ -340,7 +300,7 @@ export default function GlobalDashboard({ onBack }: { onBack: () => void }) {
 
   const t = useCallback((key: any) => gt(lang, key), [lang]);
 
-  const { data: profile, isLoading: profileLoading } = useQuery<SmartProfileData>({
+  const { data: profile } = useQuery<SmartProfileData>({
     queryKey: ["/api/smart-profile"],
   });
 
@@ -398,68 +358,26 @@ export default function GlobalDashboard({ onBack }: { onBack: () => void }) {
       <main className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full mb-4 sm:mb-6">
-            <TabsTrigger value="setup" className="flex-1 gap-1 sm:gap-1.5 text-[11px] sm:text-sm" data-testid="tab-setup">
-              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <TabsTrigger value="setup" className="flex-1 gap-1.5 text-sm" data-testid="tab-setup">
+              <Sparkles className="w-4 h-4 shrink-0" />
               <span className="hidden sm:inline">{t("dashTabSetup")}</span>
               <span className="sm:hidden truncate">{t("dashTabSetupShort")}</span>
             </TabsTrigger>
-            <TabsTrigger value="leads" className="flex-1 gap-1 sm:gap-1.5 text-[11px] sm:text-sm" data-testid="tab-leads">
-              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <TabsTrigger value="leads" className="flex-1 gap-1.5 text-sm" data-testid="tab-leads">
+              <Users className="w-4 h-4 shrink-0" />
               <span className="hidden sm:inline">{t("dashTabLeads")}</span>
               <span className="sm:hidden truncate">{t("dashTabLeadsShort")}</span>
-            </TabsTrigger>
-            <TabsTrigger value="embed" className="flex-1 gap-1 sm:gap-1.5 text-[11px] sm:text-sm" disabled={!hasProfile} data-testid="tab-embed">
-              <Code className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden sm:inline">{t("dashTabWidget")}</span>
-              <span className="sm:hidden truncate">{t("dashTabWidgetShort")}</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex-1 gap-1 sm:gap-1.5 text-[11px] sm:text-sm" disabled={!hasProfile} data-testid="tab-analytics">
-              <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden sm:inline">{t("dashTabAnalytics")}</span>
-              <span className="sm:hidden truncate">{t("dashTabAnalyticsShort")}</span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="setup">
             <AryaWidget profileId={userProfile?.id ?? ""} defaultLang={lang} />
+            {hasProfile && <EmbedCodeSection slug={profile.slug} t={t} />}
           </TabsContent>
 
           <TabsContent value="leads">
+            {hasProfile && <AnalyticsSummary profileId={profile.id} t={t} />}
             <LeadsPanel profileId={profile?.id ?? ""} t={t} />
-          </TabsContent>
-
-          <TabsContent value="embed">
-            {hasProfile ? (
-              <EmbedCodePanel slug={profile.slug} t={t} />
-            ) : (
-              <Card className="p-8">
-                <div className="flex flex-col items-center text-center text-muted-foreground">
-                  <Code className="w-12 h-12 mb-4 opacity-30" />
-                  <h3 className="text-lg font-medium mb-2">{t("dashSetupFirst")}</h3>
-                  <p className="text-sm">{t("dashSetupFirstDesc")}</p>
-                  <Button className="mt-4" onClick={() => setActiveTab("setup")} data-testid="button-go-to-setup">
-                    {t("dashGoToSetup")}
-                  </Button>
-                </div>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            {hasProfile ? (
-              <AnalyticsPanel profileId={profile.id} t={t} />
-            ) : (
-              <Card className="p-8">
-                <div className="flex flex-col items-center text-center text-muted-foreground">
-                  <BarChart3 className="w-12 h-12 mb-4 opacity-30" />
-                  <h3 className="text-lg font-medium mb-2">{t("dashSetupFirst")}</h3>
-                  <p className="text-sm">{t("dashSetupFirstAnalytics")}</p>
-                  <Button className="mt-4" onClick={() => setActiveTab("setup")} data-testid="button-go-to-setup-analytics">
-                    {t("dashGoToSetup")}
-                  </Button>
-                </div>
-              </Card>
-            )}
           </TabsContent>
         </Tabs>
       </main>
