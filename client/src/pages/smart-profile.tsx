@@ -216,12 +216,12 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
   const profileImageRef = useRef<string | null>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  const isOwnerChat = !!(currentUserId && profile?.user_id && currentUserId === profile.user_id);
+  const isOwnerChat = !!(currentUserId && profile?.user_id && String(currentUserId) === String(profile.user_id));
 
   useEffect(() => {
-    fetch("/api/auth/user", { credentials: "include" })
+    fetch("/api/user", { credentials: "include" })
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.id) setCurrentUserId(data.id); })
+      .then(data => { if (data?.id) setCurrentUserId(String(data.id)); })
       .catch(() => {});
   }, []);
 
@@ -677,7 +677,7 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
   };
   const inputPlaceholder = placeholders[language] || placeholders.en;
 
-  const isOwner = !!(currentUserId && profile?.user_id && currentUserId === profile.user_id);
+  const isOwner = isOwnerChat;
 
   const handleSaveName = async () => {
     if (!nameInput.trim() || !profile) return;
