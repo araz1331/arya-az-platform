@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Loader2, ExternalLink, Sparkles, Camera, Languages, ArrowLeft, Upload, MapPin, Crown, Pencil, Eye, Globe, Users, MessageCircle, Clock, ChevronRight, Mic, Square, Code, Copy, Check, Link2, Smartphone, QrCode, Megaphone, Download, Trash2, X, Plus, Settings, PlugZap, Zap } from "lucide-react";
+import { Send, Loader2, ExternalLink, Sparkles, Camera, Languages, ArrowLeft, Upload, MapPin, Crown, Pencil, Eye, Globe, Users, MessageCircle, Clock, ChevronRight, ChevronDown, Mic, Square, Code, Copy, Check, Link2, Smartphone, QrCode, Megaphone, Download, Trash2, X, Plus, Settings, PlugZap, Zap, BookOpen } from "lucide-react";
 import QRCode from "qrcode";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
@@ -1884,6 +1884,82 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
   "timestamp": "2025-..."
 }`}</pre>
           </div>
+
+          <details className="group" data-testid="details-crm-guide">
+            <summary className="text-xs font-medium cursor-pointer flex items-center gap-1.5 py-1.5 select-none" data-testid="button-crm-guide-toggle">
+              <BookOpen className="w-3.5 h-3.5 text-blue-500" />
+              {language === "az" ? "CRM-ə necə qoşulmaq olar?" : language === "ru" ? "Как подключить CRM?" : "How to connect your CRM?"}
+              <ChevronDown className="w-3 h-3 ml-auto transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="mt-2 space-y-3 text-[11px] text-muted-foreground">
+
+              <div className="space-y-1.5 bg-muted/30 rounded-md p-2.5">
+                <p className="font-medium text-foreground flex items-center gap-1.5">
+                  <span className="bg-blue-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] shrink-0">1</span>
+                  Zapier
+                </p>
+                <ol className="list-decimal list-inside space-y-0.5 pl-1">
+                  <li>{language === "az" ? "Zapier.com-da yeni Zap yaradın" : language === "ru" ? "Создайте новый Zap на Zapier.com" : "Create a new Zap on Zapier.com"}</li>
+                  <li>{language === "az" ? "Trigger: \"Webhooks by Zapier\" → \"Catch Hook\" seçin" : language === "ru" ? "Триггер: выберите \"Webhooks by Zapier\" → \"Catch Hook\"" : "Trigger: choose \"Webhooks by Zapier\" → \"Catch Hook\""}</li>
+                  <li>{language === "az" ? "Verilən URL-i buraya yapışdırın" : language === "ru" ? "Вставьте полученный URL сюда" : "Paste the provided URL here"}</li>
+                  <li>{language === "az" ? "Action: CRM-inizi seçin (HubSpot, Salesforce və s.)" : language === "ru" ? "Действие: выберите вашу CRM (HubSpot, Salesforce и др.)" : "Action: choose your CRM (HubSpot, Salesforce, etc.)"}</li>
+                  <li>{language === "az" ? "lead.name, lead.phone, lead.email sahələrini map edin" : language === "ru" ? "Привяжите поля lead.name, lead.phone, lead.email" : "Map lead.name, lead.phone, lead.email fields"}</li>
+                </ol>
+              </div>
+
+              <div className="space-y-1.5 bg-muted/30 rounded-md p-2.5">
+                <p className="font-medium text-foreground flex items-center gap-1.5">
+                  <span className="bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] shrink-0">2</span>
+                  Make (Integromat)
+                </p>
+                <ol className="list-decimal list-inside space-y-0.5 pl-1">
+                  <li>{language === "az" ? "Make.com-da yeni Scenario yaradın" : language === "ru" ? "Создайте новый Scenario на Make.com" : "Create a new Scenario on Make.com"}</li>
+                  <li>{language === "az" ? "Modul: \"Webhooks\" → \"Custom webhook\" əlavə edin" : language === "ru" ? "Модуль: добавьте \"Webhooks\" → \"Custom webhook\"" : "Module: add \"Webhooks\" → \"Custom webhook\""}</li>
+                  <li>{language === "az" ? "Verilən URL-i buraya yapışdırın və \"Test\" basın" : language === "ru" ? "Вставьте URL сюда и нажмите \"Test\"" : "Paste the URL here and click \"Test\""}</li>
+                  <li>{language === "az" ? "Növbəti modul: CRM-inizi seçin və sahələri map edin" : language === "ru" ? "Следующий модуль: выберите CRM и привяжите поля" : "Next module: choose your CRM and map fields"}</li>
+                </ol>
+              </div>
+
+              <div className="space-y-1.5 bg-muted/30 rounded-md p-2.5">
+                <p className="font-medium text-foreground flex items-center gap-1.5">
+                  <span className="bg-orange-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] shrink-0">3</span>
+                  Bitrix24
+                </p>
+                <ol className="list-decimal list-inside space-y-0.5 pl-1">
+                  <li>{language === "az" ? "Bitrix24-də CRM → Avtomatlaşdırma → Webhook-a keçin" : language === "ru" ? "В Bitrix24 откройте CRM → Автоматизация → Вебхуки" : "In Bitrix24 go to CRM → Automation → Webhooks"}</li>
+                  <li>{language === "az" ? "\"Gələn webhook\" yaradın və URL-i buraya yapışdırın" : language === "ru" ? "Создайте \"Входящий вебхук\" и вставьте URL сюда" : "Create an \"Inbound webhook\" and paste the URL here"}</li>
+                  <li>{language === "az" ? "Və ya Zapier/Make vasitəsilə Bitrix24-ə qoşulun" : language === "ru" ? "Или подключите через Zapier/Make" : "Or connect via Zapier/Make for easier setup"}</li>
+                </ol>
+              </div>
+
+              <div className="space-y-1.5 bg-muted/30 rounded-md p-2.5">
+                <p className="font-medium text-foreground flex items-center gap-1.5">
+                  <span className="bg-green-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] shrink-0">4</span>
+                  AmoCRM / HubSpot
+                </p>
+                <ol className="list-decimal list-inside space-y-0.5 pl-1">
+                  <li>{language === "az" ? "Zapier və ya Make vasitəsilə qoşulmaq ən asandır" : language === "ru" ? "Проще всего подключить через Zapier или Make" : "Easiest via Zapier or Make"}</li>
+                  <li>{language === "az" ? "Trigger: Arya webhook → Action: AmoCRM/HubSpot-da kontakt yarat" : language === "ru" ? "Триггер: Arya webhook → Действие: создать контакт в AmoCRM/HubSpot" : "Trigger: Arya webhook → Action: create contact in AmoCRM/HubSpot"}</li>
+                  <li>{language === "az" ? "lead.name → Ad, lead.phone → Telefon, lead.email → Email" : language === "ru" ? "lead.name → Имя, lead.phone → Телефон, lead.email → Email" : "lead.name → Name, lead.phone → Phone, lead.email → Email"}</li>
+                </ol>
+              </div>
+
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-md p-2.5 text-[10px]">
+                <p className="font-medium text-blue-600 dark:text-blue-400 mb-1">
+                  {language === "az" ? "Qısa xülasə:" : language === "ru" ? "Кратко:" : "Quick summary:"}
+                </p>
+                <p>
+                  {language === "az"
+                    ? "1) CRM-inizdən və ya Zapier/Make-dən webhook URL alın → 2) Yuxarıdakı sahəyə yapışdırın → 3) \"Save\" basın → 4) \"Test\" ilə yoxlayın. Hazırdır!"
+                    : language === "ru"
+                    ? "1) Получите webhook URL из CRM или Zapier/Make → 2) Вставьте в поле выше → 3) Нажмите \"Сохранить\" → 4) Проверьте кнопкой \"Test\". Готово!"
+                    : "1) Get a webhook URL from your CRM or Zapier/Make → 2) Paste it above → 3) Click \"Save\" → 4) Verify with \"Test\". Done!"}
+                </p>
+              </div>
+
+            </div>
+          </details>
+
         </div>
       </Card>
     );
