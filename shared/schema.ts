@@ -101,6 +101,8 @@ export const smartProfiles = pgTable("smart_profiles", {
   webhookUrl: text("webhook_url"),
   webhookSecret: text("webhook_secret"),
   webhookAutoSend: boolean("webhook_auto_send").notNull().default(false),
+  whatsappNumber: text("whatsapp_number"),
+  whatsappAutoNotify: boolean("whatsapp_auto_notify").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
