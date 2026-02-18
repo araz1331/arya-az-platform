@@ -41,12 +41,17 @@ export async function sendWhatsAppMessage(toNumber: string, body: string): Promi
       },
       body: params.toString(),
     }, 15000);
+    const responseBody = await res.text();
     if (res.ok) {
-      console.log(`[whatsapp] Message sent to ${toNumber}`);
+      try {
+        const parsed = JSON.parse(responseBody);
+        console.log(`[whatsapp] Message sent to ${toNumber} | SID: ${parsed.sid} | Status: ${parsed.status}`);
+      } catch {
+        console.log(`[whatsapp] Message sent to ${toNumber}`);
+      }
       return true;
     } else {
-      const err = await res.text();
-      console.error(`[whatsapp] Failed (${res.status}):`, err);
+      console.error(`[whatsapp] Failed (${res.status}):`, responseBody);
       return false;
     }
   } catch (e) {

@@ -61,12 +61,17 @@ async function sendWhatsAppNotification(toNumber: string, leadName: string, lead
       },
       body: params.toString(),
     }, 15000);
+    const responseBody = await res.text();
     if (res.ok) {
-      console.log(`[whatsapp] Notification sent to ${toNumber} for ${businessName}`);
+      try {
+        const parsed = JSON.parse(responseBody);
+        console.log(`[whatsapp] Notification sent to ${toNumber} for ${businessName} | SID: ${parsed.sid} | Status: ${parsed.status}`);
+      } catch {
+        console.log(`[whatsapp] Notification sent to ${toNumber} for ${businessName}`);
+      }
       return true;
     } else {
-      const err = await res.text();
-      console.error(`[whatsapp] Failed (${res.status}):`, err);
+      console.error(`[whatsapp] Failed (${res.status}):`, responseBody);
       return false;
     }
   } catch (e) {
@@ -2051,17 +2056,49 @@ Your capabilities:
       if (!profile.whatsappNumber) {
         return res.status(400).json({ message: "No WhatsApp number configured" });
       }
-      const sent = await sendWhatsAppNotification(
-        profile.whatsappNumber,
-        "Test Lead",
-        "+1234567890",
-        "test@example.com",
-        profile.businessName
-      );
-      if (sent) {
-        res.json({ success: true });
+      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+      const authToken = process.env.TWILIO_AUTH_TOKEN;
+      if (!accountSid || !authToken) {
+        return res.status(500).json({ message: "WhatsApp not configured on server" });
+      }
+      const toNumber = profile.whatsappNumber;
+      const fromNumber = "whatsapp:+12792030206";
+      const to = `whatsapp:${toNumber.startsWith("+") ? toNumber : "+" + toNumber}`;
+      const body = `*Test Message — ${profile.businessName}*\n\nThis is a test notification from Arya AI.\nIf you received this, WhatsApp notifications are working!\n\n_Sent by Arya AI_`;
+
+      const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+      const params = new URLSearchParams({ To: to, From: fromNumber, Body: body });
+      const twilioRes = await fetchWithTimeout(url, {
+        method: "POST",
+        headers: {
+          "Authorization": "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64"),
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: params.toString(),
+      }, 15000);
+
+      const responseBody = await twilioRes.text();
+      console.log(`[whatsapp-test] Twilio response (${twilioRes.status}):`, responseBody);
+
+      if (twilioRes.ok) {
+        try {
+          const parsed = JSON.parse(responseBody);
+          console.log(`[whatsapp-test] SID: ${parsed.sid} | Status: ${parsed.status} | To: ${to}`);
+          res.json({ success: true, status: parsed.status, sid: parsed.sid });
+        } catch {
+          res.json({ success: true });
+        }
       } else {
-        res.status(502).json({ message: "Failed to send WhatsApp message. Check your number format." });
+        let errorMsg = "Failed to send WhatsApp message.";
+        try {
+          const parsed = JSON.parse(responseBody);
+          errorMsg = parsed.message || parsed.error_message || errorMsg;
+          console.error(`[whatsapp-test] Twilio error ${parsed.code}: ${errorMsg}`);
+          if (parsed.code === 63007 || parsed.code === 63016) {
+            errorMsg += " The recipient must first message the Arya WhatsApp number to opt in.";
+          }
+        } catch {}
+        res.status(502).json({ message: errorMsg });
       }
     } catch (error: any) {
       console.error("[whatsapp-test] Error:", error);
