@@ -1339,9 +1339,25 @@ Onboarding Complete: ${profile.onboardingComplete ? "Yes" : "No"}`;
       const currentPrivateVault = profile?.privateVault || "";
       const globalKBContent = await storage.getGlobalKnowledgeBase();
 
+      let masterNeedsVerification = false;
+      let masterJustVerified = false;
+
       if (!profile) {
         noProfile = true;
       } else if (profile.isMaster) {
+        const secretPhrase = process.env.MASTER_SECRET_PHRASE;
+        const isVerified = req.session.masterVerified === true;
+
+        if (!isVerified && secretPhrase) {
+          if (message.trim() === secretPhrase) {
+            req.session.masterVerified = true;
+            masterJustVerified = true;
+          } else {
+            masterNeedsVerification = true;
+          }
+        }
+
+        if (!masterNeedsVerification && !masterJustVerified) {
         const globalUpdatePattern = /^(update|set|change|add to|modify|replace)\s+(the\s+)?(global\s+)?(knowledge\s*base|kb|platform\s*info|product\s*info)\s*[:\-]?\s*/i;
         const globalMatch = message.trim().match(globalUpdatePattern);
         if (globalMatch) {
@@ -1382,9 +1398,10 @@ Updated Global Knowledge Base:`;
             }
           }
         }
+        }
       }
 
-      if (!noProfile && !updateApplied && profile) {
+      if (!masterNeedsVerification && !noProfile && !updateApplied && profile) {
         const msgLower = message.trim().toLowerCase();
 
         const privateKeywords = [
@@ -1531,7 +1548,9 @@ ${updateApplied && updateTarget === "private" ? `\n*** PRIVATE UPDATE APPLIED: T
 ${updateApplied && updateTarget === "global" ? `\n*** GLOBAL KB UPDATE APPLIED: The Global Knowledge Base was just updated. This knowledge is now shared across ALL Arya agents on the platform. Confirm the change and mention that all agents will immediately reference this updated information. ***` : ""}
 ${updateTarget === "ask" ? `\n*** CLASSIFICATION NEEDED: The owner said something that looks like an update, but I'm not sure if it should be PUBLIC or PRIVATE. Ask the owner: "Should I save this as public info (customers can see) or private (only for you)?" ***` : ""}
 ${noProfile ? `\n*** NO PROFILE: The owner has not set up their business profile yet. Tell them to go to the "AI Setup" tab first. ***` : ""}
-${profile?.isMaster ? `\n*** MASTER AGENT STATUS: You are the King Arya — the Master Agent. You have special powers:\n- Update the Global Knowledge Base with: "Update global knowledge base: [content]"\n- The Global KB is shared across ALL Arya agents on the platform\n- Current Global KB: ${globalKBContent ? globalKBContent.slice(0, 500) + (globalKBContent.length > 500 ? "..." : "") : "(empty)"}\n***` : ""}
+${profile?.isMaster && masterNeedsVerification ? `\n*** MASTER IDENTITY VERIFICATION REQUIRED: This is the Master Agent account (King Arya). The owner must verify their identity before you can grant any master powers or process any commands. Ask them for the secret phrase. Do NOT reveal what the phrase is, do NOT give hints, and do NOT process any commands until verified. Be warm but firm — say something like "Welcome back! Before I can activate your King powers, I need to verify your identity. Please provide your secret phrase." If they give the wrong phrase, say "That's not correct. Please try again." Do NOT process any KB updates or master commands until verified. ***` : ""}
+${profile?.isMaster && masterJustVerified ? `\n*** MASTER IDENTITY VERIFIED: The owner just provided the correct secret phrase! Welcome them warmly as the King/Master. Confirm that their master powers are now active for this session. They can now use all master commands including updating the Global Knowledge Base. ***` : ""}
+${profile?.isMaster && !masterNeedsVerification && !masterJustVerified ? `\n*** MASTER AGENT STATUS: You are the King Arya — the Master Agent. Identity verified for this session. You have special powers:\n- Update the Global Knowledge Base with: "Update global knowledge base: [content]"\n- The Global KB is shared across ALL Arya agents on the platform\n- Current Global KB: ${globalKBContent ? globalKBContent.slice(0, 500) + (globalKBContent.length > 500 ? "..." : "") : "(empty)"}\n***` : ""}
 
 Your capabilities:
 - You classify and store information in the correct vault (public or private).
