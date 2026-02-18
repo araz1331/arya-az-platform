@@ -3,15 +3,27 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Send, Loader2, X, Sparkles, Mic, Square, CheckCircle2, Shield, Globe } from "lucide-react";
+import { Send, Loader2, X, Sparkles, Mic, Square, CheckCircle2, Shield, Globe, Paperclip, FileText, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 
 interface Message {
   role: "user" | "model";
   content: string;
   updated?: boolean;
   updateTarget?: "public" | "private" | "ask" | null;
+  fileUrl?: string | null;
+}
+
+function extractFileUrl(content: string): { text: string; fileUrl: string | null } {
+  const match = content.match(/^\[file:(https?:\/\/[^\]]+)\]\s*/);
+  if (match) {
+    return { text: content.replace(match[0], "").trim(), fileUrl: match[1] };
+  }
+  return { text: content, fileUrl: null };
+}
+
+function isImageUrl(url: string): boolean {
+  return /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url);
 }
 
 export default function OwnerAssistant() {
@@ -22,9 +34,12 @@ export default function OwnerAssistant() {
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingFilePreview, setPendingFilePreview] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -37,13 +52,22 @@ export default function OwnerAssistant() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    return () => {
+      if (pendingFilePreview) URL.revokeObjectURL(pendingFilePreview);
+    };
+  }, [pendingFilePreview]);
+
   const loadHistory = async () => {
     try {
       const res = await fetch("/api/owner-chat/history", { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
         if (data.messages?.length) {
-          setMessages(data.messages.map((m: any) => ({ role: m.role, content: m.content })));
+          setMessages(data.messages.map((m: any) => {
+            const { text, fileUrl } = extractFileUrl(m.content);
+            return { role: m.role, content: text || m.content, fileUrl };
+          }));
         }
       }
       setHistoryLoaded(true);
@@ -52,21 +76,67 @@ export default function OwnerAssistant() {
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: "Unsupported file type. Use JPEG, PNG, GIF, WebP, or PDF.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "File too large. Maximum 10MB.", variant: "destructive" });
+      return;
+    }
+
+    setPendingFile(file);
+    if (file.type.startsWith("image/")) {
+      setPendingFilePreview(URL.createObjectURL(file));
+    } else {
+      setPendingFilePreview(null);
+    }
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const clearPendingFile = () => {
+    if (pendingFilePreview) URL.revokeObjectURL(pendingFilePreview);
+    setPendingFile(null);
+    setPendingFilePreview(null);
+  };
+
   const sendMessage = async () => {
     const text = input.trim();
-    if (!text || isLoading) return;
+    if (!text && !pendingFile) return;
+    if (isLoading) return;
+
+    const currentFile = pendingFile;
+    const currentPreview = pendingFilePreview;
 
     setInput("");
-    setMessages(prev => [...prev, { role: "user", content: text }]);
+    setPendingFile(null);
+    setPendingFilePreview(null);
+
+    const userMsg: Message = {
+      role: "user",
+      content: text || (currentFile ? `Sent ${currentFile.name}` : ""),
+      fileUrl: currentPreview || null,
+    };
+    setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
 
     try {
+      const formData = new FormData();
+      if (text) formData.append("message", text);
+      if (currentFile) formData.append("file", currentFile);
+
       const res = await fetch("/api/owner-chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ message: text }),
+        body: formData,
       });
+
       if (!res.ok) {
         const errText = await res.text();
         console.error("Owner chat error:", res.status, errText);
@@ -77,6 +147,19 @@ export default function OwnerAssistant() {
         throw new Error(errText);
       }
       const data = await res.json();
+
+      if (data.fileUrl) {
+        setMessages(prev => {
+          const updated = [...prev];
+          const lastUserIdx = updated.length - 1 - [...updated].reverse().findIndex(m => m.role === "user");
+          if (lastUserIdx >= 0) {
+            updated[lastUserIdx] = { ...updated[lastUserIdx], fileUrl: data.fileUrl };
+          }
+          return updated;
+        });
+        if (currentPreview) URL.revokeObjectURL(currentPreview);
+      }
+
       setMessages(prev => [...prev, { role: "model", content: data.reply, updated: data.updated, updateTarget: data.updateTarget }]);
     } catch (err: any) {
       console.error("Owner chat send error:", err);
@@ -185,7 +268,7 @@ export default function OwnerAssistant() {
           <div className="flex flex-col items-center justify-center h-full text-center text-white/40 px-4">
             <Sparkles className="w-10 h-10 mb-3 opacity-40" />
             <p className="text-sm font-medium mb-1">Your private assistant</p>
-            <p className="text-xs">Ask me anything about your business, marketing ideas, or how to improve your AI receptionist.</p>
+            <p className="text-xs">Ask me anything — send text, voice, images, or documents.</p>
           </div>
         )}
 
@@ -217,7 +300,28 @@ export default function OwnerAssistant() {
                   <span>Knowledge base updated</span>
                 </div>
               )}
-              <p className="whitespace-pre-wrap">{msg.content}</p>
+              {msg.fileUrl && isImageUrl(msg.fileUrl) && (
+                <img
+                  src={msg.fileUrl}
+                  alt="Uploaded"
+                  className="rounded-lg mb-2 max-h-[180px] w-auto object-contain cursor-pointer"
+                  onClick={() => window.open(msg.fileUrl!, "_blank")}
+                  data-testid={`image-attachment-${i}`}
+                />
+              )}
+              {msg.fileUrl && !isImageUrl(msg.fileUrl) && (
+                <a
+                  href={msg.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 mb-2 text-xs text-[hsl(260,80%,75%)] underline"
+                  data-testid={`file-attachment-${i}`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>View attached file</span>
+                </a>
+              )}
+              {msg.content && <p className="whitespace-pre-wrap">{msg.content}</p>}
             </div>
           </div>
         ))}
@@ -234,7 +338,40 @@ export default function OwnerAssistant() {
       </div>
 
       <div className="px-3 py-3 border-t border-white/10 bg-[hsl(240,20%,10%)]">
-        <div className="flex items-end gap-2">
+        {pendingFile && (
+          <div className="flex items-center gap-2 mb-2 bg-white/5 rounded-lg px-2 py-1.5" data-testid="container-pending-file">
+            {pendingFilePreview ? (
+              <img src={pendingFilePreview} alt="Preview" className="w-10 h-10 rounded object-cover" />
+            ) : (
+              <div className="w-10 h-10 rounded bg-white/10 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-white/60" />
+              </div>
+            )}
+            <span className="text-xs text-white/70 flex-1 truncate">{pendingFile.name}</span>
+            <Button size="icon" variant="ghost" onClick={clearPendingFile} className="text-white/40 shrink-0" data-testid="button-remove-file">
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        )}
+        <div className="flex items-end gap-1.5">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
+            className="hidden"
+            onChange={handleFileSelect}
+            data-testid="input-file-upload"
+          />
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading}
+            className="text-white/50 shrink-0"
+            data-testid="button-attach-file"
+          >
+            <Paperclip className="w-4 h-4" />
+          </Button>
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -245,7 +382,7 @@ export default function OwnerAssistant() {
             disabled={isLoading}
             data-testid="input-owner-assistant-message"
           />
-          {input.trim() ? (
+          {(input.trim() || pendingFile) ? (
             <Button
               size="icon"
               onClick={sendMessage}

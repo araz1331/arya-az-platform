@@ -13,6 +13,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { detectAudioFormat, speechToText } from "./replit_integrations/audio/client";
 import { handleInboundWhatsApp, sendMissedLeadAlert, detectAndSendAppointmentConfirmation, startWhatsAppScheduler, sendWhatsAppMessage } from "./whatsapp-service";
+import { uploadToS3 } from "./s3";
 
 function isValidWebhookUrl(urlStr: string): boolean {
   try {
@@ -1295,7 +1296,7 @@ Your Role - AI Receptionist:
     }
   });
 
-  app.post("/api/owner-chat", async (req: Request, res: Response) => {
+  app.post("/api/owner-chat", upload.single("file"), async (req: Request, res: Response) => {
     if (!req.session.userId) {
       console.error("Owner chat 401: no session userId. Session ID:", req.sessionID, "Has cookie:", !!req.headers.cookie);
       return res.status(401).json({ message: "Unauthorized" });
@@ -1304,8 +1305,9 @@ Your Role - AI Receptionist:
       const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-      const { message } = req.body;
-      if (!message?.trim()) return res.status(400).json({ error: "Message required" });
+      const message = req.body.message || "";
+      const uploadedFile = req.file;
+      if (!message?.trim() && !uploadedFile) return res.status(400).json({ error: "Message or file required" });
 
       const profile = await storage.getSmartProfileByUserId(userId);
 
@@ -1330,7 +1332,25 @@ Onboarding Complete: ${profile.onboardingComplete ? "Yes" : "No"}`;
         parts: [{ text: m.content }],
       }));
 
-      await storage.createOwnerChatMessage({ userId, role: "user", content: message.trim() });
+      let fileUrl: string | null = null;
+      let fileBase64: string | null = null;
+      let fileMimeType: string | null = null;
+
+      if (uploadedFile) {
+        const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"];
+        if (!allowedTypes.includes(uploadedFile.mimetype)) {
+          return res.status(400).json({ error: "Unsupported file type. Allowed: JPEG, PNG, GIF, WebP, PDF" });
+        }
+        fileBase64 = uploadedFile.buffer.toString("base64");
+        fileMimeType = uploadedFile.mimetype;
+
+        const ext = uploadedFile.originalname.split(".").pop() || "bin";
+        const s3Key = `owner-chat/${userId}/${Date.now()}.${ext}`;
+        fileUrl = await uploadToS3(s3Key, uploadedFile.buffer, uploadedFile.mimetype);
+      }
+
+      const savedContent = fileUrl ? `[file:${fileUrl}] ${message.trim()}` : message.trim();
+      await storage.createOwnerChatMessage({ userId, role: "user", content: savedContent });
 
       let updateApplied = false;
       let noProfile = false;
@@ -1602,11 +1622,26 @@ Your capabilities are UNLIMITED:
 - You have full access to both public and private business data
 - Give thorough, detailed, helpful answers — never say you are limited to the knowledge base`;
 
+      const userParts: any[] = [];
+      if (fileBase64 && fileMimeType && fileMimeType.startsWith("image/")) {
+        userParts.push({ inlineData: { mimeType: fileMimeType, data: fileBase64 } });
+      }
+      if (message.trim()) {
+        userParts.push({ text: message.trim() });
+      } else if (fileBase64 && fileMimeType?.startsWith("image/")) {
+        userParts.push({ text: "Analyze this image. What do you see?" });
+      } else if (fileUrl && fileMimeType === "application/pdf") {
+        userParts.push({ text: `The owner uploaded a PDF document (${uploadedFile?.originalname || "document.pdf"}). It has been saved. Let them know you received it and ask if they'd like help with anything related to it.` });
+      }
+      if (!userParts.length) {
+        userParts.push({ text: message.trim() || "Hello" });
+      }
+
       const result = await gemini.models.generateContent({
         model: "gemini-2.5-flash",
         contents: [
           ...chatHistory,
-          { role: "user", parts: [{ text: message }] },
+          { role: "user", parts: userParts },
         ],
         config: {
           systemInstruction: responseSystemPrompt,
@@ -1618,7 +1653,7 @@ Your capabilities are UNLIMITED:
 
       await storage.createOwnerChatMessage({ userId, role: "model", content: reply });
 
-      res.json({ reply, updated: updateApplied, updateTarget: updateApplied ? updateTarget : (updateTarget === "ask" ? "ask" : null) });
+      res.json({ reply, updated: updateApplied, updateTarget: updateApplied ? updateTarget : (updateTarget === "ask" ? "ask" : null), fileUrl });
     } catch (err: any) {
       console.error("Owner chat error:", err?.message);
       res.status(500).json({ error: "Chat unavailable" });
