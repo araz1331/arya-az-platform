@@ -61,10 +61,25 @@ export default function OwnerAssistant() {
     setIsLoading(true);
 
     try {
-      const res = await apiRequest("POST", "/api/owner-chat", { message: text });
+      const res = await fetch("/api/owner-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ message: text }),
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("Owner chat error:", res.status, errText);
+        if (res.status === 401) {
+          setMessages(prev => [...prev, { role: "model", content: "Session expired. Please log out and log back in." }]);
+          return;
+        }
+        throw new Error(errText);
+      }
       const data = await res.json();
       setMessages(prev => [...prev, { role: "model", content: data.reply, updated: data.updated, updateTarget: data.updateTarget }]);
-    } catch {
+    } catch (err: any) {
+      console.error("Owner chat send error:", err);
       setMessages(prev => [...prev, { role: "model", content: "Sorry, something went wrong. Please try again." }]);
     } finally {
       setIsLoading(false);

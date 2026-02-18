@@ -1069,9 +1069,13 @@ Your Role - AI Receptionist:
     }
   });
 
-  app.post("/api/owner-chat", isAuthenticated, async (req: Request, res: Response) => {
+  app.post("/api/owner-chat", async (req: Request, res: Response) => {
+    if (!req.session.userId) {
+      console.error("Owner chat 401: no session userId. Session ID:", req.sessionID, "Has cookie:", !!req.headers.cookie);
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     try {
-      const userId = getUserId(req);
+      const userId = req.session.userId;
       if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
       const { message } = req.body;
