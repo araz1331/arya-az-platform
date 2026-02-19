@@ -4,6 +4,7 @@ import { setupSession, registerAuthRoutes, isAuthenticated, getUserId } from "./
 import { storage } from "./storage";
 import { db } from "./db";
 import { users } from "@shared/models/auth";
+import { smartProfiles } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import multer from "multer";
 import { GoogleGenAI } from "@google/genai";
@@ -189,6 +190,51 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error getting user:", error);
       res.status(500).json({ message: "Server xətası" });
+    }
+  });
+
+  app.post("/api/admin/transfer-king", async (req: Request, res: Response) => {
+    try {
+      const { secret, kingEmail, targetSlug, recipientEmail } = req.body;
+      const masterSecret = process.env.MASTER_SECRET_PHRASE;
+      if (!secret || !masterSecret || secret !== masterSecret) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      const results: string[] = [];
+
+      await db.execute(sql`UPDATE smart_profiles SET is_master = false WHERE is_master = true`);
+      results.push("Cleared all existing master flags");
+
+      if (kingEmail) {
+        const [kingUser] = await db.select().from(users).where(eq(users.email, kingEmail)).limit(1);
+        if (kingUser) {
+          const kingProfiles = await db.select().from(smartProfiles).where(eq(smartProfiles.userId, kingUser.id));
+          if (kingProfiles.length > 0) {
+            const kingProfile = kingProfiles[0];
+            await db.execute(sql`UPDATE smart_profiles SET is_master = true WHERE id = ${kingProfile.id}`);
+            results.push(`Set ${kingProfile.slug} (${kingEmail}) as Master/King`);
+          } else {
+            results.push(`No smart profile found for ${kingEmail}`);
+          }
+        } else {
+          results.push(`User ${kingEmail} not found`);
+        }
+      }
+
+      if (targetSlug && recipientEmail) {
+        const [recipientUser] = await db.select().from(users).where(eq(users.email, recipientEmail)).limit(1);
+        if (recipientUser) {
+          await db.execute(sql`UPDATE smart_profiles SET user_id = ${recipientUser.id} WHERE slug = ${targetSlug}`);
+          results.push(`Transferred ${targetSlug} to ${recipientEmail}`);
+        } else {
+          results.push(`Recipient ${recipientEmail} not found`);
+        }
+      }
+
+      res.json({ success: true, results });
+    } catch (error: any) {
+      console.error("[admin] transfer-king error:", error);
+      res.status(500).json({ message: error.message });
     }
   });
 
