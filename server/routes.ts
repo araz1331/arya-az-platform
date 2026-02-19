@@ -1446,7 +1446,7 @@ Your Role - AI Receptionist:
     }
   });
 
-  app.post("/api/owner-chat", upload.single("file"), async (req: Request, res: Response) => {
+  app.post("/api/owner-chat", upload.array("files", 10), async (req: Request, res: Response) => {
     if (!req.session.userId) {
       console.error("Owner chat 401: no session userId. Session ID:", req.sessionID, "Has cookie:", !!req.headers.cookie);
       return res.status(401).json({ message: "Unauthorized" });
@@ -1456,8 +1456,8 @@ Your Role - AI Receptionist:
       if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
       const message = req.body.message || "";
-      const uploadedFile = req.file;
-      if (!message?.trim() && !uploadedFile) return res.status(400).json({ error: "Message or file required" });
+      const uploadedFiles = (req.files as Express.Multer.File[]) || [];
+      if (!message?.trim() && uploadedFiles.length === 0) return res.status(400).json({ error: "Message or file required" });
 
       const profile = await storage.getSmartProfileByUserId(userId);
 
@@ -1482,24 +1482,33 @@ Onboarding Complete: ${profile.onboardingComplete ? "Yes" : "No"}`;
         parts: [{ text: m.content }],
       }));
 
-      let fileUrl: string | null = null;
-      let fileBase64: string | null = null;
-      let fileMimeType: string | null = null;
+      const fileUrls: string[] = [];
+      const imageDataParts: any[] = [];
+      const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"];
 
-      if (uploadedFile) {
-        const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"];
-        if (!allowedTypes.includes(uploadedFile.mimetype)) {
-          return res.status(400).json({ error: "Unsupported file type. Allowed: JPEG, PNG, GIF, WebP, PDF" });
-        }
-        fileBase64 = uploadedFile.buffer.toString("base64");
-        fileMimeType = uploadedFile.mimetype;
+      for (const uploadedFile of uploadedFiles) {
+        if (!allowedTypes.includes(uploadedFile.mimetype)) continue;
 
         const ext = uploadedFile.originalname.split(".").pop() || "bin";
-        const s3Key = `owner-chat/${userId}/${Date.now()}.${ext}`;
-        fileUrl = await uploadToS3(s3Key, uploadedFile.buffer, uploadedFile.mimetype);
+        const s3Key = `owner-chat/${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
+        const url = await uploadToS3(s3Key, uploadedFile.buffer, uploadedFile.mimetype);
+        if (url) fileUrls.push(url);
+
+        if (uploadedFile.mimetype.startsWith("image/")) {
+          imageDataParts.push({
+            inlineData: {
+              mimeType: uploadedFile.mimetype,
+              data: uploadedFile.buffer.toString("base64"),
+            },
+          });
+        }
       }
 
-      const savedContent = fileUrl ? `[file:${fileUrl}] ${message.trim()}` : message.trim();
+      let savedContent = message.trim();
+      if (fileUrls.length > 0) {
+        const fileTags = fileUrls.map(u => `[file:${u}]`).join(" ");
+        savedContent = `${fileTags} ${savedContent}`.trim();
+      }
       await storage.createOwnerChatMessage({ userId, role: "user", content: savedContent });
 
       let updateApplied = false;
@@ -1700,8 +1709,58 @@ ${targetLabel}:`;
       }
 
       const isMasterProfile = profile?.isMaster === true;
+      const isDiscoveryMode = !isMasterProfile && profile && !currentKB.trim() && history.length < 6;
+      const isLearningMode = !isMasterProfile && profile && !isDiscoveryMode;
 
-      const responseSystemPrompt = isMasterProfile ? `You are Arya — the King AI, a powerful and intelligent AI assistant. You are as capable as any top-tier AI chat model. You can answer ANY question on ANY topic — coding, math, science, business strategy, creative writing, translations, legal questions, medical information, cooking recipes, travel advice, history, philosophy, or anything else the user asks.
+      const discoveryPrompt = `You are Arya, a smart AI assistant who is meeting a new user for the first time. Your job is to INTERVIEW them to understand who they are and what they need, so you can become their perfect AI assistant.
+
+IMPORTANT: You know NOTHING about this person yet. Do NOT assume anything. Start from zero.
+
+INTERVIEW FLOW:
+1. FIRST MESSAGE (if no chat history): Start with a warm welcome and ask the critical first question:
+   "Welcome to Arya! I'm your personal AI — and I'll get smarter the more we talk. First, let me understand how I can help you best. Are you here for:
+   
+   A) Your business — I'll become your AI receptionist, answer customer questions, manage leads
+   B) Personal use — I'll be your executive assistant, manage info, handle inquiries on your behalf"
+
+2. BASED ON THEIR ANSWER:
+   - BUSINESS PATH: Ask about their industry/type of business. Don't guess — ask! Then ask follow-up questions:
+     * What services/products do they offer?
+     * Business name, location, working hours?
+     * Pricing or key information customers usually ask about?
+     * Any special promotions, policies, or FAQs?
+   - PERSONAL PATH: Ask what they need help with:
+     * What's their role/profession? (executive, freelancer, consultant, doctor, etc.)
+     * What kind of inquiries do they get?
+     * What information should people know about them?
+     * Any scheduling, contact, or availability info?
+
+3. KEEP ASKING until you have enough to build a solid knowledge base. Don't rush — be thorough but conversational.
+
+4. If they upload files (images, PDFs), analyze them and extract useful information. Menus, price lists, brochures, resumes — anything that helps you understand them better.
+
+5. Respond in the SAME LANGUAGE the user writes in (English, Azerbaijani, Russian, Turkish, etc.)
+
+PROFILE CONTEXT:
+${businessContext}
+
+STYLE: Be warm, professional, and genuinely curious. Make them feel like they're talking to a smart colleague who wants to understand their world. Ask ONE or TWO questions at a time — don't overwhelm with a long list.`;
+
+      const continuousLearningAddendum = `
+CONTINUOUS LEARNING MODE:
+You are always learning. Every conversation is an opportunity to discover new information about the owner and their business/personal needs. When you notice NEW information in their message (prices changed, new services, new contact info, schedule updates, personal preferences, etc.):
+- Acknowledge what you learned naturally in your response
+- The system will automatically extract and save this to the knowledge base
+- You don't need to ask "should I save this?" for obvious business/personal updates — just confirm what you noted
+- For ambiguous info that could be public or private, ask: "Should I make this visible to your customers/visitors, or keep it private just for you?"
+- If they upload files with new information, analyze and incorporate the content
+
+IMPORTANT: You are not just a chatbot — you are a learning AI that gets smarter with every interaction. Treat every message as potential knowledge to absorb.`;
+
+      let responseSystemPrompt: string;
+
+      if (isMasterProfile) {
+        responseSystemPrompt = `You are Arya — the King AI, a powerful and intelligent AI assistant. You are as capable as any top-tier AI chat model. You can answer ANY question on ANY topic — coding, math, science, business strategy, creative writing, translations, legal questions, medical information, cooking recipes, travel advice, history, philosophy, or anything else the user asks.
 
 YOU ARE NOT LIMITED TO THE KNOWLEDGE BASE. The knowledge base below is ADDITIONAL context about the owner's business, but your intelligence and knowledge extend far beyond it. Use your full AI capabilities to help with absolutely anything.
 
@@ -1733,18 +1792,22 @@ Your capabilities are UNLIMITED:
 - Update the Global Knowledge Base when commanded
 - Respond in the same language the owner uses
 - You have full access to both public and private business data
-- Give thorough, detailed, helpful answers — never say you are limited to the knowledge base` :
+- Give thorough, detailed, helpful answers — never say you are limited to the knowledge base`;
+      } else if (isDiscoveryMode) {
+        responseSystemPrompt = discoveryPrompt;
+      } else if (noProfile) {
+        responseSystemPrompt = discoveryPrompt;
+      } else {
+        responseSystemPrompt = `You are Arya, a powerful and intelligent AI assistant for the owner. You are as capable as any top-tier AI chat model. You can answer ANY question on ANY topic — coding, math, science, business strategy, creative writing, translations, legal questions, medical information, cooking recipes, travel advice, history, philosophy, or anything else the owner asks.
 
-`You are Arya, a powerful and intelligent AI assistant for the business owner. You are as capable as any top-tier AI chat model. You can answer ANY question on ANY topic — coding, math, science, business strategy, creative writing, translations, legal questions, medical information, cooking recipes, travel advice, history, philosophy, or anything else the owner asks.
+YOU ARE NOT LIMITED TO THE KNOWLEDGE BASE. The knowledge base below is ADDITIONAL context about the owner, but your intelligence and knowledge extend far beyond it. Use your full AI capabilities to help with absolutely anything.
 
-YOU ARE NOT LIMITED TO THE KNOWLEDGE BASE. The knowledge base below is ADDITIONAL context about the owner's business, but your intelligence and knowledge extend far beyond it. Use your full AI capabilities to help with absolutely anything.
-
-BUSINESS CONTEXT (supplementary — use when relevant):
+BUSINESS/PERSONAL CONTEXT (supplementary — use when relevant):
 ${businessContext}
 
 PRIVACY FIREWALL SYSTEM:
-The business has TWO separate data stores:
-1. PUBLIC Knowledge Base (visible to customers): Business hours, services, prices, address, promotions
+The owner has TWO separate data stores:
+1. PUBLIC Knowledge Base (visible to customers/visitors): Business hours, services, prices, address, promotions, public bio
 2. PRIVATE Vault (ONLY the owner sees this): Door codes, recipes, supplier costs, personal notes, passwords
 
 Current PUBLIC Knowledge Base:
@@ -1753,11 +1816,12 @@ ${currentKB || "(empty)"}
 Current PRIVATE Vault:
 ${currentPrivateVault || "(empty)"}
 
-${updateApplied && updateTarget === "public" ? `\n*** PUBLIC UPDATE APPLIED: The public knowledge base was just updated. Confirm the change and mention that customers will see it immediately. ***` : ""}
-${updateApplied && updateTarget === "private" ? `\n*** PRIVATE UPDATE APPLIED: The private vault was just updated. Confirm — this info is PRIVATE, customers will NEVER see it. ***` : ""}
+${updateApplied && updateTarget === "public" ? `\n*** PUBLIC UPDATE APPLIED: The public knowledge base was just updated. Confirm the change and mention that visitors will see it immediately. ***` : ""}
+${updateApplied && updateTarget === "private" ? `\n*** PRIVATE UPDATE APPLIED: The private vault was just updated. Confirm — this info is PRIVATE, visitors will NEVER see it. ***` : ""}
 ${updateApplied && updateTarget === "global" ? `\n*** GLOBAL KB UPDATE APPLIED: The Global Knowledge Base was just updated. This knowledge is now shared across ALL Arya agents on the platform. ***` : ""}
-${updateTarget === "ask" ? `\n*** CLASSIFICATION NEEDED: Ask the owner: "Should I save this as public info (customers can see) or private (only for you)?" ***` : ""}
-${noProfile ? `\n*** NO PROFILE: The owner has not set up their business profile yet. Tell them to go to the "AI Setup" tab first. ***` : ""}
+${updateTarget === "ask" ? `\n*** CLASSIFICATION NEEDED: Ask the owner: "Should I save this as public info (visitors can see) or private (only for you)?" ***` : ""}
+
+${continuousLearningAddendum}
 
 Your capabilities are UNLIMITED:
 - Answer ANY question on ANY topic using your full AI intelligence
@@ -1765,23 +1829,30 @@ Your capabilities are UNLIMITED:
 - Business strategy, marketing, finance, analytics
 - Creative writing, translations, summarization
 - Math, science, research, problem-solving
-- Classify and store business info in the correct vault (public or private)
-- When info looks like a business update, ask: "Is this for customers, or just for you?"
+- Classify and store info in the correct vault (public or private)
 - Respond in the same language the owner uses
 - When confirming updates, specify if it went to "Public" or "Private" storage
-- You have full access to both public and private business data
+- You have full access to both public and private data
 - Give thorough, detailed, helpful answers — never say you are limited to the knowledge base`;
+      }
 
       const userParts: any[] = [];
-      if (fileBase64 && fileMimeType && fileMimeType.startsWith("image/")) {
-        userParts.push({ inlineData: { mimeType: fileMimeType, data: fileBase64 } });
+      if (imageDataParts.length > 0) {
+        userParts.push(...imageDataParts);
       }
+      const pdfFiles = uploadedFiles.filter(f => f.mimetype === "application/pdf");
       if (message.trim()) {
-        userParts.push({ text: message.trim() });
-      } else if (fileBase64 && fileMimeType?.startsWith("image/")) {
-        userParts.push({ text: "Analyze this image. What do you see?" });
-      } else if (fileUrl && fileMimeType === "application/pdf") {
-        userParts.push({ text: `The owner uploaded a PDF document (${uploadedFile?.originalname || "document.pdf"}). It has been saved. Let them know you received it and ask if they'd like help with anything related to it.` });
+        let textContent = message.trim();
+        if (pdfFiles.length > 0) {
+          const pdfNames = pdfFiles.map(f => f.originalname).join(", ");
+          textContent += `\n\n[The owner also uploaded ${pdfFiles.length} PDF document(s): ${pdfNames}. They have been saved. Acknowledge receipt and ask if they need help with the content.]`;
+        }
+        userParts.push({ text: textContent });
+      } else if (imageDataParts.length > 0) {
+        userParts.push({ text: `The owner uploaded ${imageDataParts.length} image(s). Analyze them. What do you see? Extract any useful business information (menu items, prices, services, etc.) and offer to save it to the knowledge base.` });
+      } else if (pdfFiles.length > 0) {
+        const pdfNames = pdfFiles.map(f => f.originalname).join(", ");
+        userParts.push({ text: `The owner uploaded ${pdfFiles.length} PDF document(s): ${pdfNames}. They have been saved. Let them know you received the files and ask if they'd like help with anything related to them.` });
       }
       if (!userParts.length) {
         userParts.push({ text: message.trim() || "Hello" });
@@ -1803,7 +1874,82 @@ Your capabilities are UNLIMITED:
 
       await storage.createOwnerChatMessage({ userId, role: "model", content: reply });
 
-      res.json({ reply, updated: updateApplied, updateTarget: updateApplied ? updateTarget : (updateTarget === "ask" ? "ask" : null), fileUrl });
+      const hasSubstantiveInput = message.trim().length > 10 || uploadedFiles.length > 0;
+      if (profile && !isMasterProfile && !updateApplied && hasSubstantiveInput) {
+        (async () => {
+          try {
+            const recentMessages = await storage.getOwnerChatHistory(userId, 10);
+            const conversationText = recentMessages.map(m => `${m.role === "user" ? "Owner" : "Arya"}: ${m.content}`).join("\n");
+
+            const extractPrompt = `You are a knowledge base extraction engine. Analyze the latest conversation between a business/personal profile owner and their AI assistant.
+
+CURRENT PUBLIC KNOWLEDGE BASE:
+${currentKB || "(empty)"}
+
+RECENT CONVERSATION:
+${conversationText}
+
+TASK: Extract any NEW factual information the owner shared that should be saved to their PUBLIC knowledge base. This includes:
+- Business name, type, industry, profession
+- Services, products, pricing
+- Location, address, working hours
+- Contact information
+- Policies, FAQs, special offers
+- Personal bio, skills, specialties (for personal profiles)
+- Any factual update that changes or adds to existing info
+
+RULES:
+- If the current KB is empty and the conversation contains enough info, CREATE a structured knowledge base
+- If the current KB has content, ONLY output changes/additions — do NOT repeat existing info
+- If there is NO new factual information to save, respond with exactly: NO_UPDATE
+- Do NOT include private/sensitive info (passwords, codes, supplier costs, personal notes)
+- Output ONLY the knowledge base text or NO_UPDATE — nothing else, no explanations
+- Keep the format clean, organized, professional
+
+${currentKB ? "Updated Knowledge Base:" : "Knowledge Base:"}`;
+
+            const extractResult = await gemini.models.generateContent({
+              model: "gemini-2.5-flash",
+              contents: [{ role: "user", parts: [{ text: extractPrompt }] }],
+              config: { maxOutputTokens: 2000 },
+            });
+
+            const extracted = (extractResult.text || "").trim();
+            if (extracted && extracted !== "NO_UPDATE" && extracted.length > 15 && !extracted.startsWith("NO_UPDATE")) {
+              if (!currentKB.trim()) {
+                await storage.updateSmartProfile(profile.id, { knowledgeBase: extracted });
+                console.log(`[KB-learn] Created initial KB for profile ${profile.slug} from conversation`);
+              } else {
+                const mergePrompt = `Merge the following new information into the existing knowledge base. Preserve ALL existing content. Add the new info in the appropriate sections. If info conflicts, use the NEWER version.
+
+EXISTING KNOWLEDGE BASE:
+${currentKB}
+
+NEW INFORMATION TO ADD:
+${extracted}
+
+Output the complete merged knowledge base. Output ONLY the text, nothing else.`;
+
+                const mergeResult = await gemini.models.generateContent({
+                  model: "gemini-2.5-flash",
+                  contents: [{ role: "user", parts: [{ text: mergePrompt }] }],
+                  config: { maxOutputTokens: 3000 },
+                });
+
+                const merged = (mergeResult.text || "").trim();
+                if (merged && merged.length > currentKB.length * 0.5) {
+                  await storage.updateSmartProfile(profile.id, { knowledgeBase: merged });
+                  console.log(`[KB-learn] Updated KB for profile ${profile.slug} with new info`);
+                }
+              }
+            }
+          } catch (learnErr: any) {
+            console.error("[KB-learn] Background extraction error:", learnErr?.message);
+          }
+        })();
+      }
+
+      res.json({ reply, updated: updateApplied, updateTarget: updateApplied ? updateTarget : (updateTarget === "ask" ? "ask" : null), fileUrls: fileUrls.length > 0 ? fileUrls : undefined, fileUrl: fileUrls.length === 1 ? fileUrls[0] : undefined });
     } catch (err: any) {
       console.error("Owner chat error:", err?.message);
       res.status(500).json({ error: "Chat unavailable" });

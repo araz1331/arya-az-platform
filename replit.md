@@ -26,6 +26,9 @@ The platform is built with a **React + Vite (TypeScript)** frontend, leveraging 
 - **Global SaaS Homepage:** Marketing pages, pricing plans, and "Get Started" CTAs.
 - **Global Dashboard:** AI setup, lead management, widget embed code, and analytics.
 - **Smart Profile Management (Arya Widget):** Onboarding wizard with industry templates, OCR scanning for price lists, 2GIS location integration, profile image upload, and knowledge base translation.
+- **Discovery Interview System:** When a new user opens the owner-assistant chat for the first time (empty KB, no history), the AI automatically starts an interview from scratch — asking business vs personal use, then drilling into specifics. Supports both Business path (industry, services, pricing, hours) and Personal Assistant path (profession, inquiries, bio). No assumptions — AI asks and clarifies.
+- **Continuous KB Learning:** After every owner message, a background AI process analyzes the conversation and auto-extracts new factual information to update the knowledge base. Creates initial KB from conversations, merges updates into existing KB. Owner can update Arya ad-hoc just by talking ("we moved to a new address", "prices changed", etc.) — no forms needed.
+- **Multi-File Upload:** Owner-assistant chat supports uploading up to 10 files at once (images, PDFs). Preview grid with individual remove buttons. All images are sent to Gemini for visual analysis (menus, price lists, etc.).
 - **API Endpoints:** Comprehensive set of RESTful APIs for user management, voice donations, transactions, smart profiles, and AI interactions.
 
 - **Master Agent System:** Hierarchical agent management where one smart profile (currently `aryaai`) is designated as the platform-wide "King" agent via `isMaster=true` flag. The master agent can:
