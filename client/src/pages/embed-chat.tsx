@@ -38,7 +38,15 @@ export default function EmbedChat({ slug }: { slug: string }) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [language, setLanguage] = useState<"az" | "ru" | "en">("en");
+  const [language, setLanguage] = useState<"az" | "ru" | "en">(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlLang = params.get("lang");
+    if (urlLang === "az" || urlLang === "ru" || urlLang === "en") return urlLang;
+    const browserLang = (navigator.language || "").toLowerCase().slice(0, 2);
+    if (browserLang === "az") return "az";
+    if (browserLang === "ru") return "ru";
+    return "en";
+  });
   const [profileLoading, setProfileLoading] = useState(true);
   const [pendingVoiceText, setPendingVoiceText] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -51,10 +59,6 @@ export default function EmbedChat({ slug }: { slug: string }) {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const langParam = params.get("lang");
-    if (langParam === "ru" || langParam === "en" || langParam === "az") {
-      setLanguage(langParam);
-    }
     const autoOpen = params.get("open");
     if (autoOpen === "1" || autoOpen === "true") {
       setIsOpen(true);
