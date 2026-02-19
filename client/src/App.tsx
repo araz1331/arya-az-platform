@@ -303,13 +303,17 @@ function App() {
   }
 
   if (getSlugFromPath()) {
+    const slug = getSlugFromPath()!;
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <LanguageProvider>
-            <Toaster />
-            <AzContent />
-          </LanguageProvider>
+          <Toaster />
+          <SmartProfile
+            slug={slug}
+            onBack={() => {
+              window.location.href = "/";
+            }}
+          />
         </TooltipProvider>
       </QueryClientProvider>
     );
