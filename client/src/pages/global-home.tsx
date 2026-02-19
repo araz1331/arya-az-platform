@@ -7,7 +7,7 @@ import {
   Globe, Wrench, GraduationCap, UtensilsCrossed, Camera, Paintbrush, Link2,
   ChevronDown, ArrowRight, Check, Waves, MessageSquare, Zap, Star, Quote,
   Settings, Languages, UserPlus, Code, Mic, BarChart3, Volume2, VolumeX,
-  Flame, ShieldCheck, Crown, AlertTriangle, Lock, PlugZap, Smartphone
+  Flame, ShieldCheck, Crown, AlertTriangle, Lock, PlugZap, Smartphone, X
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -55,6 +55,64 @@ function GlobalLanguageSelector({ lang, setLang }: { lang: GlobalLanguage; setLa
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+function FloatingAryaChat() {
+  const [isOpen, setIsOpen] = useState(false);
+  const widgetLang = (() => {
+    const bl = (navigator.language || "en").toLowerCase();
+    if (bl.startsWith("ru")) return "ru";
+    if (bl.startsWith("az")) return "az";
+    if (bl.startsWith("tr")) return "tr";
+    if (bl.startsWith("es")) return "es";
+    if (bl.startsWith("fr")) return "fr";
+    return "en";
+  })();
+
+  return (
+    <div className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-50" data-testid="floating-arya-chat">
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ duration: 0.25 }}
+            className="mb-3 rounded-xl overflow-hidden shadow-2xl border border-border w-[calc(100vw-2rem)] sm:w-[380px] h-[70vh] sm:h-[520px] max-h-[600px]"
+          >
+            <div className="relative w-full h-full bg-background">
+              <button
+                onClick={() => setIsOpen(false)}
+                className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/30 text-white flex items-center justify-center"
+                data-testid="button-close-arya-chat"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <iframe
+                src={`/embed/aryaai?lang=${widgetLang}&open=true`}
+                className="w-full h-full border-0"
+                title="Chat with Arya AI"
+                allow="microphone"
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <motion.button
+        onClick={() => setIsOpen(prev => !prev)}
+        className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center ml-auto"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        data-testid="button-open-arya-chat"
+      >
+        {isOpen ? (
+          <X className="w-6 h-6" />
+        ) : (
+          <MessageSquare className="w-6 h-6" />
+        )}
+      </motion.button>
+    </div>
   );
 }
 
@@ -805,6 +863,8 @@ export default function GlobalHome() {
           </div>
         </div>
       </footer>
+
+      <FloatingAryaChat />
     </div>
   );
 }
