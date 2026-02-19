@@ -164,7 +164,6 @@ export default function AboutPage() {
             <div className="flex flex-wrap gap-6 text-sm">
               <a href="/" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-home">Home</a>
               <a href="/about" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-about">{t("navOurStory")}</a>
-              <a href="/az" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-az">Arya Azərbaycan</a>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t">
