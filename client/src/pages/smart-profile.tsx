@@ -190,12 +190,19 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
   const [language, setLanguage] = useState<"az" | "ru" | "en" | "es" | "fr" | "tr">(() => {
     const params = new URLSearchParams(window.location.search);
     const urlLang = params.get("lang");
+    if (urlLang === "az") return "az";
     if (urlLang === "ru") return "ru";
     if (urlLang === "en") return "en";
     if (urlLang === "es") return "es";
     if (urlLang === "fr") return "fr";
     if (urlLang === "tr") return "tr";
-    return "az";
+    const browserLang = (navigator.language || "").toLowerCase().slice(0, 2);
+    if (browserLang === "az") return "az";
+    if (browserLang === "ru") return "ru";
+    if (browserLang === "es") return "es";
+    if (browserLang === "fr") return "fr";
+    if (browserLang === "tr") return "tr";
+    return "en";
   });
   const [pendingVoiceText, setPendingVoiceText] = useState<string | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -282,7 +289,7 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
           is_pro: data.is_pro || false,
           pro_expires_at: data.pro_expires_at || null,
         });
-        const greetFn = GREETINGS.known[language] || GREETINGS.known.az;
+        const greetFn = GREETINGS.known[language] || GREETINGS.known.en;
         setMessages([{ role: "assistant", text: greetFn(data.display_name, data.profession) }]);
         setProfileLoading(false);
       })
@@ -301,13 +308,13 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
               profession_en: data.profession_en || demoTrans?.profession_en || null,
             });
             const greetFn = slug === "new-user"
-              ? (GREETINGS.newUser[language] || GREETINGS.newUser.az)
-              : (GREETINGS.known[language] || GREETINGS.known.az);
+              ? (GREETINGS.newUser[language] || GREETINGS.newUser.en)
+              : (GREETINGS.known[language] || GREETINGS.known.en);
             setMessages([{ role: "assistant", text: greetFn(data.display_name, data.profession) }]);
           })
           .catch(() => {
             apiAvailableRef.current = false;
-            const fallback = demoInfo || { display_name: slug, profession: "Sİ Köməkçi", profession_ru: "ИИ-Ассистент", profession_en: "AI Assistant", theme_color: "#2563EB" };
+            const fallback = demoInfo || { display_name: slug, profession: "AI Assistant", profession_ru: "ИИ-Ассистент", profession_en: "AI Assistant", theme_color: "#2563EB" };
             setProfile({
               id: "demo-id",
               display_name: fallback.display_name,
@@ -318,8 +325,8 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
               avatar_url: ""
             });
             const greetFn = slug === "new-user"
-              ? (GREETINGS.newUser[language] || GREETINGS.newUser.az)
-              : (GREETINGS.fallback[language] || GREETINGS.fallback.az);
+              ? (GREETINGS.newUser[language] || GREETINGS.newUser.en)
+              : (GREETINGS.fallback[language] || GREETINGS.fallback.en);
             setMessages([{ role: "assistant", text: greetFn(fallback.display_name, fallback.profession) }]);
           })
           .finally(() => setProfileLoading(false));
@@ -349,10 +356,10 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
       });
     } else {
       const greetFn = slug === "new-user"
-        ? (GREETINGS.newUser[language] || GREETINGS.newUser.az)
+        ? (GREETINGS.newUser[language] || GREETINGS.newUser.en)
         : isDemo
-          ? (GREETINGS.fallback[language] || GREETINGS.fallback.az)
-          : (GREETINGS.known[language] || GREETINGS.known.az);
+          ? (GREETINGS.fallback[language] || GREETINGS.fallback.en)
+          : (GREETINGS.known[language] || GREETINGS.known.en);
       const newGreeting = greetFn(name, prof);
       setMessages(prev => {
         if (prev.length <= 1) return [{ role: "assistant", text: newGreeting }];
@@ -473,7 +480,7 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
 
   const getDemoReply = () => {
     const profileReplies = DEMO_REPLIES[slug] || DEMO_REPLIES["new-user"];
-    const langReplies = profileReplies[language] || profileReplies["az"];
+    const langReplies = profileReplies[language] || profileReplies["en"] || profileReplies["az"];
     const idx = demoReplyIndexRef.current % langReplies.length;
     demoReplyIndexRef.current++;
     return langReplies[idx];
