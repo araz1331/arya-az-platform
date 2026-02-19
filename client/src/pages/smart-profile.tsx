@@ -855,35 +855,6 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
                   {locationText}
                 </span>
               )}
-              <div className="flex items-center gap-0.5" data-testid="language-selector">
-                {(["es","fr","tr"].includes(language)
-                  ? [
-                      { code: "en" as const, label: "EN" },
-                      { code: "es" as const, label: "ES" },
-                      { code: "ru" as const, label: "RU" },
-                      { code: "fr" as const, label: "FR" },
-                      { code: "tr" as const, label: "TR" },
-                    ]
-                  : [
-                      { code: "az" as const, label: "AZ" },
-                      { code: "ru" as const, label: "RU" },
-                      { code: "en" as const, label: "EN" },
-                    ]
-                ).map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => setLanguage(lang.code)}
-                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all ${
-                      language === lang.code
-                        ? "bg-blue-500 text-white"
-                        : "bg-white/10 text-white/50 hover:bg-white/20"
-                    }`}
-                    data-testid={`button-lang-${lang.code}`}
-                  >
-                    {lang.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         </div>

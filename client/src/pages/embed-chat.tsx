@@ -38,7 +38,7 @@ export default function EmbedChat({ slug }: { slug: string }) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [language, setLanguage] = useState<"az" | "ru" | "en">("az");
+  const [language, setLanguage] = useState<"az" | "ru" | "en">("en");
   const [profileLoading, setProfileLoading] = useState(true);
   const [pendingVoiceText, setPendingVoiceText] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -281,22 +281,6 @@ export default function EmbedChat({ slug }: { slug: string }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{profile.display_name}</div>
           <div style={{ fontSize: 12, opacity: 0.85, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{displayProfession}</div>
-        </div>
-        <div style={{ display: "flex", gap: 2 }}>
-          {(["az", "ru", "en"] as const).map(lang => (
-            <button
-              key={lang}
-              onClick={() => setLanguage(lang)}
-              style={{
-                padding: "3px 8px", borderRadius: 4, fontSize: 11, fontWeight: 700, border: "none", cursor: "pointer",
-                background: language === lang ? "rgba(255,255,255,0.3)" : "transparent",
-                color: "#fff",
-              }}
-              data-testid={`embed-lang-${lang}`}
-            >
-              {lang.toUpperCase()}
-            </button>
-          ))}
         </div>
       </div>
 
