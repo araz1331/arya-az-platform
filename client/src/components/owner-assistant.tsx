@@ -44,8 +44,8 @@ function isImageUrl(url: string): boolean {
   return /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url);
 }
 
-export default function OwnerAssistant() {
-  const [open, setOpen] = useState(false);
+export default function OwnerAssistant({ autoOpen = false }: { autoOpen?: boolean } = {}) {
+  const [open, setOpen] = useState(autoOpen);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -58,6 +58,10 @@ export default function OwnerAssistant() {
   const audioChunksRef = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (autoOpen) setOpen(true);
+  }, [autoOpen]);
 
   useEffect(() => {
     if (open && !historyLoaded) {

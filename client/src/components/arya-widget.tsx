@@ -850,18 +850,7 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
       }]);
       setOnboarding(null);
     } else if (!smartProfile) {
-      setMessages([{ role: "assistant", text: questions[0] }]);
-      setOnboarding({
-        step: 0,
-        businessName: "",
-        profession: "",
-        services: "",
-        pricing: "",
-        location: "",
-        workHours: "",
-        faq: "",
-        slug: "",
-      });
+      setOnboarding(null);
     }
   }, [smartProfile, language]);
 
@@ -1679,6 +1668,38 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
   }
 
   const profileReady = smartProfile && smartProfile.onboardingComplete;
+
+  if (smartProfile === null && !editMode) {
+    const welcomeTexts: Record<Lang, { title: string; subtitle: string; cta: string }> = {
+      az: {
+        title: "Arya ilə tanış olun!",
+        subtitle: "Sağ alt küncüdəki söhbət düyməsini basın. Arya sizə bir neçə sual verəcək və avtomatik olaraq Sİ köməkçinizi yaradacaq.",
+        cta: "Söhbətə başlayın",
+      },
+      ru: {
+        title: "Познакомьтесь с Arya!",
+        subtitle: "Нажмите кнопку чата в правом нижнем углу. Arya задаст вам несколько вопросов и автоматически создаст вашего ИИ-ассистента.",
+        cta: "Начните разговор",
+      },
+      en: {
+        title: "Meet Arya!",
+        subtitle: "Click the chat button in the bottom right corner. Arya will ask you a few questions and automatically create your AI assistant.",
+        cta: "Start a conversation",
+      },
+    };
+    const wt = welcomeTexts[language];
+    return (
+      <Card className="flex flex-col h-[300px] overflow-visible items-center justify-center p-8 text-center">
+        <Sparkles className="w-12 h-12 mb-4 text-primary opacity-60" />
+        <h3 className="text-lg font-semibold mb-2" data-testid="text-welcome-title">{wt.title}</h3>
+        <p className="text-sm text-muted-foreground mb-4 max-w-[320px]" data-testid="text-welcome-subtitle">{wt.subtitle}</p>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <MessageCircle className="w-4 h-4" />
+          <span>{wt.cta}</span>
+        </div>
+      </Card>
+    );
+  }
 
   const kbPreview = smartProfile?.knowledgeBase
     ? smartProfile.knowledgeBase.split("\n\n").map(line => {

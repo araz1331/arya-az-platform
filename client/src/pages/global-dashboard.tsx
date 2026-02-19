@@ -458,7 +458,7 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
           </TabsContent>
         </Tabs>
       </main>
-      <OwnerAssistant />
+      <OwnerAssistant autoOpen={!hasProfile} />
     </div>
   );
 }

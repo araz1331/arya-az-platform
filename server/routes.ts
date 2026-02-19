@@ -1874,6 +1874,78 @@ Your capabilities are UNLIMITED:
 
       await storage.createOwnerChatMessage({ userId, role: "model", content: reply });
 
+      if (noProfile && !profile) {
+        (async () => {
+          try {
+            const existingCheck = await storage.getSmartProfileByUserId(userId);
+            if (existingCheck) return;
+
+            const recentMessages = await storage.getOwnerChatHistory(userId, 20);
+            if (recentMessages.length >= 4) {
+              const conversationText = recentMessages.map(m => `${m.role === "user" ? "Owner" : "Arya"}: ${m.content}`).join("\n");
+              const profileExtractPrompt = `Analyze this conversation between a new user and their AI assistant. Extract profile information to create their smart profile.
+
+CONVERSATION:
+${conversationText}
+
+TASK: Extract the following fields from the conversation. If a field is not mentioned, leave it as an empty string.
+Respond in EXACTLY this JSON format:
+{
+  "businessName": "the business or service name, or personal name if personal use",
+  "profession": "their profession or field",
+  "knowledgeBase": "structured summary of all information gathered (services, prices, hours, location, etc.)",
+  "slug": "a URL-friendly slug based on their name or business (lowercase, hyphens only, no spaces)"
+}
+
+RULES:
+- Only extract info that was EXPLICITLY stated by the owner
+- slug must be lowercase letters, numbers, and hyphens only
+- If not enough info yet (no business name or profession), respond with exactly: NOT_READY
+- Output ONLY the JSON or NOT_READY — nothing else`;
+
+              const extractResult = await gemini.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: [{ role: "user", parts: [{ text: profileExtractPrompt }] }],
+                config: { maxOutputTokens: 2000 },
+              });
+
+              const extracted = (extractResult.text || "").trim();
+              if (extracted && extracted !== "NOT_READY" && !extracted.startsWith("NOT_READY")) {
+                try {
+                  const cleanJson = extracted.replace(/```json\n?|```\n?/g, "").trim();
+                  const profileData = JSON.parse(cleanJson);
+                  if (profileData.businessName && profileData.profession) {
+                    let slug = (profileData.slug || profileData.businessName).toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+                    const slugTaken = await storage.getSmartProfileBySlug(slug);
+                    if (slugTaken) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
+
+                    const [user] = await db.select().from(users).where(eq(users.id, userId));
+                    const realName = user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : null;
+
+                    await storage.createSmartProfile({
+                      userId,
+                      slug,
+                      businessName: profileData.businessName,
+                      displayName: realName || profileData.businessName,
+                      profession: profileData.profession,
+                      themeColor: "#2563EB",
+                      knowledgeBase: profileData.knowledgeBase || null,
+                      onboardingComplete: true,
+                      isActive: true,
+                    });
+                    console.log(`[discovery] Auto-created profile "${slug}" for user ${userId}`);
+                  }
+                } catch (parseErr: any) {
+                  console.error("[discovery] Failed to parse profile JSON:", parseErr?.message);
+                }
+              }
+            }
+          } catch (autoErr: any) {
+            console.error("[discovery] Auto-create profile error:", autoErr?.message);
+          }
+        })();
+      }
+
       const hasSubstantiveInput = message.trim().length > 10 || uploadedFiles.length > 0;
       if (profile && !isMasterProfile && !updateApplied && hasSubstantiveInput) {
         (async () => {
