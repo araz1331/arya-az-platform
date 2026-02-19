@@ -6,6 +6,14 @@ import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { WebhookHandlers } from "./webhookHandlers";
 
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled promise rejection:", reason);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception:", err);
+});
+
 const app = express();
 const httpServer = createServer(app);
 
@@ -107,7 +115,9 @@ async function initStripe() {
 
 (async () => {
   try {
-    await bootstrapViews();
+    await bootstrapViews().catch(err => {
+      console.warn("bootstrapViews failed (non-fatal):", err.message);
+    });
     await initStripe();
     await registerRoutes(httpServer, app);
   } catch (err) {

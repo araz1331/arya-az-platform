@@ -5,8 +5,18 @@ import * as schema from "@shared/schema";
 const connectionString = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL || "";
 
 if (!connectionString) {
-  throw new Error("DATABASE_URL must be set");
+  console.error("WARNING: No database connection string found (SUPABASE_DB_URL or DATABASE_URL)");
 }
 
-export const pool = new Pool({ connectionString });
+export const pool = new Pool({
+  connectionString,
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  max: 20,
+});
+
+pool.on("error", (err) => {
+  console.error("Unexpected database pool error:", err.message);
+});
+
 export const db = drizzle(pool, { schema });

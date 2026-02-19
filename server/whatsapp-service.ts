@@ -574,17 +574,25 @@ export function startWhatsAppScheduler() {
   console.log("[whatsapp-scheduler] Started (runs every 30 minutes)");
 
   schedulerInterval = setInterval(async () => {
-    console.log("[whatsapp-scheduler] Running scheduled tasks...");
-    await runDailySummaries();
-    await runFollowUps();
-    await runRecordingReminders();
+    try {
+      console.log("[whatsapp-scheduler] Running scheduled tasks...");
+      await runDailySummaries();
+      await runFollowUps();
+      await runRecordingReminders();
+    } catch (err: any) {
+      console.error("[whatsapp-scheduler] Scheduled task error:", err.message);
+    }
   }, 30 * 60 * 1000);
 
   setTimeout(async () => {
-    console.log("[whatsapp-scheduler] Initial run...");
-    await runDailySummaries();
-    await runFollowUps();
-    await runRecordingReminders();
+    try {
+      console.log("[whatsapp-scheduler] Initial run...");
+      await runDailySummaries();
+      await runFollowUps();
+      await runRecordingReminders();
+    } catch (err: any) {
+      console.error("[whatsapp-scheduler] Initial run error:", err.message);
+    }
   }, 60 * 1000);
 }
 
