@@ -56,8 +56,6 @@ function getAzSubPath(): string {
 }
 
 function getRedirectForLegacy(): string | null {
-  const path = window.location.pathname;
-  if (path === "/admin") return `${LANG_PREFIX}/admin`;
   return null;
 }
 
@@ -189,6 +187,40 @@ function AzContent() {
   );
 }
 
+function AzGeoGate() {
+  const [status, setStatus] = useState<"loading" | "allowed" | "blocked">("loading");
+
+  useEffect(() => {
+    fetch("/api/geo")
+      .then(res => res.json())
+      .then((data: any) => {
+        if (data.isAz) {
+          setStatus("allowed");
+        } else {
+          setStatus("blocked");
+        }
+      })
+      .catch(() => {
+        setStatus("blocked");
+      });
+  }, []);
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground text-sm">Loading...</div>
+      </div>
+    );
+  }
+
+  if (status === "blocked") {
+    window.location.replace("/");
+    return null;
+  }
+
+  return <AzContent />;
+}
+
 function GlobalContent() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -252,13 +284,26 @@ function App() {
     );
   }
 
-  if (getSlugFromPath() || isAzPath()) {
+  if (getSlugFromPath()) {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <LanguageProvider>
             <Toaster />
             <AzContent />
+          </LanguageProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (isAzPath()) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <LanguageProvider>
+            <Toaster />
+            <AzGeoGate />
           </LanguageProvider>
         </TooltipProvider>
       </QueryClientProvider>

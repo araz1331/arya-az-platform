@@ -158,6 +158,29 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/geo", async (req: Request, res: Response) => {
+    try {
+      const isDev = process.env.NODE_ENV === "development";
+      const forwarded = req.headers["x-forwarded-for"];
+      const ip = typeof forwarded === "string" ? forwarded.split(",")[0].trim() : req.socket.remoteAddress || "";
+      const isPrivate = !ip || ip === "::1" || ip === "127.0.0.1" || ip.startsWith("10.") || ip.startsWith("192.168.") || ip.startsWith("172.") || ip.startsWith("fc") || ip.startsWith("fd") || ip.startsWith("fe80");
+      if (isPrivate) {
+        return res.json({ country: "unknown", isAz: isDev });
+      }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      const geoRes = await fetch(`https://ipapi.co/${ip}/json/`, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (!geoRes.ok) return res.json({ country: "unknown", isAz: isDev });
+      const data = await geoRes.json() as any;
+      const cc = (data.country_code || "").toUpperCase();
+      res.json({ country: cc, isAz: cc === "AZ" });
+    } catch {
+      const isDev = process.env.NODE_ENV === "development";
+      res.json({ country: "unknown", isAz: isDev });
+    }
+  });
+
   app.get("/api/user", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
