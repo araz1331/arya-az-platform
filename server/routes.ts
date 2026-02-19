@@ -747,6 +747,81 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/profile-kb/:profileId", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const profileId = req.params.profileId as string;
+      const profile = await storage.getSmartProfile(profileId);
+      if (!profile) return res.status(404).json({ message: "Profile not found" });
+      res.json({
+        id: profile.id,
+        slug: profile.slug,
+        businessName: profile.businessName,
+        knowledgeBase: profile.knowledgeBase,
+        privateVault: profile.privateVault,
+        knowledgeBaseRu: profile.knowledgeBaseRu,
+        knowledgeBaseEn: profile.knowledgeBaseEn,
+      });
+    } catch (error) {
+      console.error("Admin get profile KB error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.patch("/api/admin/profile-kb/:profileId", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const profileId = req.params.profileId as string;
+      const { knowledgeBase, privateVault, knowledgeBaseRu, knowledgeBaseEn } = req.body;
+
+      const fields = { knowledgeBase, privateVault, knowledgeBaseRu, knowledgeBaseEn };
+      for (const [key, val] of Object.entries(fields)) {
+        if (val !== undefined && typeof val !== "string") {
+          return res.status(400).json({ message: `${key} must be a string` });
+        }
+      }
+
+      const profile = await storage.getSmartProfile(profileId);
+      if (!profile) return res.status(404).json({ message: "Profile not found" });
+
+      const updates: any = {};
+      if (knowledgeBase !== undefined) updates.knowledgeBase = knowledgeBase;
+      if (privateVault !== undefined) updates.privateVault = privateVault;
+      if (knowledgeBaseRu !== undefined) updates.knowledgeBaseRu = knowledgeBaseRu;
+      if (knowledgeBaseEn !== undefined) updates.knowledgeBaseEn = knowledgeBaseEn;
+
+      if (Object.keys(updates).length > 0) {
+        await storage.updateSmartProfile(profileId, updates);
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Admin update profile KB error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.get("/api/admin/global-kb", isAdmin, async (_req: Request, res: Response) => {
+    try {
+      const content = await storage.getGlobalKnowledgeBase();
+      res.json({ content: content || "" });
+    } catch (error) {
+      console.error("Admin get global KB error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.patch("/api/admin/global-kb", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const { content } = req.body;
+      if (typeof content !== "string") return res.status(400).json({ message: "content required" });
+      const [masterProfile] = await db.select().from(smartProfiles).where(eq(smartProfiles.isMaster, true)).limit(1);
+      await storage.setGlobalKnowledgeBase(content, masterProfile?.id || "admin");
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Admin update global KB error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   app.get("/api/admin/leads", isAdmin, async (_req: Request, res: Response) => {
     try {
       const leads = await storage.getAdminLeads();

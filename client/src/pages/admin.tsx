@@ -5,15 +5,16 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   Users, Mic, HardDrive, Clock, ArrowLeft, Waves, Download,
   MessageSquare, Globe, Crown, TrendingUp, Briefcase,
   ExternalLink, Languages, CheckCircle, XCircle, Loader2,
-  Play, Pause, Volume2,
+  Play, Pause, Volume2, BookOpen, Save, ChevronDown, ChevronRight,
 } from "lucide-react";
 
-type Tab = "overview" | "users" | "profiles" | "leads" | "voice";
+type Tab = "overview" | "users" | "profiles" | "leads" | "voice" | "knowledge";
 
 interface FullStats {
   totalUsers: number;
@@ -590,6 +591,238 @@ function VoiceTab({ donations, isLoading }: { donations: AdminVoiceDonation[]; i
   );
 }
 
+function ProfileKBEditor({ profile }: { profile: AdminSmartProfile }) {
+  const { toast } = useToast();
+  const [expanded, setExpanded] = useState(false);
+  const [kb, setKb] = useState("");
+  const [pv, setPv] = useState("");
+  const [kbRu, setKbRu] = useState("");
+  const [kbEn, setKbEn] = useState("");
+  const [loaded, setLoaded] = useState(false);
+
+  const { data, isLoading } = useQuery<{
+    knowledgeBase: string | null;
+    privateVault: string | null;
+    knowledgeBaseRu: string | null;
+    knowledgeBaseEn: string | null;
+  }>({
+    queryKey: ["/api/admin/profile-kb", profile.id],
+    enabled: expanded && !loaded,
+  });
+
+  useEffect(() => {
+    if (data && !loaded) {
+      setKb(data.knowledgeBase || "");
+      setPv(data.privateVault || "");
+      setKbRu(data.knowledgeBaseRu || "");
+      setKbEn(data.knowledgeBaseEn || "");
+      setLoaded(true);
+    }
+  }, [data, loaded]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("PATCH", `/api/admin/profile-kb/${profile.id}`, {
+        knowledgeBase: kb,
+        privateVault: pv,
+        knowledgeBaseRu: kbRu,
+        knowledgeBaseEn: kbEn,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: `Knowledge base saved for ${profile.businessName}` });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/profile-kb", profile.id] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Failed to save", description: err.message, variant: "destructive" });
+    },
+  });
+
+  return (
+    <Card className="p-4" data-testid={`card-kb-${profile.slug}`}>
+      <button
+        className="w-full flex items-center gap-3 text-left"
+        onClick={() => setExpanded(!expanded)}
+        data-testid={`button-expand-kb-${profile.slug}`}
+      >
+        <Avatar className="w-8 h-8 shrink-0">
+          <AvatarImage src={profile.profileImageUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.slug}`} />
+          <AvatarFallback className="text-[10px] font-bold">{(profile.displayName || profile.businessName).slice(0, 2).toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <span className="font-medium text-sm">{profile.displayName || profile.businessName}</span>
+          <span className="text-xs text-muted-foreground ml-2">/{profile.slug}</span>
+        </div>
+        {profile.isPro && <Badge className="bg-amber-500/10 text-amber-600 border-transparent text-[10px]">PRO</Badge>}
+        {expanded ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+      </button>
+
+      {expanded && (
+        <div className="mt-4 space-y-4">
+          {isLoading && !loaded ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Knowledge Base (AZ — Main)</label>
+                <Textarea
+                  value={kb}
+                  onChange={(e) => setKb(e.target.value)}
+                  rows={8}
+                  className="text-sm"
+                  placeholder="Main knowledge base content (Azerbaijani)..."
+                  data-testid={`textarea-kb-az-${profile.slug}`}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Knowledge Base (RU)</label>
+                <Textarea
+                  value={kbRu}
+                  onChange={(e) => setKbRu(e.target.value)}
+                  rows={5}
+                  className="text-sm"
+                  placeholder="Russian translation..."
+                  data-testid={`textarea-kb-ru-${profile.slug}`}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Knowledge Base (EN)</label>
+                <Textarea
+                  value={kbEn}
+                  onChange={(e) => setKbEn(e.target.value)}
+                  rows={5}
+                  className="text-sm"
+                  placeholder="English translation..."
+                  data-testid={`textarea-kb-en-${profile.slug}`}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Private Vault (Owner Only)</label>
+                <Textarea
+                  value={pv}
+                  onChange={(e) => setPv(e.target.value)}
+                  rows={4}
+                  className="text-sm"
+                  placeholder="Private information only visible to the owner..."
+                  data-testid={`textarea-pv-${profile.slug}`}
+                />
+              </div>
+              <Button
+                onClick={() => saveMutation.mutate()}
+                disabled={saveMutation.isPending}
+                className="gap-1.5"
+                data-testid={`button-save-kb-${profile.slug}`}
+              >
+                {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save Changes
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function KnowledgeTab({ profiles, isLoading }: { profiles: AdminSmartProfile[]; isLoading: boolean }) {
+  const { toast } = useToast();
+  const [globalExpanded, setGlobalExpanded] = useState(false);
+  const [globalContent, setGlobalContent] = useState("");
+  const [globalLoaded, setGlobalLoaded] = useState(false);
+
+  const { data: globalKB, isLoading: globalLoading } = useQuery<{ content: string }>({
+    queryKey: ["/api/admin/global-kb"],
+    enabled: globalExpanded && !globalLoaded,
+  });
+
+  useEffect(() => {
+    if (globalKB && !globalLoaded) {
+      setGlobalContent(globalKB.content || "");
+      setGlobalLoaded(true);
+    }
+  }, [globalKB, globalLoaded]);
+
+  const saveGlobalMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("PATCH", "/api/admin/global-kb", { content: globalContent });
+    },
+    onSuccess: () => {
+      toast({ title: "Global Knowledge Base saved" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/global-kb"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Failed to save", description: err.message, variant: "destructive" });
+    },
+  });
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-4" data-testid="card-global-kb">
+        <button
+          className="w-full flex items-center gap-3 text-left"
+          onClick={() => setGlobalExpanded(!globalExpanded)}
+          data-testid="button-expand-global-kb"
+        >
+          <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary/10">
+            <Globe className="w-4 h-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="font-medium text-sm">Global Knowledge Base</span>
+            <span className="text-xs text-muted-foreground ml-2">Shared across all agents</span>
+          </div>
+          <Badge variant="default" className="text-[10px]">
+            <Crown className="w-3 h-3 mr-1" />
+            King
+          </Badge>
+          {globalExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+        </button>
+
+        {globalExpanded && (
+          <div className="mt-4 space-y-4">
+            {globalLoading && !globalLoaded ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                <Textarea
+                  value={globalContent}
+                  onChange={(e) => setGlobalContent(e.target.value)}
+                  rows={16}
+                  className="text-sm font-mono"
+                  placeholder="Global knowledge base content..."
+                  data-testid="textarea-global-kb"
+                />
+                <Button
+                  onClick={() => saveGlobalMutation.mutate()}
+                  disabled={saveGlobalMutation.isPending}
+                  className="gap-1.5"
+                  data-testid="button-save-global-kb"
+                >
+                  {saveGlobalMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Save Global KB
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+      </Card>
+
+      <h3 className="text-sm font-medium text-muted-foreground">Profile Knowledge Bases</h3>
+
+      {isLoading ? (
+        <p className="text-muted-foreground text-sm p-4">Loading profiles...</p>
+      ) : profiles.length === 0 ? (
+        <p className="text-muted-foreground text-sm p-4">No smart profiles yet.</p>
+      ) : (
+        profiles.map((p) => <ProfileKBEditor key={p.id} profile={p} />)
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage({ onBack }: { onBack: () => void }) {
   const [tab, setTab] = useState<Tab>("overview");
 
@@ -649,6 +882,9 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
           <TabButton active={tab === "leads"} onClick={() => setTab("leads")} count={leads.length} testId="button-tab-leads">
             <MessageSquare className="w-4 h-4" /> Leads
           </TabButton>
+          <TabButton active={tab === "knowledge"} onClick={() => setTab("knowledge")} testId="button-tab-knowledge">
+            <BookOpen className="w-4 h-4" /> Knowledge
+          </TabButton>
           <TabButton active={tab === "voice"} onClick={() => setTab("voice")} count={donations.length} testId="button-tab-voice">
             <Mic className="w-4 h-4" /> Voice
           </TabButton>
@@ -659,6 +895,7 @@ export default function AdminPage({ onBack }: { onBack: () => void }) {
         {tab === "overview" && <OverviewTab stats={stats} />}
         {tab === "users" && <UsersTab users={users} isLoading={usersLoading} />}
         {tab === "profiles" && <ProfilesTab profiles={profiles} isLoading={profilesLoading} />}
+        {tab === "knowledge" && <KnowledgeTab profiles={profiles} isLoading={profilesLoading} />}
         {tab === "leads" && <LeadsTab leads={leads} isLoading={leadsLoading} />}
         {tab === "voice" && <VoiceTab donations={donations} isLoading={donationsLoading} />}
       </main>
