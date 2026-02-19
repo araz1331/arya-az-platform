@@ -58,17 +58,9 @@ function GlobalLanguageSelector({ lang, setLang }: { lang: GlobalLanguage; setLa
   );
 }
 
-function FloatingAryaChat() {
+function FloatingAryaChat({ lang: pageLang }: { lang: string }) {
   const [isOpen, setIsOpen] = useState(false);
-  const widgetLang = (() => {
-    const bl = (navigator.language || "en").toLowerCase();
-    if (bl.startsWith("ru")) return "ru";
-    if (bl.startsWith("az")) return "az";
-    if (bl.startsWith("tr")) return "tr";
-    if (bl.startsWith("es")) return "es";
-    if (bl.startsWith("fr")) return "fr";
-    return "en";
-  })();
+  const widgetLang = pageLang || "en";
 
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-50" data-testid="floating-arya-chat">
@@ -864,7 +856,7 @@ export default function GlobalHome() {
         </div>
       </footer>
 
-      <FloatingAryaChat />
+      <FloatingAryaChat lang={lang} />
     </div>
   );
 }
