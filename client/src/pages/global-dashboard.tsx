@@ -9,7 +9,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye, Pencil, Loader2 } from "lucide-react";
+import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye, Pencil, Loader2, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import AryaWidget from "@/components/arya-widget";
@@ -355,7 +355,7 @@ function EmbedCodeSection({ slug, t }: { slug: string; t: (key: any) => string }
   );
 }
 
-export default function GlobalDashboard({ onBack }: { onBack: () => void }) {
+export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onBack: () => void; isAdmin?: boolean; onAdminClick?: () => void }) {
   const { user: authUser, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("setup");
   const [lang, setLangState] = useState<GlobalLanguage>(getStoredGlobalLanguage());
@@ -396,6 +396,16 @@ export default function GlobalDashboard({ onBack }: { onBack: () => void }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {isAdmin && onAdminClick && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={onAdminClick}
+                data-testid="button-admin-panel"
+              >
+                <Shield className="w-4 h-4" />
+              </Button>
+            )}
             <DashLanguageSelector lang={lang} setLang={setLang} />
             {profile?.isPro && (
               <Badge variant="default" data-testid="badge-pro-status">

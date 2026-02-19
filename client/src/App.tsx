@@ -221,8 +221,22 @@ function AzGeoGate() {
   return <AzContent />;
 }
 
+function isAdminPath(): boolean {
+  const path = window.location.pathname;
+  return path === "/admin" || path.startsWith("/admin/");
+}
+
 function GlobalContent() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [showAdmin, setShowAdmin] = useState(isAdminPath());
+
+  const { data: adminCheck } = useQuery<{ isAdmin: boolean }>({
+    queryKey: ["/api/admin/check"],
+    enabled: isAuthenticated,
+    retry: false,
+  });
+
+  const isAdmin = adminCheck?.isAdmin === true;
 
   if (isLoading) {
     return (
@@ -236,7 +250,11 @@ function GlobalContent() {
     return <GlobalAuthPage onBack={() => { window.location.href = "/"; }} />;
   }
 
-  return <GlobalDashboard onBack={() => { window.location.href = "/"; }} />;
+  if (showAdmin && isAdmin) {
+    return <AdminPage onBack={() => { setShowAdmin(false); window.history.replaceState({}, '', '/dashboard'); }} />;
+  }
+
+  return <GlobalDashboard onBack={() => { window.location.href = "/"; }} isAdmin={isAdmin} onAdminClick={() => { setShowAdmin(true); window.history.pushState({}, '', '/admin'); }} />;
 }
 
 function App() {
@@ -273,7 +291,7 @@ function App() {
     );
   }
 
-  if (isDashboardPath()) {
+  if (isAdminPath() || isDashboardPath()) {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
