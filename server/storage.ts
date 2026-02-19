@@ -180,6 +180,10 @@ export class DatabaseStorage implements IStorage {
       email: users.email,
       firstName: users.firstName,
       lastName: users.lastName,
+      isSuspended: users.isSuspended,
+      suspendedAt: users.suspendedAt,
+      accountManager: users.accountManager,
+      deletedAt: users.deletedAt,
       createdAt: users.createdAt,
     }).from(users).orderBy(desc(users.createdAt));
 

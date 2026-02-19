@@ -106,6 +106,14 @@ export function registerAuthRoutes(app: Express) {
         return res.status(401).json({ message: "E-poçt və ya şifrə yanlışdır" });
       }
 
+      if (user.deletedAt) {
+        return res.status(403).json({ message: "Bu hesab silinib / This account has been deleted" });
+      }
+
+      if (user.isSuspended) {
+        return res.status(403).json({ message: "Bu hesab dayandırılıb / This account has been suspended" });
+      }
+
       req.session.userId = user.id;
 
       const { passwordHash: _, ...safeUser } = user;
@@ -139,6 +147,11 @@ export function registerAuthRoutes(app: Express) {
 
       if (!user) {
         return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      if (user.deletedAt || user.isSuspended) {
+        req.session.destroy(() => {});
+        return res.status(403).json({ message: "Account suspended or deleted" });
       }
 
       const { passwordHash: _, ...safeUser } = user;

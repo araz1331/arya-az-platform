@@ -7,11 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
 import {
   Users, Mic, HardDrive, Clock, ArrowLeft, Waves, Download,
   MessageSquare, Globe, Crown, TrendingUp, Briefcase,
   ExternalLink, Languages, CheckCircle, XCircle, Loader2,
   Play, Pause, Volume2, BookOpen, Save, ChevronDown, ChevronRight,
+  Search, Ban, Trash2, RotateCcw, UserCog, Shield,
 } from "lucide-react";
 
 type Tab = "overview" | "users" | "profiles" | "leads" | "voice" | "knowledge";
@@ -38,6 +40,10 @@ interface AdminUser {
   email: string;
   firstName: string | null;
   lastName: string | null;
+  isSuspended: boolean | null;
+  suspendedAt: string | null;
+  accountManager: string | null;
+  deletedAt: string | null;
   createdAt: string;
   tokens: number;
   recordingsCount: number;
@@ -202,10 +208,23 @@ function OverviewTab({ stats }: { stats: FullStats | undefined }) {
   );
 }
 
+type UserFilter = "all" | "active" | "suspended" | "deleted" | "pro";
+
 function UsersTab({ users, isLoading }: { users: AdminUser[]; isLoading: boolean }) {
   const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<UserFilter>("all");
   const [proDialog, setProDialog] = useState<{ userId: string; name: string; currentPro: boolean } | null>(null);
   const [proDays, setProDays] = useState("30");
+  const [managerDialog, setManagerDialog] = useState<{ userId: string; name: string; current: string | null } | null>(null);
+  const [managerValue, setManagerValue] = useState("");
+  const [confirmDialog, setConfirmDialog] = useState<{ userId: string; name: string; action: "suspend" | "unsuspend" | "delete" | "restore" } | null>(null);
+
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/full-stats"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/smart-profiles"] });
+  };
 
   const setProMutation = useMutation({
     mutationFn: async ({ userId, isPro, days }: { userId: string; isPro: boolean; days?: number }) => {
@@ -213,9 +232,7 @@ function UsersTab({ users, isLoading }: { users: AdminUser[]; isLoading: boolean
       return res.json();
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/full-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/smart-profiles"] });
+      invalidateAll();
       toast({
         title: variables.isPro ? "PRO activated" : "PRO removed",
         description: variables.isPro ? `PRO for ${variables.days || 30} days` : "Subscription removed",
@@ -226,6 +243,86 @@ function UsersTab({ users, isLoading }: { users: AdminUser[]; isLoading: boolean
       toast({ title: "Error", description: err.message || "Failed to update", variant: "destructive" });
     },
   });
+
+  const suspendMutation = useMutation({
+    mutationFn: async ({ userId, suspend }: { userId: string; suspend: boolean }) => {
+      const res = await apiRequest("PATCH", `/api/admin/users/${userId}/suspend`, { suspend });
+      return res.json();
+    },
+    onSuccess: (_data, variables) => {
+      invalidateAll();
+      toast({ title: variables.suspend ? "User suspended" : "User unsuspended" });
+      setConfirmDialog(null);
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await apiRequest("DELETE", `/api/admin/users/${userId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      invalidateAll();
+      toast({ title: "User soft-deleted" });
+      setConfirmDialog(null);
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await apiRequest("PATCH", `/api/admin/users/${userId}/restore`, {});
+      return res.json();
+    },
+    onSuccess: () => {
+      invalidateAll();
+      toast({ title: "User restored" });
+      setConfirmDialog(null);
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const managerMutation = useMutation({
+    mutationFn: async ({ userId, accountManager }: { userId: string; accountManager: string }) => {
+      const res = await apiRequest("PATCH", `/api/admin/users/${userId}/manager`, { accountManager });
+      return res.json();
+    },
+    onSuccess: () => {
+      invalidateAll();
+      toast({ title: "Account manager updated" });
+      setManagerDialog(null);
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const filteredUsers = users.filter((u) => {
+    const q = searchQuery.toLowerCase();
+    if (q) {
+      const name = `${u.firstName ?? ""} ${u.lastName ?? ""}`.toLowerCase();
+      const email = u.email.toLowerCase();
+      const slug = (u.smartProfileSlug || "").toLowerCase();
+      const manager = (u.accountManager || "").toLowerCase();
+      if (!name.includes(q) && !email.includes(q) && !slug.includes(q) && !manager.includes(q)) return false;
+    }
+    if (statusFilter === "active") return !u.isSuspended && !u.deletedAt;
+    if (statusFilter === "suspended") return !!u.isSuspended && !u.deletedAt;
+    if (statusFilter === "deleted") return !!u.deletedAt;
+    if (statusFilter === "pro") return u.isPro;
+    return true;
+  });
+
+  const getName = (u: AdminUser) => u.firstName || u.lastName ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() : u.email;
+
+  const anyPending = suspendMutation.isPending || deleteMutation.isPending || restoreMutation.isPending;
 
   if (isLoading) return <p className="text-muted-foreground text-sm p-4">Loading...</p>;
   return (
@@ -281,86 +378,250 @@ function UsersTab({ users, isLoading }: { users: AdminUser[]; isLoading: boolean
         </Card>
       </div>
     )}
-    <Card className="overflow-hidden">
-      <div className="p-4 border-b">
-        <h3 className="font-semibold">All Users ({users.length})</h3>
+
+    {confirmDialog && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setConfirmDialog(null)}>
+        <Card className="p-6 max-w-sm w-full mx-4 space-y-4" onClick={(e) => e.stopPropagation()}>
+          <h3 className="font-semibold flex items-center gap-2">
+            {confirmDialog.action === "suspend" && <><Ban className="w-4 h-4 text-orange-500" /> Suspend User</>}
+            {confirmDialog.action === "unsuspend" && <><Shield className="w-4 h-4 text-green-500" /> Unsuspend User</>}
+            {confirmDialog.action === "delete" && <><Trash2 className="w-4 h-4 text-red-500" /> Delete User</>}
+            {confirmDialog.action === "restore" && <><RotateCcw className="w-4 h-4 text-blue-500" /> Restore User</>}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {confirmDialog.action === "suspend" && `Suspend ${confirmDialog.name}? They will be logged out and unable to sign in.`}
+            {confirmDialog.action === "unsuspend" && `Unsuspend ${confirmDialog.name}? They will be able to sign in again.`}
+            {confirmDialog.action === "delete" && `Soft-delete ${confirmDialog.name}? This suspends the account and deactivates their smart profile. Can be restored later.`}
+            {confirmDialog.action === "restore" && `Restore ${confirmDialog.name}? This unsuspends the account and reactivates their smart profile.`}
+          </p>
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setConfirmDialog(null)} data-testid="button-confirm-cancel">
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              variant={confirmDialog.action === "delete" || confirmDialog.action === "suspend" ? "destructive" : "default"}
+              disabled={anyPending}
+              onClick={() => {
+                if (confirmDialog.action === "suspend") suspendMutation.mutate({ userId: confirmDialog.userId, suspend: true });
+                else if (confirmDialog.action === "unsuspend") suspendMutation.mutate({ userId: confirmDialog.userId, suspend: false });
+                else if (confirmDialog.action === "delete") deleteMutation.mutate(confirmDialog.userId);
+                else if (confirmDialog.action === "restore") restoreMutation.mutate(confirmDialog.userId);
+              }}
+              data-testid="button-confirm-action"
+            >
+              {anyPending && <Loader2 className="w-3 h-3 animate-spin" />}
+              Confirm
+            </Button>
+          </div>
+        </Card>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/30">
-              <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">User</th>
-              <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Email</th>
-              <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Status</th>
-              <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Joined</th>
-              <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Recordings</th>
-              <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Tokens</th>
-              <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id} className="border-b last:border-b-0" data-testid={`row-user-${u.id}`}>
-                <td className="py-2.5 px-4">
-                  <div className="font-medium">
-                    {u.firstName || u.lastName ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() : "—"}
-                  </div>
-                </td>
-                <td className="py-2.5 px-4 text-muted-foreground text-xs">{u.email}</td>
-                <td className="py-2.5 px-4">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {u.isPro ? (
-                      <Badge className="bg-amber-500/10 text-amber-600 border-transparent text-[10px]" data-testid={`badge-pro-${u.id}`}>
-                        PRO
-                      </Badge>
-                    ) : u.hasSmartProfile ? (
-                      <Badge variant="outline" className="text-[10px]" data-testid={`badge-free-${u.id}`}>Free</Badge>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                    {u.smartProfileSlug && (
-                      <a href={`/u/${u.smartProfileSlug}`} target="_blank" rel="noopener" className="text-[10px] text-blue-500 flex items-center gap-0.5" data-testid={`link-user-profile-${u.id}`}>
-                        /u/{u.smartProfileSlug} <ExternalLink className="w-2.5 h-2.5" />
-                      </a>
-                    )}
-                  </div>
-                  {u.isPro && u.proExpiresAt && (
-                    <div className="text-[10px] text-muted-foreground mt-0.5" data-testid={`text-pro-expires-${u.id}`}>
-                      expires {formatDate(u.proExpiresAt)}
-                    </div>
-                  )}
-                </td>
-                <td className="py-2.5 px-4 text-muted-foreground text-xs">{formatDate(u.createdAt)}</td>
-                <td className="py-2.5 px-4 text-right tabular-nums">
-                  {u.recordingsCount > 0 ? <Badge variant="secondary">{u.recordingsCount}</Badge> : <span className="text-muted-foreground">0</span>}
-                </td>
-                <td className="py-2.5 px-4 text-right tabular-nums font-medium">{u.tokens.toLocaleString()}</td>
-                <td className="py-2.5 px-4 text-right">
-                  {u.hasSmartProfile ? (
-                    <Button
-                      variant={u.isPro ? "outline" : "default"}
-                      size="sm"
-                      className="text-[11px] gap-1"
-                      onClick={() => setProDialog({
-                        userId: u.id,
-                        name: u.firstName || u.lastName ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() : u.email,
-                        currentPro: u.isPro,
-                      })}
-                      data-testid={`button-set-pro-${u.id}`}
-                    >
-                      <Crown className="w-3 h-3" />
-                      {u.isPro ? "Manage" : "Give PRO"}
-                    </Button>
-                  ) : (
-                    <span className="text-[10px] text-muted-foreground">No profile</span>
-                  )}
-                </td>
+    )}
+
+    {managerDialog && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setManagerDialog(null)}>
+        <Card className="p-6 max-w-sm w-full mx-4 space-y-4" onClick={(e) => e.stopPropagation()}>
+          <h3 className="font-semibold flex items-center gap-2">
+            <UserCog className="w-4 h-4" /> Assign Account Manager
+          </h3>
+          <p className="text-sm text-muted-foreground">Set the account manager for {managerDialog.name}</p>
+          <Input
+            value={managerValue}
+            onChange={(e) => setManagerValue(e.target.value)}
+            placeholder="Manager name or email..."
+            data-testid="input-manager"
+          />
+          <div className="flex items-center justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setManagerDialog(null)} data-testid="button-manager-cancel">
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              disabled={managerMutation.isPending}
+              onClick={() => managerMutation.mutate({ userId: managerDialog.userId, accountManager: managerValue })}
+              data-testid="button-manager-save"
+            >
+              {managerMutation.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
+              Save
+            </Button>
+          </div>
+        </Card>
+      </div>
+    )}
+
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search name, email, slug, manager..."
+            className="pl-9"
+            data-testid="input-user-search"
+          />
+        </div>
+        <div className="flex items-center gap-1 flex-wrap">
+          {(["all", "active", "suspended", "deleted", "pro"] as UserFilter[]).map((f) => (
+            <Button
+              key={f}
+              variant={statusFilter === f ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter(f)}
+              data-testid={`button-filter-${f}`}
+            >
+              {f === "all" ? "All" : f === "active" ? "Active" : f === "suspended" ? "Suspended" : f === "deleted" ? "Deleted" : "PRO"}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <Card className="overflow-hidden">
+        <div className="p-4 border-b">
+          <h3 className="font-semibold">Users ({filteredUsers.length}{filteredUsers.length !== users.length ? ` / ${users.length}` : ""})</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/30">
+                <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">User</th>
+                <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Email</th>
+                <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Status</th>
+                <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Manager</th>
+                <th className="py-2.5 px-4 text-left font-medium text-muted-foreground">Joined</th>
+                <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Rec</th>
+                <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Tokens</th>
+                <th className="py-2.5 px-4 text-right font-medium text-muted-foreground">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
+            </thead>
+            <tbody>
+              {filteredUsers.map((u) => (
+                <tr
+                  key={u.id}
+                  className={`border-b last:border-b-0 ${u.deletedAt ? "opacity-50" : u.isSuspended ? "bg-orange-500/5" : ""}`}
+                  data-testid={`row-user-${u.id}`}
+                >
+                  <td className="py-2.5 px-4">
+                    <div className="font-medium">
+                      {u.firstName || u.lastName ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() : "—"}
+                    </div>
+                  </td>
+                  <td className="py-2.5 px-4 text-muted-foreground text-xs">{u.email}</td>
+                  <td className="py-2.5 px-4">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {u.deletedAt ? (
+                        <Badge variant="destructive" className="text-[10px]" data-testid={`badge-deleted-${u.id}`}>Deleted</Badge>
+                      ) : u.isSuspended ? (
+                        <Badge className="bg-orange-500/10 text-orange-600 border-transparent text-[10px]" data-testid={`badge-suspended-${u.id}`}>Suspended</Badge>
+                      ) : (
+                        <Badge className="bg-green-500/10 text-green-600 border-transparent text-[10px]" data-testid={`badge-active-${u.id}`}>Active</Badge>
+                      )}
+                      {u.isPro && (
+                        <Badge className="bg-amber-500/10 text-amber-600 border-transparent text-[10px]" data-testid={`badge-pro-${u.id}`}>PRO</Badge>
+                      )}
+                      {u.smartProfileSlug && (
+                        <a href={`/u/${u.smartProfileSlug}`} target="_blank" rel="noopener" className="text-[10px] text-blue-500 flex items-center gap-0.5" data-testid={`link-user-profile-${u.id}`}>
+                          /{u.smartProfileSlug} <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      )}
+                    </div>
+                    {u.isPro && u.proExpiresAt && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5" data-testid={`text-pro-expires-${u.id}`}>
+                        expires {formatDate(u.proExpiresAt)}
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-2.5 px-4">
+                    <button
+                      className="text-xs text-muted-foreground flex items-center gap-1"
+                      onClick={() => {
+                        setManagerValue(u.accountManager || "");
+                        setManagerDialog({ userId: u.id, name: getName(u), current: u.accountManager });
+                      }}
+                      data-testid={`button-manager-${u.id}`}
+                    >
+                      <UserCog className="w-3 h-3" />
+                      {u.accountManager || "—"}
+                    </button>
+                  </td>
+                  <td className="py-2.5 px-4 text-muted-foreground text-xs">{formatDate(u.createdAt)}</td>
+                  <td className="py-2.5 px-4 text-right tabular-nums">
+                    {u.recordingsCount > 0 ? <Badge variant="secondary">{u.recordingsCount}</Badge> : <span className="text-muted-foreground">0</span>}
+                  </td>
+                  <td className="py-2.5 px-4 text-right tabular-nums font-medium">{u.tokens.toLocaleString()}</td>
+                  <td className="py-2.5 px-4">
+                    <div className="flex items-center justify-end gap-1 flex-wrap">
+                      {u.hasSmartProfile && (
+                        <Button
+                          variant={u.isPro ? "outline" : "default"}
+                          size="sm"
+                          className="text-[11px] gap-1"
+                          onClick={() => setProDialog({
+                            userId: u.id,
+                            name: getName(u),
+                            currentPro: u.isPro,
+                          })}
+                          data-testid={`button-set-pro-${u.id}`}
+                        >
+                          <Crown className="w-3 h-3" />
+                          {u.isPro ? "PRO" : "Give PRO"}
+                        </Button>
+                      )}
+                      {u.deletedAt ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-[11px] gap-1"
+                          onClick={() => setConfirmDialog({ userId: u.id, name: getName(u), action: "restore" })}
+                          data-testid={`button-restore-${u.id}`}
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          Restore
+                        </Button>
+                      ) : (
+                        <>
+                          {u.isSuspended ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-[11px] gap-1"
+                              onClick={() => setConfirmDialog({ userId: u.id, name: getName(u), action: "unsuspend" })}
+                              data-testid={`button-unsuspend-${u.id}`}
+                            >
+                              <Shield className="w-3 h-3" />
+                              Unsuspend
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-[11px] gap-1"
+                              onClick={() => setConfirmDialog({ userId: u.id, name: getName(u), action: "suspend" })}
+                              data-testid={`button-suspend-${u.id}`}
+                            >
+                              <Ban className="w-3 h-3" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-[11px] gap-1 text-red-500"
+                            onClick={() => setConfirmDialog({ userId: u.id, name: getName(u), action: "delete" })}
+                            data-testid={`button-delete-${u.id}`}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
     </>
   );
 }

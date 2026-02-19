@@ -880,6 +880,81 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/admin/users/:userId/suspend", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const uid = req.params.userId as string;
+      const { suspend } = req.body;
+      await db.update(users).set({
+        isSuspended: !!suspend,
+        suspendedAt: suspend ? new Date() : null,
+        updatedAt: new Date(),
+      }).where(eq(users.id, uid));
+      res.json({ success: true, isSuspended: !!suspend });
+    } catch (error) {
+      console.error("Admin suspend error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.delete("/api/admin/users/:userId", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const uid = req.params.userId as string;
+      await db.update(users).set({
+        deletedAt: new Date(),
+        isSuspended: true,
+        suspendedAt: new Date(),
+        updatedAt: new Date(),
+      }).where(eq(users.id, uid));
+
+      const sp = await storage.getSmartProfileByUserId(uid);
+      if (sp) {
+        await storage.updateSmartProfile(sp.id, { isActive: false });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Admin delete error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.patch("/api/admin/users/:userId/restore", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const uid = req.params.userId as string;
+      await db.update(users).set({
+        deletedAt: null,
+        isSuspended: false,
+        suspendedAt: null,
+        updatedAt: new Date(),
+      }).where(eq(users.id, uid));
+
+      const sp = await storage.getSmartProfileByUserId(uid);
+      if (sp) {
+        await storage.updateSmartProfile(sp.id, { isActive: true });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Admin restore error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.patch("/api/admin/users/:userId/manager", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const uid = req.params.userId as string;
+      const { accountManager } = req.body;
+      await db.update(users).set({
+        accountManager: accountManager || null,
+        updatedAt: new Date(),
+      }).where(eq(users.id, uid));
+      res.json({ success: true, accountManager: accountManager || null });
+    } catch (error) {
+      console.error("Admin assign manager error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   app.get("/api/export/metadata.csv", async (_req: Request, res: Response) => {
     try {
       const allRecordings = await storage.getAllRecordings();
