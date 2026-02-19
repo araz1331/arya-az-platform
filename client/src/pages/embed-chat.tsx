@@ -24,12 +24,18 @@ const GREETINGS: Record<string, (name: string, prof: string) => string> = {
   az: (name, prof) => `Salam! Mən ${name}, ${prof}. Sizə necə kömək edə bilərəm?`,
   ru: (name, prof) => `Здравствуйте! Я ${name}, ${prof}. Чем могу помочь?`,
   en: (name, prof) => `Hello! I'm ${name}, ${prof}. How can I help you?`,
+  es: (name, prof) => `¡Hola! Soy ${name}, ${prof}. ¿En qué puedo ayudarte?`,
+  fr: (name, prof) => `Bonjour ! Je suis ${name}, ${prof}. Comment puis-je vous aider ?`,
+  tr: (name, prof) => `Merhaba! Ben ${name}, ${prof}. Size nasıl yardımcı olabilirim?`,
 };
 
 const PLACEHOLDERS: Record<string, string> = {
   az: "Mesaj yazın...",
   ru: "Напишите сообщение...",
   en: "Type a message...",
+  es: "Escribe un mensaje...",
+  fr: "Écrivez un message...",
+  tr: "Bir mesaj yazın...",
 };
 
 export default function EmbedChat({ slug }: { slug: string }) {
@@ -38,13 +44,16 @@ export default function EmbedChat({ slug }: { slug: string }) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [language, setLanguage] = useState<"az" | "ru" | "en">(() => {
+  const [language, setLanguage] = useState<"az" | "ru" | "en" | "es" | "fr" | "tr">(() => {
     const params = new URLSearchParams(window.location.search);
     const urlLang = params.get("lang");
-    if (urlLang === "az" || urlLang === "ru" || urlLang === "en") return urlLang;
+    if (urlLang === "az" || urlLang === "ru" || urlLang === "en" || urlLang === "es" || urlLang === "fr" || urlLang === "tr") return urlLang;
     const browserLang = (navigator.language || "").toLowerCase().slice(0, 2);
     if (browserLang === "az") return "az";
     if (browserLang === "ru") return "ru";
+    if (browserLang === "es") return "es";
+    if (browserLang === "fr") return "fr";
+    if (browserLang === "tr") return "tr";
     return "en";
   });
   const [profileLoading, setProfileLoading] = useState(true);
