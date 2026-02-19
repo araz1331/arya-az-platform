@@ -1561,11 +1561,12 @@ Updated Global Knowledge Base:`;
               const updateResult = await gemini.models.generateContent({
                 model: "gemini-2.5-flash",
                 contents: [{ role: "user", parts: [{ text: updatePrompt }] }],
-                config: { maxOutputTokens: 2000 },
+                config: { maxOutputTokens: 8000 },
               });
 
               const updatedGKB = (updateResult.text || "").trim();
-              if (updatedGKB && updatedGKB.length > 10) {
+              const minExpectedLength = Math.floor((globalKBContent || "").length * 0.7);
+              if (updatedGKB && updatedGKB.length > minExpectedLength) {
                 await storage.setGlobalKnowledgeBase(updatedGKB, profile.id);
                 updateApplied = true;
                 updateTarget = "global";
