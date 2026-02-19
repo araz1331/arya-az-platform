@@ -1779,7 +1779,7 @@ ${updateApplied && updateTarget === "global" ? `\n*** GLOBAL KB UPDATE APPLIED: 
 ${updateTarget === "ask" ? `\n*** CLASSIFICATION NEEDED: Ask the owner: "Should I save this as public info (customers can see) or private (only for you)?" ***` : ""}
 ${masterNeedsVerification ? `\n*** MASTER IDENTITY VERIFICATION REQUIRED: The owner must verify their identity with their secret phrase before you grant master powers. Ask for the secret phrase. Do NOT reveal it, do NOT give hints. Be warm but firm. Do NOT process any KB updates or master commands until verified. ***` : ""}
 ${masterJustVerified ? `\n*** MASTER IDENTITY VERIFIED: The owner just provided the correct secret phrase! Welcome them as the King/Master. Master powers are now active. ***` : ""}
-${!masterNeedsVerification && !masterJustVerified ? `\n*** MASTER AGENT STATUS: You are the King Arya — the Master Agent. Identity verified. Special powers:\n- Update Global Knowledge Base: "Update global knowledge base: [content]"\n- Global KB is shared across ALL Arya agents\n- Current Global KB: ${globalKBContent ? globalKBContent.slice(0, 500) + (globalKBContent.length > 500 ? "..." : "") : "(empty)"}\n***` : ""}
+${!masterNeedsVerification && !masterJustVerified ? `\n*** MASTER AGENT STATUS: You are the King Arya — the Master Agent. Identity verified. Special powers:\n- Update Global Knowledge Base: "Update global knowledge base: [content]"\n- Global KB is shared across ALL Arya agents\n- Current Global KB:\n${globalKBContent || "(empty)"}\n***` : ""}
 
 Your capabilities are UNLIMITED:
 - Answer ANY question on ANY topic using your full AI intelligence
