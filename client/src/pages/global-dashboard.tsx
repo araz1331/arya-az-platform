@@ -9,7 +9,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye, Pencil, Loader2, Shield, MessageSquare, Lightbulb, Zap, FileText } from "lucide-react";
+import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye, Pencil, Loader2, Shield, MessageSquare, Lightbulb, Zap, FileText, PlugZap, Phone, BarChart3, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import AryaWidget from "@/components/arya-widget";
@@ -434,18 +434,40 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
 
       <main className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full mb-4 sm:mb-6">
-            <TabsTrigger value="setup" className="flex-1 gap-1.5 text-sm" data-testid="tab-setup">
-              <Sparkles className="w-4 h-4 shrink-0" />
-              <span className="hidden sm:inline">{t("dashTabSetup")}</span>
-              <span className="sm:hidden truncate">{t("dashTabSetupShort")}</span>
-            </TabsTrigger>
-            <TabsTrigger value="leads" className="flex-1 gap-1.5 text-sm" data-testid="tab-leads">
-              <Users className="w-4 h-4 shrink-0" />
-              <span className="hidden sm:inline">{t("dashTabLeads")}</span>
-              <span className="sm:hidden truncate">{t("dashTabLeadsShort")}</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-3 sm:-mx-4 px-3 sm:px-4 mb-4 sm:mb-6">
+            <TabsList className="inline-flex w-auto min-w-full gap-0">
+              <TabsTrigger value="setup" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" data-testid="tab-setup">
+                <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">{t("dashTabSetup")}</span>
+                <span className="sm:hidden truncate">{t("dashTabSetupShort")}</span>
+              </TabsTrigger>
+              <TabsTrigger value="profile" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" disabled={!hasProfile} data-testid="tab-profile">
+                <User className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{t("dashTabProfile")}</span>
+              </TabsTrigger>
+              <TabsTrigger value="leads" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" data-testid="tab-leads">
+                <Users className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{t("dashTabLeadsShort")}</span>
+              </TabsTrigger>
+              <TabsTrigger value="crm" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" disabled={!hasProfile} data-testid="tab-crm">
+                <PlugZap className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">CRM</span>
+              </TabsTrigger>
+              <TabsTrigger value="whatsapp" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" disabled={!hasProfile} data-testid="tab-whatsapp">
+                <Phone className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">WhatsApp</span>
+              </TabsTrigger>
+              <TabsTrigger value="widget" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" disabled={!hasProfile} data-testid="tab-widget">
+                <Code className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{t("dashTabWidget")}</span>
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" disabled={!hasProfile} data-testid="tab-analytics">
+                <BarChart3 className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">{t("dashTabAnalytics")}</span>
+                <span className="sm:hidden truncate">{t("dashTabAnalyticsShort")}</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="setup">
             {!hasProfile && (
@@ -482,9 +504,117 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
             {hasProfile && <EmbedCodeSection slug={profile.slug} t={t} />}
           </TabsContent>
 
+          <TabsContent value="profile">
+            {hasProfile && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <h2 className="font-semibold text-lg" data-testid="text-profile-heading">{t("dashProfileView")}</h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(`/u/${profile.slug}`, "_blank")}
+                    data-testid="button-view-profile-external"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                    {t("dashOpenProfile")}
+                  </Button>
+                </div>
+                <AryaWidget profileId={userProfile?.id ?? ""} defaultLang={lang} />
+              </div>
+            )}
+          </TabsContent>
+
           <TabsContent value="leads">
             {hasProfile && <AnalyticsSummary profileId={profile.id} t={t} />}
             <LeadsPanel profileId={profile?.id ?? ""} t={t} />
+          </TabsContent>
+
+          <TabsContent value="crm">
+            {hasProfile && (
+              <div className="space-y-4">
+                <h2 className="font-semibold text-lg" data-testid="text-crm-heading">{t("dashCrmTitle")}</h2>
+                <p className="text-sm text-muted-foreground" data-testid="text-crm-desc">{t("dashCrmDesc")}</p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Card
+                    className="p-4 cursor-pointer hover-elevate"
+                    onClick={() => { setActiveTab("crm-altegio"); }}
+                    data-testid="card-crm-altegio"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-md bg-violet-500/10 flex items-center justify-center shrink-0">
+                        <PlugZap className="w-5 h-5 text-violet-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-sm font-medium block">Altegio CRM</span>
+                        <span className="text-xs text-muted-foreground">YCLIENTS</span>
+                      </div>
+                    </div>
+                  </Card>
+                  <Card
+                    className="p-4 cursor-pointer hover-elevate"
+                    onClick={() => { setActiveTab("crm-webhook"); }}
+                    data-testid="card-crm-webhook"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-md bg-blue-500/10 flex items-center justify-center shrink-0">
+                        <Globe className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-sm font-medium block">{t("dashWebhookTitle")}</span>
+                        <span className="text-xs text-muted-foreground">Bitrix24, HubSpot, Zapier...</span>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="crm-altegio">
+            {hasProfile && (
+              <div className="space-y-4">
+                <Button variant="ghost" size="sm" onClick={() => setActiveTab("crm")} className="gap-1.5 -ml-2" data-testid="button-back-crm">
+                  <ArrowLeft className="w-4 h-4" />
+                  CRM
+                </Button>
+                <AryaWidget key="altegio" profileId={userProfile?.id ?? ""} defaultLang={lang} initialView="altegio" />
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="crm-webhook">
+            {hasProfile && (
+              <div className="space-y-4">
+                <Button variant="ghost" size="sm" onClick={() => setActiveTab("crm")} className="gap-1.5 -ml-2" data-testid="button-back-crm-webhook">
+                  <ArrowLeft className="w-4 h-4" />
+                  CRM
+                </Button>
+                <AryaWidget key="webhook" profileId={userProfile?.id ?? ""} defaultLang={lang} initialView="webhook" />
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="whatsapp">
+            {hasProfile && (
+              <AryaWidget key="whatsapp" profileId={userProfile?.id ?? ""} defaultLang={lang} initialView="whatsapp" />
+            )}
+          </TabsContent>
+
+          <TabsContent value="widget">
+            {hasProfile && (
+              <div className="space-y-4 [&>div]:mt-0 [&>div]:pt-0 [&>div]:border-t-0">
+                <EmbedCodeSection slug={profile.slug} t={t} />
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            {hasProfile && (
+              <div className="space-y-4">
+                <h2 className="font-semibold text-lg" data-testid="text-analytics-heading">{t("dashTabAnalytics")}</h2>
+                <AnalyticsSummary profileId={profile.id} t={t} />
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </main>

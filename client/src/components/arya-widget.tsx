@@ -649,7 +649,7 @@ const LANG_LABELS: { key: Lang; label: string }[] = [
   { key: "en", label: "En" },
 ];
 
-export default function AryaWidget({ profileId, defaultLang }: { profileId: string; defaultLang?: string }) {
+export default function AryaWidget({ profileId, defaultLang, initialView }: { profileId: string; defaultLang?: string; initialView?: "dashboard" | "altegio" | "webhook" | "whatsapp" | "widget-guide" | "leads" }) {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -801,6 +801,33 @@ export default function AryaWidget({ profileId, defaultLang }: { profileId: stri
     }
     if (!showWhatsappSettings) whatsappFormSynced.current = false;
   }, [whatsappSettings, showWhatsappSettings]);
+
+  const initialViewApplied = useRef(false);
+  useEffect(() => {
+    if (initialView && smartProfile && !initialViewApplied.current) {
+      initialViewApplied.current = true;
+      if (initialView === "altegio") {
+        setShowAltegioSettings(true);
+        setShowDashboard(false);
+      } else if (initialView === "webhook") {
+        setShowWebhookSettings(true);
+        setShowDashboard(false);
+      } else if (initialView === "whatsapp") {
+        setShowWhatsappSettings(true);
+        setShowDashboard(false);
+      } else if (initialView === "widget-guide") {
+        setShowWidgetGuide(true);
+        setShowDashboard(false);
+      } else if (initialView === "leads") {
+        setShowLeads(true);
+        setShowDashboard(false);
+      }
+    }
+  }, [initialView, smartProfile]);
+
+  useEffect(() => {
+    initialViewApplied.current = false;
+  }, [initialView]);
 
   const { data: hirearyaLeads } = useQuery<any[]>({
     queryKey: ["/api/proxy/leads", smartProfile?.slug],
