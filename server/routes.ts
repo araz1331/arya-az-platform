@@ -1538,38 +1538,110 @@ Onboarding Complete: ${profile.onboardingComplete ? "Yes" : "No"}`;
 
         if (!masterNeedsVerification && !masterJustVerified) {
         const globalUpdatePattern = /^(update|set|change|add to|modify|replace)\s+(the\s+)?(global\s+)?(knowledge\s*base|kb|platform\s*info|product\s*info)\s*[:\-]?\s*/i;
+        const globalReplacePattern = /^(rewrite|replace\s+all|full\s+rewrite|overwrite)\s+(the\s+)?(global\s+)?(knowledge\s*base|kb|platform\s*info|product\s*info)\s*[:\-]?\s*/i;
+        const globalRemovePattern = /^(remove|delete)\s+.*?\s*(from\s+)?(the\s+)?(global\s+)?(knowledge\s*base|kb|platform\s*info|product\s*info)\s*[:\-]?\s*/i;
         const globalMatch = message.trim().match(globalUpdatePattern);
+        const isFullRewrite = globalReplacePattern.test(message.trim());
+        const isRemoval = globalRemovePattern.test(message.trim());
         if (globalMatch) {
           const newContent = message.trim().replace(globalUpdatePattern, "").trim();
           if (newContent.length > 5) {
             if (globalKBContent) {
-              const updatePrompt = `You are a Global Knowledge Base editor. Update the platform-wide knowledge base based on the Master Agent's instruction.
+              if (isFullRewrite) {
+                const rewritePrompt = `You are a Global Knowledge Base editor. The Master Agent wants to FULLY REWRITE the knowledge base.
+
+Output ONLY the complete new knowledge base text based on their instruction. Use markdown formatting with ### headings.
+
+Master Agent's instruction: "${newContent}"
+
+New Global Knowledge Base:`;
+                const rewriteResult = await gemini.models.generateContent({
+                  model: "gemini-2.5-flash",
+                  contents: [{ role: "user", parts: [{ text: rewritePrompt }] }],
+                  config: { maxOutputTokens: 8000 },
+                });
+                const rewritten = (rewriteResult.text || "").trim();
+                if (rewritten && rewritten.length > 50) {
+                  await storage.setGlobalKnowledgeBase(rewritten, profile.id);
+                  updateApplied = true;
+                  updateTarget = "global";
+                }
+              } else if (isRemoval) {
+                const removePrompt = `You are a Global Knowledge Base editor. The Master Agent wants to REMOVE specific information.
 
 RULES:
-- Preserve ALL existing information unless explicitly asked to remove something
-- Integrate new information naturally
-- Keep the same format and structure
-- Output ONLY the complete updated text, nothing else
+- Remove ONLY the information specified
+- Keep everything else exactly as-is
+- Output the COMPLETE updated knowledge base
+- Do NOT add any new information
 
 Current Global Knowledge Base:
 ${globalKBContent}
 
-Master Agent's instruction: "${newContent}"
+Master Agent's instruction: "${message.trim()}"
 
 Updated Global Knowledge Base:`;
+                const removeResult = await gemini.models.generateContent({
+                  model: "gemini-2.5-flash",
+                  contents: [{ role: "user", parts: [{ text: removePrompt }] }],
+                  config: { maxOutputTokens: 8000 },
+                });
+                const removed = (removeResult.text || "").trim();
+                const minLen = Math.floor(globalKBContent.length * 0.3);
+                if (removed && removed.length > minLen) {
+                  await storage.setGlobalKnowledgeBase(removed, profile.id);
+                  updateApplied = true;
+                  updateTarget = "global";
+                }
+              } else {
+                const patchPrompt = `You are a Global Knowledge Base editor. Analyze the Master Agent's instruction and output ONLY the section to add or update.
 
-              const updateResult = await gemini.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: [{ role: "user", parts: [{ text: updatePrompt }] }],
-                config: { maxOutputTokens: 8000 },
-              });
+RULES:
+- If this is NEW information (topic not in current KB): Output a new markdown section with a ### heading and content. Output ONLY this new section.
+- If this UPDATES existing information: Output the SECTION HEADING that needs updating (exactly as it appears) on the first line prefixed with "REPLACE_SECTION: ", then the full updated section content below it.
+- Output NOTHING else — no commentary, no "here is", no full KB copy.
 
-              const updatedGKB = (updateResult.text || "").trim();
-              const minExpectedLength = Math.floor((globalKBContent || "").length * 0.7);
-              if (updatedGKB && updatedGKB.length > minExpectedLength) {
-                await storage.setGlobalKnowledgeBase(updatedGKB, profile.id);
-                updateApplied = true;
-                updateTarget = "global";
+Current KB section headings:
+${(globalKBContent.match(/^###\s+.+$/gm) || []).join("\n")}
+
+Master Agent's instruction: "${newContent}"
+
+Output:`;
+
+                const patchResult = await gemini.models.generateContent({
+                  model: "gemini-2.5-flash",
+                  contents: [{ role: "user", parts: [{ text: patchPrompt }] }],
+                  config: { maxOutputTokens: 2000 },
+                });
+
+                const patch = (patchResult.text || "").trim();
+                if (patch && patch.length > 5) {
+                  let updatedKB = globalKBContent;
+
+                  if (patch.startsWith("REPLACE_SECTION:")) {
+                    const lines = patch.split("\n");
+                    const sectionHeading = lines[0].replace("REPLACE_SECTION:", "").trim();
+                    const newSectionContent = lines.slice(1).join("\n").trim();
+
+                    const headingPattern = sectionHeading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const sectionRegex = new RegExp(
+                      `(${headingPattern}[\\s\\S]*?)(?=\\n###\\s|$)`,
+                      "i"
+                    );
+
+                    if (sectionRegex.test(updatedKB)) {
+                      updatedKB = updatedKB.replace(sectionRegex, newSectionContent);
+                    } else {
+                      updatedKB = updatedKB.trimEnd() + "\n\n" + newSectionContent;
+                    }
+                  } else {
+                    updatedKB = updatedKB.trimEnd() + "\n\n" + patch;
+                  }
+
+                  await storage.setGlobalKnowledgeBase(updatedKB, profile.id);
+                  updateApplied = true;
+                  updateTarget = "global";
+                }
               }
             } else {
               await storage.setGlobalKnowledgeBase(newContent, profile.id);
