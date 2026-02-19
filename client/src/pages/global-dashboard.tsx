@@ -8,7 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye, Pencil, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import AryaWidget from "@/components/arya-widget";
 import OwnerAssistant from "@/components/owner-assistant";
 import type { Profile } from "@shared/schema";
@@ -220,6 +223,10 @@ function LeadsPanel({ profileId, t }: { profileId: string; t: (key: any) => stri
 
 function EmbedCodeSection({ slug, t }: { slug: string; t: (key: any) => string }) {
   const [copied, setCopied] = useState<string | null>(null);
+  const [editingSlug, setEditingSlug] = useState(false);
+  const [newSlug, setNewSlug] = useState(slug);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const embedCode = `<script src="${origin}/widget.js" data-slug="${slug}" data-color="#2563EB"></script>`;
   const profileUrl = `${origin}/u/${slug}`;
@@ -230,6 +237,30 @@ function EmbedCodeSection({ slug, t }: { slug: string; t: (key: any) => string }
     setTimeout(() => setCopied(null), 2000);
   };
 
+  const saveSlug = async () => {
+    const cleaned = newSlug.toLowerCase().replace(/[^a-z0-9._-]/g, "").replace(/--+/g, "-").replace(/^-|-$/g, "");
+    if (!cleaned || cleaned.length < 2) {
+      toast({ title: "Name must be at least 2 characters (letters, numbers, hyphens)", variant: "destructive" });
+      return;
+    }
+    if (cleaned === slug) {
+      setEditingSlug(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await apiRequest("PATCH", "/api/smart-profile", { slug: cleaned });
+      queryClient.invalidateQueries({ queryKey: ["/api/smart-profile"] });
+      toast({ title: "Profile link updated successfully" });
+      setEditingSlug(false);
+    } catch (err: any) {
+      const msg = err?.message || "";
+      toast({ title: msg.includes("taken") ? "This name is already taken. Try a different one." : "Failed to update. Please try again.", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-4 mt-6 pt-6 border-t" data-testid="container-embed-section">
       <Card className="p-4">
@@ -237,27 +268,63 @@ function EmbedCodeSection({ slug, t }: { slug: string; t: (key: any) => string }
           <Link2 className="w-4 h-4 text-muted-foreground" />
           <h3 className="font-semibold text-sm" data-testid="text-profile-link-title">{t("dashProfileLink")}</h3>
         </div>
-        <div className="flex items-center gap-2">
-          <code className="flex-1 text-xs bg-muted px-3 py-2 rounded-md truncate" data-testid="text-profile-url">
-            {profileUrl}
-          </code>
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={() => copyToClipboard(profileUrl, "link")}
-            data-testid="button-copy-profile-link"
-          >
-            {copied === "link" ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          </Button>
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={() => window.open(`/u/${slug}`, "_blank")}
-            data-testid="button-open-profile"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </Button>
-        </div>
+        {editingSlug ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground shrink-0">{origin}/u/</span>
+              <Input
+                value={newSlug}
+                onChange={(e) => setNewSlug(e.target.value.toLowerCase().replace(/\s/g, "-"))}
+                className="text-sm"
+                placeholder="your-name"
+                disabled={saving}
+                autoFocus
+                onKeyDown={(e) => { if (e.key === "Enter") saveSlug(); if (e.key === "Escape") { setEditingSlug(false); setNewSlug(slug); } }}
+                data-testid="input-edit-slug"
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground">Use lowercase letters, numbers, hyphens, dots, or underscores</p>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={saveSlug} disabled={saving} data-testid="button-save-slug">
+                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Check className="w-3.5 h-3.5 mr-1" />}
+                Save
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => { setEditingSlug(false); setNewSlug(slug); }} disabled={saving} data-testid="button-cancel-slug">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <code className="flex-1 text-xs bg-muted px-3 py-2 rounded-md truncate" data-testid="text-profile-url">
+              {profileUrl}
+            </code>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => { setNewSlug(slug); setEditingSlug(true); }}
+              data-testid="button-edit-slug"
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => copyToClipboard(profileUrl, "link")}
+              data-testid="button-copy-profile-link"
+            >
+              {copied === "link" ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => window.open(`/u/${slug}`, "_blank")}
+              data-testid="button-open-profile"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
       </Card>
 
       <Card className="p-4">

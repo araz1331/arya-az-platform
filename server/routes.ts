@@ -806,6 +806,12 @@ export async function registerRoutes(
     for (const key of allowedFields) {
       if (key in req.body) safeData[key] = req.body[key];
     }
+    if (safeData.slug && safeData.slug !== existing.slug) {
+      const taken = await storage.getSmartProfileBySlug(safeData.slug);
+      if (taken && taken.id !== existing.id) {
+        return res.status(409).json({ message: "This name is already taken. Try a different one." });
+      }
+    }
     const updated = await storage.updateSmartProfile(existing.id, safeData);
     res.json(updated);
   });
