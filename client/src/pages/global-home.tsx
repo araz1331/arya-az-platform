@@ -16,6 +16,7 @@ import {
   type GlobalLanguage, GLOBAL_LANGUAGES, gt,
   getStoredGlobalLanguage, setStoredGlobalLanguage
 } from "@/lib/global-i18n";
+import aryaAvatarImg from "@assets/Arya_avatar_1771538275062.png";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
@@ -93,15 +94,26 @@ function FloatingAryaChat({ lang: pageLang }: { lang: string }) {
       </AnimatePresence>
       <motion.button
         onClick={() => setIsOpen(prev => !prev)}
-        className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center ml-auto"
+        className="relative w-16 h-16 rounded-full shadow-lg ml-auto group"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         data-testid="button-open-arya-chat"
       >
         {isOpen ? (
-          <X className="w-6 h-6" />
+          <div className="w-full h-full rounded-full bg-foreground/80 flex items-center justify-center">
+            <X className="w-6 h-6 text-background" />
+          </div>
         ) : (
-          <MessageSquare className="w-6 h-6" />
+          <>
+            <img
+              src={aryaAvatarImg}
+              alt="Arya AI"
+              className="w-full h-full rounded-full object-cover border-2 border-white/80 dark:border-white/40"
+            />
+            <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shadow-md border-2 border-background">
+              <MessageSquare className="w-3 h-3" />
+            </span>
+          </>
         )}
       </motion.button>
     </div>
