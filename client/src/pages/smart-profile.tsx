@@ -665,11 +665,7 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
       ? profile.profession_en
       : profile?.profession;
 
-  const locationTexts: Record<string, string> = {
-    az: "Bakı, Azərbaycan", ru: "Баку, Азербайджан", en: "Baku, Azerbaijan",
-    es: "Bakú, Azerbaiyán", fr: "Bakou, Azerbaïdjan", tr: "Bakü, Azerbaycan",
-  };
-  const locationText = locationTexts[language] || locationTexts.en;
+  const locationText: string | null = null;
 
   const placeholders: Record<string, string> = {
     az: "Mesaj yazın...", ru: "Напишите сообщение...", en: "Type a message...",
@@ -846,10 +842,12 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
               {displayProfession}
             </p>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span className="text-slate-400 text-[11px] flex items-center gap-1">
-                <MapPin className="w-2.5 h-2.5" />
-                {locationText}
-              </span>
+              {locationText && (
+                <span className="text-slate-400 text-[11px] flex items-center gap-1">
+                  <MapPin className="w-2.5 h-2.5" />
+                  {locationText}
+                </span>
+              )}
               <div className="flex items-center gap-0.5" data-testid="language-selector">
                 {(["es","fr","tr"].includes(language)
                   ? [
