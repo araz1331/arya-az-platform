@@ -9,7 +9,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye, Pencil, Loader2, Shield } from "lucide-react";
+import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye, Pencil, Loader2, Shield, MessageSquare, Lightbulb, Zap, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import AryaWidget from "@/components/arya-widget";
@@ -448,7 +448,37 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
           </TabsList>
 
           <TabsContent value="setup">
-            <AryaWidget profileId={userProfile?.id ?? ""} defaultLang={lang} />
+            {!hasProfile && (
+              <Card className="p-5 mb-4 border-primary/20 bg-primary/5" data-testid="card-welcome-guidance">
+                <div className="flex items-start gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-md bg-primary/10 text-primary shrink-0">
+                    <Lightbulb className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-sm mb-1.5" data-testid="text-welcome-title">{t("dashWelcomeTitle")}</h3>
+                    <p className="text-sm text-muted-foreground mb-3" data-testid="text-welcome-desc">{t("dashWelcomeDesc")}</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <MessageSquare className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>{t("dashWelcomeStep1")}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Zap className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>{t("dashWelcomeStep2")}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span>{t("dashWelcomeStep3")}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+            <OwnerAssistant inline autoOpen={!hasProfile} />
+            <div className="mt-4">
+              <AryaWidget profileId={userProfile?.id ?? ""} defaultLang={lang} />
+            </div>
             {hasProfile && <EmbedCodeSection slug={profile.slug} t={t} />}
           </TabsContent>
 
@@ -458,7 +488,6 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
           </TabsContent>
         </Tabs>
       </main>
-      <OwnerAssistant autoOpen={!hasProfile} />
     </div>
   );
 }

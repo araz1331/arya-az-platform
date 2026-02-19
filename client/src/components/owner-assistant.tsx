@@ -44,8 +44,8 @@ function isImageUrl(url: string): boolean {
   return /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url);
 }
 
-export default function OwnerAssistant({ autoOpen = false }: { autoOpen?: boolean } = {}) {
-  const [open, setOpen] = useState(autoOpen);
+export default function OwnerAssistant({ autoOpen = false, inline = false }: { autoOpen?: boolean; inline?: boolean } = {}) {
+  const [open, setOpen] = useState(autoOpen || inline);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -60,8 +60,8 @@ export default function OwnerAssistant({ autoOpen = false }: { autoOpen?: boolea
   const { toast } = useToast();
 
   useEffect(() => {
-    if (autoOpen) setOpen(true);
-  }, [autoOpen]);
+    if (autoOpen || inline) setOpen(true);
+  }, [autoOpen, inline]);
 
   useEffect(() => {
     if (open && !historyLoaded) {
@@ -346,7 +346,7 @@ export default function OwnerAssistant({ autoOpen = false }: { autoOpen?: boolea
     );
   };
 
-  if (!open) {
+  if (!open && !inline) {
     return (
       <Button
         onClick={() => setOpen(true)}
@@ -360,8 +360,14 @@ export default function OwnerAssistant({ autoOpen = false }: { autoOpen?: boolea
     );
   }
 
+  if (!open) return null;
+
+  const containerClass = inline
+    ? "w-full h-[480px] sm:h-[520px] flex flex-col shadow-lg border border-border/50 bg-[hsl(240,20%,8%)] text-white overflow-hidden rounded-md"
+    : "fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-6rem)] flex flex-col shadow-2xl border-border/50 bg-[hsl(240,20%,8%)] text-white overflow-hidden";
+
   return (
-    <Card className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-6rem)] flex flex-col shadow-2xl border-border/50 bg-[hsl(240,20%,8%)] text-white overflow-hidden" data-testid="panel-owner-assistant">
+    <Card className={containerClass} data-testid="panel-owner-assistant">
       <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-white/10 bg-gradient-to-r from-[hsl(260,60%,20%)] to-[hsl(220,60%,18%)]">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-[hsl(260,85%,70%)]" />
@@ -369,9 +375,11 @@ export default function OwnerAssistant({ autoOpen = false }: { autoOpen?: boolea
         </div>
         <div className="flex items-center gap-1">
           <Badge variant="outline" className="text-[10px] border-white/20 text-white/60 no-default-hover-elevate no-default-active-elevate">Private</Badge>
-          <Button size="icon" variant="ghost" onClick={() => setOpen(false)} className="text-white/60 hover-elevate" data-testid="button-owner-assistant-close">
-            <X className="w-4 h-4" />
-          </Button>
+          {!inline && (
+            <Button size="icon" variant="ghost" onClick={() => setOpen(false)} className="text-white/60 hover-elevate" data-testid="button-owner-assistant-close">
+              <X className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
 
