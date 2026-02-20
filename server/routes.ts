@@ -2738,6 +2738,7 @@ Output the complete merged knowledge base. Output ONLY the text, nothing else.`;
         whatsappFollowupEnabled: profile.whatsappFollowupEnabled || false,
         whatsappFollowupHours: profile.whatsappFollowupHours || 24,
         whatsappAppointmentConfirm: profile.whatsappAppointmentConfirm || false,
+        whatsappPin: profile.whatsappPin || "",
       });
     } catch (error) {
       console.error("[whatsapp-settings] Error:", error);
@@ -2753,7 +2754,7 @@ Output the complete merged knowledge base. Output ONLY the text, nothing else.`;
       if (!profile) return res.status(404).json({ message: "No profile found" });
       const { whatsappNumber, whatsappAutoNotify, whatsappSummaryEnabled, whatsappSummaryFrequency,
               whatsappMissedAlertsEnabled, whatsappChatEnabled, whatsappFollowupEnabled,
-              whatsappFollowupHours, whatsappAppointmentConfirm } = req.body;
+              whatsappFollowupHours, whatsappAppointmentConfirm, whatsappPin } = req.body;
       if (whatsappNumber && !/^\+?\d{7,15}$/.test(whatsappNumber.replace(/[\s\-()]/g, ""))) {
         return res.status(400).json({ message: "Invalid phone number format. Use international format: +994501234567" });
       }
@@ -2767,6 +2768,12 @@ Output the complete merged knowledge base. Output ONLY the text, nothing else.`;
       if (whatsappFollowupEnabled !== undefined) updates.whatsappFollowupEnabled = whatsappFollowupEnabled;
       if (whatsappFollowupHours !== undefined) updates.whatsappFollowupHours = whatsappFollowupHours;
       if (whatsappAppointmentConfirm !== undefined) updates.whatsappAppointmentConfirm = whatsappAppointmentConfirm;
+      if (whatsappPin !== undefined) {
+        if (whatsappPin && (whatsappPin.length < 4 || whatsappPin.length > 20)) {
+          return res.status(400).json({ message: "PIN must be 4-20 characters" });
+        }
+        updates.whatsappPin = whatsappPin || null;
+      }
       await storage.updateSmartProfile(profile.id, updates);
       res.json({ success: true });
     } catch (error) {

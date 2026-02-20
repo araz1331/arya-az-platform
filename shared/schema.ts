@@ -114,6 +114,7 @@ export const smartProfiles = pgTable("smart_profiles", {
   whatsappFollowupEnabled: boolean("whatsapp_followup_enabled").notNull().default(false),
   whatsappFollowupHours: integer("whatsapp_followup_hours").notNull().default(24),
   whatsappAppointmentConfirm: boolean("whatsapp_appointment_confirm").notNull().default(false),
+  whatsappPin: text("whatsapp_pin"),
   isMaster: boolean("is_master").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });

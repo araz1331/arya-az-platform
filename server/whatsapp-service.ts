@@ -346,6 +346,9 @@ export async function sendAppointmentConfirmation(profileId: string, sessionId: 
   }
 }
 
+const verifiedOwnerSessions = new Map<string, number>();
+const OWNER_SESSION_TTL = 4 * 60 * 60 * 1000;
+
 export async function handleInboundWhatsApp(from: string, body: string, profileId?: string) {
   const waNumber = from.replace("whatsapp:", "").replace("+", "");
 
@@ -355,14 +358,36 @@ export async function handleInboundWhatsApp(from: string, body: string, profileI
   }
 
   const ownerProfile = await db.execute(sql`
-    SELECT id, slug, business_name, whatsapp_number
+    SELECT id, slug, business_name, whatsapp_number, whatsapp_pin
     FROM smart_profiles
     WHERE REPLACE(REPLACE(whatsapp_number, '+', ''), ' ', '') = ${waNumber}
     LIMIT 1
   `);
 
   if (ownerProfile.rows.length) {
-    return handleOwnerReply(ownerProfile.rows[0] as any, body);
+    const profile = ownerProfile.rows[0] as any;
+    const pin = profile.whatsapp_pin;
+
+    if (pin) {
+      const sessionExpiry = verifiedOwnerSessions.get(waNumber);
+      const isVerified = sessionExpiry && Date.now() < sessionExpiry;
+
+      if (!isVerified) {
+        const trimmed = body.trim();
+        if (trimmed === pin) {
+          verifiedOwnerSessions.set(waNumber, Date.now() + OWNER_SESSION_TTL);
+          console.log(`[whatsapp-owner] PIN verified for ${profile.business_name}`);
+          await sendWhatsAppMessage(profile.whatsapp_number, `✅ Owner identity verified. You can now reply to leads for the next 4 hours.\n\nTo reply to the latest lead, just send your message.`);
+          return { handled: true, type: "owner-pin-verified" };
+        } else {
+          console.warn(`[whatsapp-owner] Unverified owner attempt from ${waNumber}`);
+          await sendWhatsAppMessage(profile.whatsapp_number, `🔒 Owner verification required. Please send your PIN to authenticate.\n\nSet your PIN in the Arya dashboard under WhatsApp Settings.`);
+          return { handled: true, type: "owner-pin-required" };
+        }
+      }
+    }
+
+    return handleOwnerReply(profile, body);
   }
 
   return handleCustomerMessage(waNumber, body, profileId);

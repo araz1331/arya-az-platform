@@ -706,6 +706,7 @@ export default function AryaWidget({ profileId, defaultLang, initialView }: { pr
     whatsappMissedAlertsEnabled: false, whatsappChatEnabled: false,
     whatsappFollowupEnabled: false, whatsappFollowupHours: 24,
     whatsappAppointmentConfirm: false,
+    whatsappPin: "",
   });
   const [whatsappSaving, setWhatsappSaving] = useState(false);
   const [whatsappTesting, setWhatsappTesting] = useState(false);
@@ -754,6 +755,7 @@ export default function AryaWidget({ profileId, defaultLang, initialView }: { pr
     whatsappMissedAlertsEnabled: boolean; whatsappChatEnabled: boolean;
     whatsappFollowupEnabled: boolean; whatsappFollowupHours: number;
     whatsappAppointmentConfirm: boolean;
+    whatsappPin: string;
   }>({
     queryKey: ["/api/smart-profile/whatsapp-settings"],
     enabled: !!smartProfile?.id,
@@ -796,6 +798,7 @@ export default function AryaWidget({ profileId, defaultLang, initialView }: { pr
         whatsappFollowupEnabled: whatsappSettings.whatsappFollowupEnabled || false,
         whatsappFollowupHours: whatsappSettings.whatsappFollowupHours || 24,
         whatsappAppointmentConfirm: whatsappSettings.whatsappAppointmentConfirm || false,
+        whatsappPin: whatsappSettings.whatsappPin || "",
       });
       whatsappFormSynced.current = true;
     }
@@ -2227,6 +2230,25 @@ export default function AryaWidget({ profileId, defaultLang, initialView }: { pr
 
               <div className="space-y-1.5">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  {language === "az" ? "Təhlükəsizlik" : language === "ru" ? "Безопасность" : "Security"}
+                </p>
+                <div className="p-2 rounded-md bg-muted/50 space-y-1.5">
+                  <label htmlFor="wa-pin" className="text-xs font-medium">
+                    {language === "az" ? "Cavab PIN kodu (WhatsApp-dan cavab vermək üçün)" : language === "ru" ? "PIN для ответов (чтобы отвечать через WhatsApp)" : "Reply PIN (to reply via WhatsApp)"}
+                  </label>
+                  <input type="text" id="wa-pin" value={whatsappForm.whatsappPin}
+                    onChange={(e) => setWhatsappForm(prev => ({ ...prev, whatsappPin: e.target.value }))}
+                    placeholder={language === "az" ? "4+ simvol PIN" : language === "ru" ? "4+ символов PIN" : "4+ character PIN"}
+                    className="w-full text-xs border rounded px-2 py-1.5 bg-background"
+                    data-testid="input-whatsapp-pin" />
+                  <p className="text-[10px] text-muted-foreground">
+                    {language === "az" ? "Müştərilərə WhatsApp-dan cavab vermək üçün bu PIN-i göndərin" : language === "ru" ? "Отправьте этот PIN, чтобы отвечать клиентам через WhatsApp" : "Send this PIN to reply to customers via WhatsApp"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                   {language === "az" ? "Hesabatlar" : language === "ru" ? "Отчёты" : "Reports"}
                 </p>
                 <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
@@ -3151,6 +3173,7 @@ export default function AryaWidget({ profileId, defaultLang, initialView }: { pr
                   whatsappFollowupEnabled: whatsappSettings.whatsappFollowupEnabled || false,
                   whatsappFollowupHours: whatsappSettings.whatsappFollowupHours || 24,
                   whatsappAppointmentConfirm: whatsappSettings.whatsappAppointmentConfirm || false,
+                  whatsappPin: whatsappSettings.whatsappPin || "",
                 });
               }
             }}
