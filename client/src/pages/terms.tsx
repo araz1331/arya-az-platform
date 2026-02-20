@@ -3,40 +3,40 @@ import { ArrowLeft, Shield } from "lucide-react";
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground" data-testid="page-terms">
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => window.history.back()} data-testid="button-terms-back">
+          <Button variant="ghost" size="icon" onClick={() => { window.location.href = "/"; }} data-testid="button-terms-back">
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <Shield className="w-5 h-5 text-primary" />
-          <h1 className="font-semibold text-lg">Terms of Service</h1>
+          <Shield className="w-5 h-5 text-foreground" />
+          <h1 className="font-semibold text-lg" data-testid="text-terms-title">Terms of Service</h1>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">Last updated: February 20, 2026</p>
-          <p className="text-sm text-muted-foreground">Arya.az — Operated by HireArya LLC</p>
+          <p className="text-sm text-muted-foreground" data-testid="text-terms-updated">Last updated: February 20, 2026</p>
+          <p className="text-sm text-muted-foreground" data-testid="text-terms-operator">Arya.az — Operated by HireArya LLC</p>
         </div>
 
-        <section className="space-y-3">
+        <section className="space-y-3" data-testid="section-acceptance">
           <h2 className="text-xl font-bold">1. Acceptance of Terms</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
             By accessing or using Arya.az (the "Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, do not use the Service. The Service includes the Arya.az website, AI receptionist features, Smart Profile pages, voice donation platform, WhatsApp integrations, embeddable widgets, and all related APIs and tools.
           </p>
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-3" data-testid="section-description">
           <h2 className="text-xl font-bold">2. Description of Service</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
             Arya.az provides AI-powered receptionist and business assistant services. The Service uses artificial intelligence to respond to customer inquiries, manage bookings, and provide business information based on data you provide. The AI is designed to be helpful but is not a substitute for human judgment.
           </p>
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-3" data-testid="section-as-is">
           <h2 className="text-xl font-bold">3. Service Provided "As-Is"</h2>
-          <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+          <div className="p-4 rounded-lg bg-muted/50 border border-border">
             <p className="text-sm leading-relaxed font-medium">
               THE SERVICE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
             </p>
@@ -46,13 +46,13 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-3" data-testid="section-liability">
           <h2 className="text-xl font-bold">4. Limitation of Liability</h2>
-          <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+          <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
             <p className="text-sm leading-relaxed font-medium">
               TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, ARYA.AZ, ITS OPERATORS, AFFILIATES, AND EMPLOYEES SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO:
             </p>
-            <ul className="list-disc list-inside text-sm mt-2 space-y-1">
+            <ul className="list-disc list-inside text-sm mt-2 space-y-1" data-testid="list-liability-items">
               <li>Loss of revenue, profits, or business opportunities</li>
               <li>Damages arising from AI-generated responses, including incorrect pricing, availability, or service information ("AI hallucinations")</li>
               <li>Loss of data or business interruption</li>
@@ -65,7 +65,7 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-3" data-testid="section-responsibilities">
           <h2 className="text-xl font-bold">5. User Responsibilities</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">As a user of the Service, you agree to:</p>
           <ul className="list-disc list-inside text-sm space-y-1.5 text-muted-foreground">
@@ -79,7 +79,7 @@ export default function TermsPage() {
           </ul>
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-3" data-testid="section-privacy">
           <h2 className="text-xl font-bold">6. Data Privacy & Protection</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
             We take data protection seriously. Your business data and customer interactions are stored securely. We collect and process the following types of data:
@@ -95,7 +95,7 @@ export default function TermsPage() {
           </p>
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-3" data-testid="section-ai-disclaimers">
           <h2 className="text-xl font-bold">7. AI-Specific Disclaimers</h2>
           <ul className="list-disc list-inside text-sm space-y-1.5 text-muted-foreground">
             <li>AI responses are generated automatically and may not always be accurate</li>
@@ -106,43 +106,43 @@ export default function TermsPage() {
           </ul>
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-3" data-testid="section-payments">
           <h2 className="text-xl font-bold">8. Subscription & Payments</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
             Paid plans (Pro, Agency, Founding Member Pass) are billed through Stripe. Subscriptions auto-renew unless cancelled. Refunds are handled on a case-by-case basis. We reserve the right to change pricing with 30 days' notice to active subscribers.
           </p>
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-3" data-testid="section-termination">
           <h2 className="text-xl font-bold">9. Termination</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
             We reserve the right to suspend or terminate your account at any time for violation of these terms, abuse of the Service, or non-payment. Upon termination, your data may be deleted after a reasonable retention period. You may request data export before account closure.
           </p>
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-3" data-testid="section-governing-law">
           <h2 className="text-xl font-bold">10. Governing Law</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
             These Terms shall be governed by and construed in accordance with the laws of the Republic of Azerbaijan. Any disputes arising from or relating to these Terms shall be subject to the exclusive jurisdiction of the courts of Baku, Azerbaijan.
           </p>
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-3" data-testid="section-changes">
           <h2 className="text-xl font-bold">11. Changes to Terms</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
             We may update these Terms from time to time. Continued use of the Service after changes constitutes acceptance of the revised Terms. We will make reasonable efforts to notify users of significant changes.
           </p>
         </section>
 
-        <section className="space-y-3">
+        <section className="space-y-3" data-testid="section-contact">
           <h2 className="text-xl font-bold">12. Contact</h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            For questions about these Terms, contact us at: <a href="mailto:support@arya.az" className="text-primary hover:underline">support@arya.az</a>
+            For questions about these Terms, contact us at: <a href="mailto:support@arya.az" className="underline hover:opacity-80" data-testid="link-support-email">support@arya.az</a>
           </p>
         </section>
 
         <div className="pt-4 border-t text-center">
-          <p className="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} Arya.az — All rights reserved.</p>
+          <p className="text-xs text-muted-foreground" data-testid="text-copyright">&copy; {new Date().getFullYear()} Arya.az — All rights reserved.</p>
         </div>
       </main>
     </div>

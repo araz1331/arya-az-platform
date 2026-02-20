@@ -1,12 +1,14 @@
-import { sendWhatsAppMessage } from "./whatsapp-service";
-import { db } from "./db";
-import { sql } from "drizzle-orm";
 import * as fs from "fs";
 import * as path from "path";
 
 const ADMIN_WHATSAPP = process.env.ADMIN_WHATSAPP_NUMBER || "";
 const LOG_DIR = path.join(process.cwd(), "logs");
-const SECURITY_LOG_FILE = path.join(LOG_DIR, "security.log");
+const MAX_LOG_SIZE = 5 * 1024 * 1024;
+
+function getLogFileName(): string {
+  const date = new Date().toISOString().split("T")[0];
+  return path.join(LOG_DIR, `security-${date}.log`);
+}
 
 const alertCooldown = new Map<string, number>();
 const COOLDOWN_MS = 5 * 60_000;
@@ -19,8 +21,15 @@ function ensureLogDir() {
 
 function writeSecurityLog(entry: Record<string, any>) {
   ensureLogDir();
+  const logFile = getLogFileName();
+  try {
+    const stat = fs.existsSync(logFile) ? fs.statSync(logFile) : null;
+    if (stat && stat.size > MAX_LOG_SIZE) {
+      fs.renameSync(logFile, logFile + ".old");
+    }
+  } catch {}
   const line = JSON.stringify({ ...entry, timestamp: new Date().toISOString() }) + "\n";
-  fs.appendFileSync(SECURITY_LOG_FILE, line, "utf-8");
+  fs.appendFileSync(logFile, line, "utf-8");
 }
 
 function shouldAlert(key: string): boolean {
@@ -29,6 +38,16 @@ function shouldAlert(key: string): boolean {
   if (last && now - last < COOLDOWN_MS) return false;
   alertCooldown.set(key, now);
   return true;
+}
+
+async function sendAlert(message: string) {
+  if (!ADMIN_WHATSAPP) return;
+  try {
+    const { sendWhatsAppMessage } = await import("./whatsapp-service");
+    await sendWhatsAppMessage(ADMIN_WHATSAPP, message);
+  } catch (err) {
+    console.error("[security-alert] Failed to send WhatsApp alert:", err);
+  }
 }
 
 export async function logPromptInjection(context: {
@@ -51,11 +70,8 @@ export async function logPromptInjection(context: {
   writeSecurityLog(logEntry);
   console.warn(`[SECURITY] Prompt injection blocked | channel=${context.channel} | slug=${context.slug} | ip=${context.ip}`);
 
-  if (ADMIN_WHATSAPP && shouldAlert(`injection-${context.channel}-${context.ip || context.from}`)) {
-    const alert = `🚨 SECURITY ALERT\n\nBlocked prompt injection attempt\n📍 Channel: ${context.channel}\n🏪 Profile: ${context.slug || "N/A"}\n🌐 IP: ${context.ip || "N/A"}\n📱 From: ${context.from || "N/A"}\n💬 Message: "${truncatedMsg}..."`;
-    await sendWhatsAppMessage(ADMIN_WHATSAPP, alert).catch(err => {
-      console.error("[security-alert] Failed to send WhatsApp alert:", err);
-    });
+  if (shouldAlert(`injection-${context.channel}-${context.ip || context.from}`)) {
+    await sendAlert(`🚨 SECURITY ALERT\n\nBlocked prompt injection attempt\n📍 Channel: ${context.channel}\n🏪 Profile: ${context.slug || "N/A"}\n🌐 IP: ${context.ip || "N/A"}\n📱 From: ${context.from || "N/A"}\n💬 Message: "${truncatedMsg}..."`);
   }
 }
 
@@ -74,11 +90,8 @@ export async function logTwilioSignatureFailure(context: {
   writeSecurityLog(logEntry);
   console.warn(`[SECURITY] Invalid Twilio signature | ip=${context.ip} | path=${context.path}`);
 
-  if (ADMIN_WHATSAPP && shouldAlert(`twilio-sig-${context.ip}`)) {
-    const alert = `🚨 SECURITY ALERT\n\nInvalid Twilio signature detected\n🌐 IP: ${context.ip || "unknown"}\n📍 Path: ${context.path}\n📱 From: ${context.from || "N/A"}\n\nPossible webhook spoofing attempt.`;
-    await sendWhatsAppMessage(ADMIN_WHATSAPP, alert).catch(err => {
-      console.error("[security-alert] Failed to send WhatsApp alert:", err);
-    });
+  if (shouldAlert(`twilio-sig-${context.ip}`)) {
+    await sendAlert(`🚨 SECURITY ALERT\n\nInvalid Twilio signature detected\n🌐 IP: ${context.ip || "unknown"}\n📍 Path: ${context.path}\n📱 From: ${context.from || "N/A"}\n\nPossible webhook spoofing attempt.`);
   }
 }
 
@@ -96,11 +109,8 @@ export async function logRateLimitHit(context: {
 
   writeSecurityLog(logEntry);
 
-  if (ADMIN_WHATSAPP && shouldAlert(`ratelimit-${context.ip}-${context.path}`)) {
-    const alert = `⚠️ RATE LIMIT\n\nExcessive requests detected\n🌐 IP: ${context.ip || "unknown"}\n📍 Path: ${context.path}\n🔒 Limit: ${context.limit} req/min`;
-    await sendWhatsAppMessage(ADMIN_WHATSAPP, alert).catch(err => {
-      console.error("[security-alert] Failed to send WhatsApp alert:", err);
-    });
+  if (shouldAlert(`ratelimit-${context.ip}-${context.path}`)) {
+    await sendAlert(`⚠️ RATE LIMIT\n\nExcessive requests detected\n🌐 IP: ${context.ip || "unknown"}\n📍 Path: ${context.path}\n🔒 Limit: ${context.limit} req/min`);
   }
 }
 
@@ -120,12 +130,21 @@ export async function logHostBlockedRequest(context: {
 
 export function getRecentSecurityLogs(limit = 50): any[] {
   try {
-    if (!fs.existsSync(SECURITY_LOG_FILE)) return [];
-    const content = fs.readFileSync(SECURITY_LOG_FILE, "utf-8");
-    const lines = content.trim().split("\n").filter(Boolean);
-    return lines.slice(-limit).map(line => {
-      try { return JSON.parse(line); } catch { return { raw: line }; }
-    }).reverse();
+    ensureLogDir();
+    const files = fs.readdirSync(LOG_DIR)
+      .filter(f => f.startsWith("security-") && f.endsWith(".log"))
+      .sort()
+      .reverse();
+    const allLines: any[] = [];
+    for (const file of files) {
+      if (allLines.length >= limit) break;
+      const content = fs.readFileSync(path.join(LOG_DIR, file), "utf-8");
+      const lines = content.trim().split("\n").filter(Boolean);
+      for (let i = lines.length - 1; i >= 0 && allLines.length < limit; i--) {
+        try { allLines.push(JSON.parse(lines[i])); } catch { allLines.push({ raw: lines[i] }); }
+      }
+    }
+    return allLines;
   } catch {
     return [];
   }
