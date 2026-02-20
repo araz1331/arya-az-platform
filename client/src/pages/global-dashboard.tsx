@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye, Pencil, Loader2, Shield, MessageSquare, Lightbulb, Zap, FileText, PlugZap, Phone, BarChart3, User } from "lucide-react";
+import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye, Pencil, Loader2, Shield, MessageSquare, Lightbulb, Zap, FileText, PlugZap, Phone, BarChart3, User, CreditCard, CheckCircle2, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import AryaWidget from "@/components/arya-widget";
@@ -355,6 +355,240 @@ function EmbedCodeSection({ slug, t }: { slug: string; t: (key: any) => string }
   );
 }
 
+function BillingPanel({ profile, t }: { profile: SmartProfileData | null | undefined; t: (key: any) => string }) {
+  const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
+  const [loading, setLoading] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const currentPlan = profile?.isPro ? "pro" : "free";
+  const proExpiry = profile?.proExpiresAt ? new Date(profile.proExpiresAt) : null;
+  const isExpired = proExpiry && proExpiry < new Date();
+
+  const handleCheckout = async (plan: "pro" | "agency") => {
+    if (!profile) {
+      toast({ title: t("dashBillingNeedProfile"), variant: "destructive" });
+      return;
+    }
+    setLoading(plan);
+    try {
+      const res = await apiRequest("POST", "/api/subscription/checkout", {
+        plan,
+        interval: billingInterval,
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      toast({ title: t("dashBillingCheckoutFailed"), variant: "destructive" });
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleFounderCheckout = async () => {
+    if (!profile) {
+      toast({ title: t("dashBillingNeedProfile"), variant: "destructive" });
+      return;
+    }
+    setLoading("founder");
+    try {
+      const res = await apiRequest("POST", "/api/founding-member/checkout", {});
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      toast({ title: t("dashBillingCheckoutFailed"), variant: "destructive" });
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const plans = [
+    {
+      key: "free",
+      name: t("dashBillingFree"),
+      monthlyPrice: "$0",
+      yearlyPrice: "$0",
+      desc: t("dashBillingFreeDesc"),
+      features: t("dashBillingFreeFeats"),
+      isCurrent: currentPlan === "free" && !isExpired,
+    },
+    {
+      key: "pro",
+      name: t("dashBillingPro"),
+      monthlyPrice: "$29",
+      yearlyPrice: "$19",
+      desc: t("dashBillingProDesc"),
+      features: t("dashBillingProFeats"),
+      isCurrent: currentPlan === "pro" && !isExpired,
+      popular: true,
+    },
+    {
+      key: "agency",
+      name: t("dashBillingAgency"),
+      monthlyPrice: "$199",
+      yearlyPrice: "$149",
+      desc: t("dashBillingAgencyDesc"),
+      features: t("dashBillingAgencyFeats"),
+      isCurrent: false,
+    },
+  ];
+
+  if (!profile) {
+    return (
+      <Card className="p-8" data-testid="card-billing-need-profile">
+        <div className="flex flex-col items-center justify-center text-center text-muted-foreground">
+          <CreditCard className="w-12 h-12 mb-4 opacity-30" />
+          <h3 className="text-lg font-medium mb-2" data-testid="text-billing-need-profile">{t("dashBillingNeedProfile")}</h3>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6" data-testid="container-billing">
+      <h2 className="font-semibold text-lg" data-testid="text-billing-title">{t("dashBillingTitle")}</h2>
+
+      <Card className="p-4" data-testid="card-current-plan">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
+              {currentPlan === "pro" && !isExpired ? <Crown className="w-5 h-5 text-primary" /> : <User className="w-5 h-5 text-muted-foreground" />}
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">{t("dashBillingCurrentPlan")}</div>
+              <div className="font-semibold text-lg flex items-center gap-2">
+                {currentPlan === "pro" && !isExpired ? t("dashBillingPro") : t("dashBillingFree")}
+                {currentPlan === "pro" && !isExpired && (
+                  <Badge variant="default" className="text-xs" data-testid="badge-plan-active">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    {t("dashBillingActive")}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
+          {proExpiry && !isExpired && (
+            <div className="text-xs text-muted-foreground" data-testid="text-plan-expiry">
+              {t("dashBillingExpires")}: {proExpiry.toLocaleDateString()}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      <div className="flex items-center justify-center gap-2" data-testid="container-billing-interval">
+        <Button
+          size="sm"
+          variant={billingInterval === "month" ? "default" : "outline"}
+          onClick={() => setBillingInterval("month")}
+          data-testid="button-billing-monthly"
+        >
+          {t("dashBillingMonthly")}
+        </Button>
+        <Button
+          size="sm"
+          variant={billingInterval === "year" ? "default" : "outline"}
+          onClick={() => setBillingInterval("year")}
+          className="gap-1.5"
+          data-testid="button-billing-yearly"
+        >
+          {t("dashBillingYearly")}
+          <Badge variant="secondary" className="text-[10px]">{t("dashBillingSave")}</Badge>
+        </Button>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3" data-testid="container-plan-cards">
+        {plans.map((plan) => (
+          <Card
+            key={plan.key}
+            className={`p-5 relative flex flex-col ${plan.popular ? "border-primary ring-1 ring-primary/20" : ""} ${plan.isCurrent ? "bg-primary/5" : ""}`}
+            data-testid={`card-plan-${plan.key}`}
+          >
+            {plan.popular && (
+              <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px]" data-testid="badge-popular">
+                <Star className="w-3 h-3 mr-1" />
+                {t("dashBillingPopular")}
+              </Badge>
+            )}
+            <div className="mb-3">
+              <h3 className="font-semibold text-base" data-testid={`text-plan-name-${plan.key}`}>{plan.name}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{plan.desc}</p>
+            </div>
+            <div className="mb-3">
+              <span className="text-2xl font-bold" data-testid={`text-plan-price-${plan.key}`}>
+                {billingInterval === "month" ? plan.monthlyPrice : plan.yearlyPrice}
+              </span>
+              {plan.key !== "free" && (
+                <span className="text-sm text-muted-foreground">{billingInterval === "month" ? t("dashBillingPerMonth") : t("dashBillingPerYear")}</span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mb-4 flex-1">{plan.features}</p>
+            {plan.isCurrent ? (
+              <Button variant="outline" size="sm" disabled className="w-full" data-testid={`button-plan-current-${plan.key}`}>
+                <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                {t("dashBillingCurrentLabel")}
+              </Button>
+            ) : plan.key === "free" ? (
+              <Button variant="outline" size="sm" disabled className="w-full" data-testid={`button-plan-free`}>
+                {t("dashBillingFree")}
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                className="w-full"
+                variant={plan.popular ? "default" : "outline"}
+                onClick={() => handleCheckout(plan.key as "pro" | "agency")}
+                disabled={!!loading}
+                data-testid={`button-plan-upgrade-${plan.key}`}
+              >
+                {loading === plan.key ? (
+                  <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />{t("dashBillingProcessing")}</>
+                ) : (
+                  <><Crown className="w-3.5 h-3.5 mr-1.5" />{t("dashBillingUpgrade")}</>
+                )}
+              </Button>
+            )}
+          </Card>
+        ))}
+      </div>
+
+      <Card className="p-5 border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-orange-500/5" data-testid="card-founder-pass">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-md bg-amber-500/10 flex items-center justify-center shrink-0">
+              <Crown className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-base" data-testid="text-founder-title">{t("dashBillingFounder")}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("dashBillingFounderDesc")}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="text-right">
+              <span className="text-2xl font-bold" data-testid="text-founder-price">{t("dashBillingFounderPrice")}</span>
+              <span className="text-xs text-muted-foreground ml-1">{t("dashBillingOneTime")}</span>
+            </div>
+            <Button
+              onClick={handleFounderCheckout}
+              disabled={!!loading}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              data-testid="button-founder-checkout"
+            >
+              {loading === "founder" ? (
+                <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />{t("dashBillingProcessing")}</>
+              ) : (
+                t("dashBillingFounderCta")
+              )}
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onBack: () => void; isAdmin?: boolean; onAdminClick?: () => void }) {
   const { user: authUser, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("setup");
@@ -374,6 +608,22 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
   const { data: userProfile } = useQuery<Profile>({
     queryKey: ["/api/user"],
   });
+
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get("checkout");
+    if (checkout?.includes("success")) {
+      const planKey = checkout.replace("-success", "");
+      const planLabel = planKey === "founder" ? t("dashBillingFounder") : planKey === "pro" ? t("dashBillingPro") : planKey === "agency" ? t("dashBillingAgency") : planKey;
+      toast({ title: `${planLabel} ${t("dashBillingActivated")}` });
+      queryClient.invalidateQueries({ queryKey: ["/api/smart-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      window.history.replaceState({}, "", window.location.pathname);
+      setActiveTab("billing");
+    }
+  }, []);
 
   const hasProfile = profile && profile.onboardingComplete;
 
@@ -465,6 +715,10 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
                 <BarChart3 className="w-3.5 h-3.5 shrink-0" />
                 <span className="hidden sm:inline">{t("dashTabAnalytics")}</span>
                 <span className="sm:hidden truncate">{t("dashTabAnalyticsShort")}</span>
+              </TabsTrigger>
+              <TabsTrigger value="billing" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" data-testid="tab-billing">
+                <CreditCard className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{t("dashTabBilling")}</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -615,6 +869,10 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
                 <AnalyticsSummary profileId={profile.id} t={t} />
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="billing">
+            <BillingPanel profile={hasProfile ? profile : null} t={t} />
           </TabsContent>
         </Tabs>
       </main>
