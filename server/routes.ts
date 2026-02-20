@@ -146,6 +146,16 @@ export async function registerRoutes(
   setupSession(app);
   registerAuthRoutes(app);
 
+  app.use("/api", (req: Request, res: Response, next) => {
+    if (req.path === "/widget.js") return next();
+    res.set({
+      "Cache-Control": "no-store, no-cache, must-revalidate, private",
+      "Pragma": "no-cache",
+      "Expires": "0",
+    });
+    next();
+  });
+
   app.get("/widget.js", (req: Request, res: Response) => {
     res.set({
       "Cache-Control": "public, max-age=300, s-maxage=300",
