@@ -338,6 +338,11 @@ function UsersTab({ users, isLoading }: { users: AdminUser[]; isLoading: boolean
               ? `Remove PRO subscription from ${proDialog.name}?`
               : `Grant PRO subscription to ${proDialog.name}`}
           </p>
+          {!proDialog.currentPro && !users.find(u => u.id === proDialog.userId)?.hasSmartProfile && (
+            <p className="text-xs text-orange-500" data-testid="text-no-profile-warning">
+              Note: This user has no smart profile yet. They need to create one before PRO can be activated.
+            </p>
+          )}
           {!proDialog.currentPro && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Duration (days)</label>
@@ -551,22 +556,20 @@ function UsersTab({ users, isLoading }: { users: AdminUser[]; isLoading: boolean
                   <td className="py-2.5 px-4 text-right tabular-nums font-medium">{u.tokens.toLocaleString()}</td>
                   <td className="py-2.5 px-4">
                     <div className="flex items-center justify-end gap-1 flex-wrap">
-                      {u.hasSmartProfile && (
-                        <Button
-                          variant={u.isPro ? "outline" : "default"}
-                          size="sm"
-                          className="text-[11px] gap-1"
-                          onClick={() => setProDialog({
-                            userId: u.id,
-                            name: getName(u),
-                            currentPro: u.isPro,
-                          })}
-                          data-testid={`button-set-pro-${u.id}`}
-                        >
-                          <Crown className="w-3 h-3" />
-                          {u.isPro ? "PRO" : "Give PRO"}
-                        </Button>
-                      )}
+                      <Button
+                        variant={u.isPro ? "outline" : "default"}
+                        size="sm"
+                        className="text-[11px] gap-1"
+                        onClick={() => setProDialog({
+                          userId: u.id,
+                          name: getName(u),
+                          currentPro: u.isPro,
+                        })}
+                        data-testid={`button-set-pro-${u.id}`}
+                      >
+                        <Crown className="w-3 h-3" />
+                        {u.isPro ? "PRO" : "Give PRO"}
+                      </Button>
                       {u.deletedAt ? (
                         <Button
                           variant="outline"

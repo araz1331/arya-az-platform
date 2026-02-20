@@ -861,7 +861,7 @@ export async function registerRoutes(
 
       const profile = await storage.getSmartProfileByUserId(userId);
       if (!profile) {
-        return res.status(404).json({ message: "User has no smart profile" });
+        return res.status(404).json({ message: "User has no smart profile yet. They need to create one first." });
       }
 
       const proExpiresAt = isPro && days
