@@ -178,7 +178,7 @@ function getSessionId(): string {
   return id;
 }
 
-export default function SmartProfile({ slug, onBack }: { slug: string; onBack: () => void }) {
+export default function SmartProfile({ slug, onBack, allowOwnerMode = false }: { slug: string; onBack: () => void; allowOwnerMode?: boolean }) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -223,7 +223,7 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
   const profileImageRef = useRef<string | null>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  const isOwnerChat = !!(currentUserId && profile?.user_id && String(currentUserId) === String(profile.user_id));
+  const isOwnerChat = allowOwnerMode && !!(currentUserId && profile?.user_id && String(currentUserId) === String(profile.user_id));
 
   useEffect(() => {
     fetch("/api/user", { credentials: "include" })
@@ -333,14 +333,14 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
       });
   }, [slug]);
 
-  const ownerGreetings: Record<string, string> = {
-    az: "Salam, sahibkar! Mən sizin Executive Assistant-ınızam. Biznesi idarə etməkdə, məlumatları yeniləməkdə kömək edə bilərəm.",
-    ru: "Здравствуйте! Я ваш Executive Assistant. Могу обновить информацию о бизнесе, помочь со стратегией и управлением.",
-    en: "Hello! I'm your Executive Assistant. I can update your business info, help with strategy, and manage your AI receptionist.",
-    es: "¡Hola! Soy tu Asistente Ejecutivo. Puedo actualizar tu información, ayudar con estrategia y gestionar tu recepcionista IA.",
-    fr: "Bonjour ! Je suis votre Assistant Exécutif. Je peux mettre à jour vos informations et gérer votre réceptionniste IA.",
-    tr: "Merhaba! Ben Yönetici Asistanınızım. İş bilgilerinizi güncelleyebilir, strateji ve yönetimde yardımcı olabilirim.",
-  };
+  const getOwnerGreeting = (ownerName: string): Record<string, string> => ({
+    az: `Salam! Mən ${ownerName}-nin Executive Assistant-ıyam. Biznesi idarə etməkdə, məlumatları yeniləməkdə kömək edə bilərəm.`,
+    ru: `Здравствуйте! Я Executive Assistant ${ownerName}. Могу обновить информацию о бизнесе, помочь со стратегией и управлением.`,
+    en: `Hello! I'm the Executive Assistant of ${ownerName}. I can update your business info, help with strategy, and manage your AI receptionist.`,
+    es: `¡Hola! Soy el Asistente Ejecutivo de ${ownerName}. Puedo actualizar tu información, ayudar con estrategia y gestionar tu recepcionista IA.`,
+    fr: `Bonjour ! Je suis l'Assistant Exécutif de ${ownerName}. Je peux mettre à jour vos informations et gérer votre réceptionniste IA.`,
+    tr: `Merhaba! Ben ${ownerName}'in Yönetici Asistanıyım. İş bilgilerinizi güncelleyebilir, strateji ve yönetimde yardımcı olabilirim.`,
+  });
 
   useEffect(() => {
     if (!profile) return;
@@ -349,7 +349,8 @@ export default function SmartProfile({ slug, onBack }: { slug: string; onBack: (
     const isDemo = profile.id === "demo-id";
 
     if (isOwnerChat) {
-      const greeting = ownerGreetings[language] || ownerGreetings.en;
+      const greetings = getOwnerGreeting(name);
+      const greeting = greetings[language] || greetings.en;
       setMessages(prev => {
         if (prev.length <= 1) return [{ role: "assistant", text: greeting }];
         return [{ role: "assistant", text: greeting }, ...prev.slice(1)];
