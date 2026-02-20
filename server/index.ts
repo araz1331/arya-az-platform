@@ -17,6 +17,91 @@ process.on("uncaughtException", (err) => {
 const app = express();
 const httpServer = createServer(app);
 
+const ALLOWED_ORIGINS = [
+  "https://arya.az",
+  "https://www.arya.az",
+  "https://hirearya.com",
+  "https://www.hirearya.com",
+];
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (req.path === "/api/whatsapp/webhook" || req.path === "/api/stripe/webhook") {
+    return next();
+  }
+
+  if (req.path === "/widget.js" || req.path === "/api/widget.js") {
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+    return next();
+  }
+
+  if (req.path.startsWith("/api/smart-profile/chat") || req.path.startsWith("/api/embed/")) {
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+    if (req.method === "OPTIONS") return res.sendStatus(204);
+    return next();
+  }
+
+  if (origin) {
+    const isDev = process.env.NODE_ENV === "development";
+    const isAllowed = ALLOWED_ORIGINS.includes(origin) ||
+      (isDev && (origin.includes("localhost") || origin.includes("replit")));
+
+    if (isAllowed) {
+      res.set("Access-Control-Allow-Origin", origin);
+      res.set("Access-Control-Allow-Credentials", "true");
+      res.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+      res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    }
+  }
+
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+
+function getRateLimitKey(req: Request): string {
+  return req.ip || "unknown";
+}
+
+function rateLimiter(maxRequests: number, windowMs: number) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const key = getRateLimitKey(req);
+    const now = Date.now();
+    const entry = rateLimitStore.get(key);
+
+    if (!entry || now > entry.resetAt) {
+      rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+
+    if (entry.count >= maxRequests) {
+      console.log(`[rate-limit] Blocked ${key} on ${req.path} (${entry.count}/${maxRequests})`);
+      return res.status(429).json({ error: "Too many requests. Please try again later." });
+    }
+
+    entry.count++;
+    return next();
+  };
+}
+
+setInterval(() => {
+  const now = Date.now();
+  rateLimitStore.forEach((entry, key) => {
+    if (now > entry.resetAt) rateLimitStore.delete(key);
+  });
+}, 60_000);
+
+app.use("/api/smart-profile/chat", rateLimiter(15, 60_000));
+app.use("/api/owner-chat", rateLimiter(20, 60_000));
+app.use("/api/whatsapp/webhook", rateLimiter(30, 60_000));
+app.use("/api/auth/login", rateLimiter(10, 60_000));
+app.use("/api/auth/register", rateLimiter(5, 60_000));
+
 import * as pathModule from "path";
 app.get("/download-now", (req, res) => {
   res.download(pathModule.resolve("my-code.zip"));

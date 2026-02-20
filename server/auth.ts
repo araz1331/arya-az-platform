@@ -28,7 +28,7 @@ export function setupSession(app: Express) {
   app.set("trust proxy", 1);
   app.use(
     session({
-      secret: process.env.SESSION_SECRET || "arya-az-fallback-secret",
+      secret: process.env.SESSION_SECRET || (() => { if (process.env.NODE_ENV === "production") throw new Error("SESSION_SECRET must be set in production"); return "dev-only-fallback-secret"; })(),
       store: sessionStore,
       resave: false,
       saveUninitialized: false,

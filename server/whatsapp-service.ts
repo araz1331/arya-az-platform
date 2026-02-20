@@ -433,6 +433,12 @@ async function handleCustomerMessage(waNumber: string, body: string, profileId?:
     `);
   }
 
+  if (body.length > 1000) {
+    console.log(`[security] Message too long from WhatsApp ${waNumber} (${body.length} chars)`);
+    await sendWhatsAppMessage(`+${waNumber}`, "Your message is too long. Please keep it under 1000 characters.");
+    return { handled: true, type: "message-too-long" };
+  }
+
   if (checkForPromptInjection(body)) {
     console.log(`[security] Prompt injection blocked on WhatsApp from ${waNumber}`);
     await sendWhatsAppMessage(`+${waNumber}`, "I'm an AI receptionist here to help you with services and bookings. How can I assist you?");

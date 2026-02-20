@@ -1471,6 +1471,10 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Missing slug or message" });
       }
 
+      if (typeof message === "string" && message.length > 1000) {
+        return res.status(400).json({ error: "Message too long. Please keep it under 1000 characters." });
+      }
+
       if (checkForPromptInjection(message)) {
         const deflect = INJECTION_DEFLECT[language] || INJECTION_DEFLECT.en;
         console.log(`[security] Prompt injection blocked on widget chat for slug "${slug}"`);
@@ -1610,6 +1614,10 @@ Your Role - AI Receptionist:
       const message = req.body.message || "";
       const uploadedFiles = (req.files as Express.Multer.File[]) || [];
       if (!message?.trim() && uploadedFiles.length === 0) return res.status(400).json({ error: "Message or file required" });
+
+      if (typeof message === "string" && message.length > 3000) {
+        return res.status(400).json({ error: "Message too long. Please keep it under 3000 characters." });
+      }
 
       let profile = await storage.getSmartProfileByUserId(userId);
       let profileAutoCreated = false;

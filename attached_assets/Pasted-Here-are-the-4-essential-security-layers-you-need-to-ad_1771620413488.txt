@@ -1,0 +1,21 @@
+Here are the 4 essential security layers you need to add to your Replit backend next:
+
+1. The "Wallet Protector" (Rate Limiting)
+The Threat: If a hacker gets frustrated that your Tripwire blocked them, they might write a script to send 10,000 messages to your chat widget in one minute. Because each message pings OpenAI or your database, this could cost you hundreds of dollars in API fees overnight.
+
+The Fix: You must tell your server: "Only allow 10 messages per minute from the same IP address. If they send 11, block them."
+
+2. The "Context Overflow" Defense (Character Limits)
+The Threat: LLMs have a "memory limit" (the context window). A classic hacking trick is to paste 5,000 words of random text into the chat. This pushes your original System Rules completely out of the AI's brain, making it "forget" the Firewall, allowing the hacker to command it again.
+
+The Fix: Add a strict character limit to the user's input. In your Python code, just add a rule: if len(user_message) > 500: return "Message too long." A customer booking a haircut will never need more than 500 characters.
+
+3. Lock the "Invisible" Door (CORS Protection)
+The Threat: Right now, a hacker doesn't even need to use your website. They can find your Replit server URL and send messages to it directly from their own terminal (using tools like Postman).
+
+The Fix: You need to configure CORS (Cross-Origin Resource Sharing). This is a simple line of code that tells your server: "Only answer requests if they are physically coming from the arya.az website. Ignore everything else."
+
+4. The Sanity Check (Secret Management)
+The Threat: Hardcoding API keys (like your OpenAI key, Stripe secret, or Database password) directly into your main.py text file. If anyone ever accidentally gets read access to your Replit environment, your entire business is compromised.
+
+The Fix: Make absolutely sure that all passwords and keys are stored only in the Replit "Secrets" tool (the little padlock icon on the left menu) and called via environment variables (os.getenv('OPENAI_API_KEY')).
