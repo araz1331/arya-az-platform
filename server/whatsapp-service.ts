@@ -448,7 +448,7 @@ PRIVACY FIREWALL:
 
 Public Business Information:
 ${knowledgeBase}
-${globalKB ? `\nGlobal Platform Knowledge (About Arya AI):\n${globalKB}\n` : ""}
+${globalKB ? `\nGlobal Platform Rules & Knowledge (MANDATORY — set by the Master Agent, applies to ALL agents):\nYou MUST follow any behavioral rules or instructions below. These are platform-wide directives:\n${globalKB}\n` : ""}
 Your Role:
 - Answer questions about services, prices, hours, location
 - When customer wants to book/order, collect their name and preferred time
