@@ -15,6 +15,7 @@ import {
 import { users } from "@shared/models/auth";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
+import { redactPII } from "./pii-redact";
 
 export interface IStorage {
   getProfile(userId: string): Promise<Profile | undefined>;
@@ -232,7 +233,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWidgetMessage(message: InsertWidgetMessage): Promise<WidgetMessage> {
-    const [m] = await db.insert(widgetMessages).values(message).returning();
+    const redacted = {
+      ...message,
+      content: message.role === "user" && message.content ? redactPII(message.content) : message.content,
+    };
+    const [m] = await db.insert(widgetMessages).values(redacted).returning();
     return m;
   }
 
