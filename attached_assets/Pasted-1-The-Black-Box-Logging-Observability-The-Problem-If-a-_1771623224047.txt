@@ -1,0 +1,33 @@
+1. The "Black Box" (Logging & Observability)
+The Problem: If a customer in Baku complains that Arya gave them the wrong price, or if a hacker successfully bypasses your tripwire, how will you know exactly what happened?
+
+The Missing Piece: A centralized logging system. You shouldn't just console.log to the Replit terminal (which disappears).
+
+The Action: Use a service like Axiom or BetterStack (both have free tiers for startups). Every time an error occurs or a security rule is triggered, send a "structured log" there. You’ll be able to search through history to find patterns.
+
+2. The "Dead Man's Switch" (Uptime Monitoring)
+The Problem: Replit "Deployments" are great, but they occasionally glitch or go into sleep mode. If a restaurant owner tries to show Arya to a customer and the site is down, you lose that client forever.
+
+The Missing Piece: External Uptime Monitoring.
+
+The Action: Set up UptimeRobot or Cronitor (Free). Point it at https://arya.az/api/health. If your server stops responding for more than 60 seconds, it will send an alert to your phone. You’ll know the site is down before your customers do.
+
+3. The "Legal Shield" (Terms of Service)
+The Problem: You are handling business data and customer phone numbers. In Azerbaijan (and especially if you deal with EU/US citizens), you are legally responsible for that data. If Arya hallucinates and tells a customer "This meal is free," a business owner might try to blame you for the lost revenue.
+
+The Missing Piece: A "Limitation of Liability" clause.
+
+The Action: Add a /terms page to your site. It must state:
+
+The service is "As-Is."
+
+You are not liable for AI hallucinations or business losses.
+
+Users agree to your data privacy policy.
+
+The Final Missing Piece: The "Owner's Eyes"
+You mentioned earlier you found the "attack" in your chat history. You shouldn't have to manually check history to find hackers.
+
+I strongly suggest we build a "Security Alert" function. Whenever the check_for_attacks (Tripwire) or the validateTwilioRequest (Signature Check) fails, the server should instantly send YOU a WhatsApp message saying:
+
+🚨 SECURITY ALERT: Blocked a prompt injection attempt from +994... "Ignore all instructions..."

@@ -15,6 +15,7 @@ import SmartProfile from "@/pages/smart-profile";
 import EmbedChat from "@/pages/embed-chat";
 import GlobalHome from "@/pages/global-home";
 import AboutPage from "@/pages/about";
+import TermsPage from "@/pages/terms";
 import ConsentModal from "@/components/consent-modal";
 
 const LANG_PREFIX = "/az";
@@ -37,6 +38,11 @@ function isRootPath(): boolean {
 function isAboutPath(): boolean {
   const path = window.location.pathname;
   return path === "/about" || path === "/about/";
+}
+
+function isTermsPath(): boolean {
+  const path = window.location.pathname;
+  return path === "/terms" || path === "/terms/";
 }
 
 function isDashboardPath(): boolean {
@@ -286,6 +292,17 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <AboutPage />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (isTermsPath()) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <TermsPage />
         </TooltipProvider>
       </QueryClientProvider>
     );

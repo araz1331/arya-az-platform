@@ -2,6 +2,7 @@ import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { GoogleGenAI } from "@google/genai";
 import { storage } from "./storage";
+import { logPromptInjection } from "./security-alerts";
 
 const waMessageTracker = new Map<string, { count: number; resetAt: number }>();
 const WA_RATE_LIMIT = 15;
@@ -525,7 +526,7 @@ async function handleCustomerMessage(waNumber: string, body: string, profileId?:
   }
 
   if (checkForPromptInjection(body)) {
-    console.log(`[security] Prompt injection blocked on WhatsApp from ${waNumber}`);
+    logPromptInjection({ channel: "whatsapp", from: waNumber, message: body });
     await sendWhatsAppMessage(`+${waNumber}`, "I'm an AI receptionist here to help you with services and bookings. How can I assist you?");
     return { handled: true, type: "injection-blocked" };
   }

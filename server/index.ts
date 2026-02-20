@@ -5,6 +5,7 @@ import { createServer } from "http";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { WebhookHandlers } from "./webhookHandlers";
+import { logRateLimitHit, logHostBlockedRequest } from "./security-alerts";
 
 process.on("unhandledRejection", (reason) => {
   console.error("Unhandled promise rejection:", reason);
@@ -24,6 +25,7 @@ app.use((req, res, next) => {
   if (process.env.NODE_ENV === "production") {
     const host = (req.hostname || req.headers.host || "").split(":")[0].toLowerCase();
     if (!ALLOWED_HOSTS.includes(host)) {
+      logHostBlockedRequest({ ip: req.ip, host });
       return res.status(403).json({ error: "Direct access not allowed. Use https://arya.az" });
     }
   }
@@ -93,7 +95,7 @@ function rateLimiter(maxRequests: number, windowMs: number) {
     }
 
     if (entry.count >= maxRequests) {
-      console.log(`[rate-limit] Blocked ${key} on ${req.path} (${entry.count}/${maxRequests})`);
+      logRateLimitHit({ ip: req.ip, path: req.path, limit: maxRequests });
       return res.status(429).json({ error: "Too many requests. Please try again later." });
     }
 
@@ -114,6 +116,10 @@ app.use("/api/owner-chat", rateLimiter(20, 60_000));
 app.use("/api/whatsapp/webhook", rateLimiter(30, 60_000));
 app.use("/api/auth/login", rateLimiter(10, 60_000));
 app.use("/api/auth/register", rateLimiter(5, 60_000));
+
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString(), uptime: process.uptime() });
+});
 
 import * as pathModule from "path";
 app.get("/download-now", (req, res) => {

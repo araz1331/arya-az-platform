@@ -13,6 +13,7 @@ import { getUncachableStripeClient } from "./stripeClient";
 import * as fs from "fs";
 import * as path from "path";
 import { detectAudioFormat, speechToText } from "./replit_integrations/audio/client";
+import { logPromptInjection, logTwilioSignatureFailure, logRateLimitHit, getRecentSecurityLogs } from "./security-alerts";
 import { handleInboundWhatsApp, sendMissedLeadAlert, detectAndSendAppointmentConfirmation, startWhatsAppScheduler, sendWhatsAppMessage } from "./whatsapp-service";
 import { uploadToS3 } from "./s3";
 import twilio from "twilio";
@@ -837,6 +838,16 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/admin/security-logs", isAdmin, async (_req: Request, res: Response) => {
+    try {
+      const logs = getRecentSecurityLogs(100);
+      res.json({ logs });
+    } catch (error) {
+      console.error("Admin security logs error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   app.patch("/api/admin/global-kb", isAdmin, async (req: Request, res: Response) => {
     try {
       const { content } = req.body;
@@ -1442,7 +1453,7 @@ export async function registerRoutes(
 
       if (checkForPromptInjection(message)) {
         const deflect = INJECTION_DEFLECT[language] || INJECTION_DEFLECT.en;
-        console.log(`[security] Prompt injection blocked on widget chat for slug "${slug}"`);
+        logPromptInjection({ channel: "widget", slug, ip: req.ip, message });
         return res.json({ reply: deflect });
       }
 
@@ -2937,7 +2948,7 @@ Output the complete merged knowledge base. Output ONLY the text, nothing else.`;
         const webhookUrl = `${publicUrl}${req.originalUrl}`;
         const isValid = twilio.validateRequest(authToken, twilioSig, webhookUrl, req.body);
         if (!isValid) {
-          console.warn(`[whatsapp-webhook] BLOCKED: Invalid Twilio signature from IP ${req.ip}`);
+          logTwilioSignatureFailure({ ip: req.ip, path: req.originalUrl, from: req.body?.From });
           return res.status(403).send("Forbidden: Invalid Twilio Signature");
         }
       }
