@@ -3,6 +3,54 @@ import { sql } from "drizzle-orm";
 import { GoogleGenAI } from "@google/genai";
 import { storage } from "./storage";
 
+const waMessageTracker = new Map<string, { count: number; resetAt: number }>();
+const WA_RATE_LIMIT = 15;
+const WA_RATE_WINDOW = 60 * 60 * 1000;
+
+function checkWhatsAppRateLimit(waNumber: string): boolean {
+  const now = Date.now();
+  const entry = waMessageTracker.get(waNumber);
+  if (!entry || now > entry.resetAt) {
+    waMessageTracker.set(waNumber, { count: 1, resetAt: now + WA_RATE_WINDOW });
+    return false;
+  }
+  entry.count++;
+  if (entry.count > WA_RATE_LIMIT) {
+    return true;
+  }
+  return false;
+}
+
+setInterval(() => {
+  const now = Date.now();
+  waMessageTracker.forEach((entry, key) => {
+    if (now > entry.resetAt) waMessageTracker.delete(key);
+  });
+}, 5 * 60_000);
+
+const ALLOWED_COUNTRY_CODES = [
+  "994",   // Azerbaijan
+  "1",     // US/Canada (Twilio number origin)
+  "90",    // Turkey
+  "7",     // Russia
+  "380",   // Ukraine
+  "995",   // Georgia
+  "44",    // UK
+  "49",    // Germany
+  "33",    // France
+  "971",   // UAE
+  "972",   // Israel
+  "966",   // Saudi Arabia
+];
+
+function isAllowedDestination(phoneNumber: string): boolean {
+  const cleaned = phoneNumber.replace(/[\s\-\+\(\)]/g, "");
+  for (const code of ALLOWED_COUNTRY_CODES) {
+    if (cleaned.startsWith(code)) return true;
+  }
+  return false;
+}
+
 const gemini = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY || "",
   httpOptions: {
@@ -28,6 +76,13 @@ export async function sendWhatsAppMessage(toNumber: string, body: string): Promi
     console.error("[whatsapp] Missing TWILIO credentials");
     return false;
   }
+
+  const cleanedTo = toNumber.replace(/[\s\-\+\(\)]/g, "");
+  if (!isAllowedDestination(cleanedTo)) {
+    console.warn(`[whatsapp-geofence] Blocked outbound to disallowed destination: ${toNumber}`);
+    return false;
+  }
+
   const fromNumber = "whatsapp:+12792030206";
   const to = `whatsapp:${toNumber.startsWith("+") ? toNumber : "+" + toNumber}`;
 
@@ -293,6 +348,11 @@ export async function sendAppointmentConfirmation(profileId: string, sessionId: 
 
 export async function handleInboundWhatsApp(from: string, body: string, profileId?: string) {
   const waNumber = from.replace("whatsapp:", "").replace("+", "");
+
+  if (checkWhatsAppRateLimit(waNumber)) {
+    console.warn(`[whatsapp-loop-breaker] Rate limited ${waNumber} — exceeded ${WA_RATE_LIMIT} messages/hour`);
+    return { handled: true, type: "rate-limited" };
+  }
 
   const ownerProfile = await db.execute(sql`
     SELECT id, slug, business_name, whatsapp_number

@@ -42,44 +42,8 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 1
 }
 
 async function sendWhatsAppNotification(toNumber: string, leadName: string, leadPhone: string, leadEmail: string, businessName: string): Promise<boolean> {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken = process.env.TWILIO_AUTH_TOKEN;
-  if (!accountSid || !authToken) {
-    console.error("[whatsapp] Missing TWILIO_ACCOUNT_SID or TWILIO_AUTH_TOKEN");
-    return false;
-  }
-  const fromNumber = "whatsapp:+12792030206";
-  const to = `whatsapp:${toNumber.startsWith("+") ? toNumber : "+" + toNumber}`;
   const body = `*New Lead — ${businessName}*\n\nName: ${leadName || "—"}\nPhone: ${leadPhone || "—"}\nEmail: ${leadEmail || "—"}\n\n_Sent by Arya AI_`;
-
-  try {
-    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-    const params = new URLSearchParams({ To: to, From: fromNumber, Body: body });
-    const res = await fetchWithTimeout(url, {
-      method: "POST",
-      headers: {
-        "Authorization": "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64"),
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: params.toString(),
-    }, 15000);
-    const responseBody = await res.text();
-    if (res.ok) {
-      try {
-        const parsed = JSON.parse(responseBody);
-        console.log(`[whatsapp] Notification sent to ${toNumber} for ${businessName} | SID: ${parsed.sid} | Status: ${parsed.status}`);
-      } catch {
-        console.log(`[whatsapp] Notification sent to ${toNumber} for ${businessName}`);
-      }
-      return true;
-    } else {
-      console.error(`[whatsapp] Failed (${res.status}):`, responseBody);
-      return false;
-    }
-  } catch (e) {
-    console.error("[whatsapp] Error:", e);
-    return false;
-  }
+  return sendWhatsAppMessage(toNumber, body);
 }
 
 const gemini = new GoogleGenAI({

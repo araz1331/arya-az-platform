@@ -1,0 +1,29 @@
+Here are the three specific security measures you must implement for Twilio right now:
+
+1. Stop "Fake" Twilio Messages (Webhook Validation)
+The Threat: Right now, your Replit server likely has a URL like arya.replit.app/whatsapp-webhook that listens for incoming Twilio messages. A hacker can find this URL and send fake POST requests to it, pretending to be Twilio. Your server will process them, ask OpenAI for a response, and run up your Replit and OpenAI bills.
+
+The Fix: You must use Twilio Signature Validation. Twilio sends a cryptographic signature with every real request. You need to add a few lines of Python to your Replit route that says: "If this request does not have the exact cryptographic signature matching my Twilio Auth Token, drop it immediately."
+
+2. The "Geo-Fence" (Preventing SMS Pumping)
+The Threat: "SMS Pumping" is a massive scam right now. Hackers use bots to force your Twilio account to send thousands of SMS or WhatsApp messages to premium-rate international numbers that they own, pocketing the profit while you pay the massive Twilio bill.
+
+The Fix: Go into your Twilio Console right now. Search for "Messaging Geographic Permissions" and "Voice Geographic Permissions".
+
+Turn OFF global routing.
+
+Explicitly only allow messages and calls to numbers in Azerbaijan (+994), and strictly disable high-risk regions (like certain island nations or premium-rate country codes) unless you have a specific client there.
+
+3. The "Infinite Loop" Breaker
+The Threat: What happens if a customer sends Arya a WhatsApp message, and that customer has an automated "Out of Office" reply turned on?
+
+Customer Bot: "I am out of the office."
+
+Arya: "No problem, let me know when you return to book!"
+
+Customer Bot: "I am out of the office."
+
+Arya: "No problem..."
+They will loop 10,000 times overnight, costing you hundreds in Twilio and OpenAI fees by morning.
+
+The Fix: Your database needs to track how many messages a single phone number has sent in the last hour. If a number sends more than 15 messages in 60 minutes, the system must automatically stop replying to them and flag it in your Owner Dashboard.
