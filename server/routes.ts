@@ -1552,7 +1552,77 @@ Your Role - AI Receptionist:
       const uploadedFiles = (req.files as Express.Multer.File[]) || [];
       if (!message?.trim() && uploadedFiles.length === 0) return res.status(400).json({ error: "Message or file required" });
 
-      const profile = await storage.getSmartProfileByUserId(userId);
+      let profile = await storage.getSmartProfileByUserId(userId);
+      let profileAutoCreated = false;
+
+      const preHistory = await storage.getOwnerChatHistory(userId, 50);
+      const preUserMsgCount = preHistory.filter(m => m.role === "user").length;
+
+      if (!profile && preUserMsgCount >= 3) {
+        try {
+          const conversationText = preHistory.map(m => `${m.role === "user" ? "Owner" : "Arya"}: ${m.content}`).join("\n");
+          const forceNow = preUserMsgCount >= 5;
+          const extractPromptText = `Analyze this conversation between a new user and their AI assistant. Extract profile information to create their smart profile.
+
+CONVERSATION:
+${conversationText}
+
+TASK: Extract the following fields. If not mentioned, use your best guess from context.
+Respond in EXACTLY this JSON format:
+{
+  "businessName": "the business/service name, or personal name",
+  "profession": "their profession or field",
+  "knowledgeBase": "structured summary of ALL info gathered",
+  "slug": "URL-friendly slug (lowercase, hyphens only)"
+}
+
+RULES:
+- slug must be lowercase letters, numbers, and hyphens only
+- ${forceNow ? "IMPORTANT: You MUST output valid JSON. Do NOT return NOT_READY. Use whatever info is available." : "If truly no info at all, respond: NOT_READY"}
+- Output ONLY the JSON or NOT_READY`;
+
+          const extractRes = await gemini.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{ role: "user", parts: [{ text: extractPromptText }] }],
+            config: { maxOutputTokens: 2000 },
+          });
+          const extracted = (extractRes.text || "").trim();
+          console.log(`[discovery-pre] Extraction for ${userId} (${preUserMsgCount} msgs, force=${forceNow}):`, extracted.slice(0, 200));
+
+          if (extracted && extracted !== "NOT_READY" && !extracted.startsWith("NOT_READY")) {
+            const cleanJson = extracted.replace(/```json\n?|```\n?/g, "").trim();
+            const pd = JSON.parse(cleanJson);
+            const [user] = await db.select().from(users).where(eq(users.id, userId));
+            const realName = user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : null;
+            const bName = pd.businessName?.trim() || realName || "My Business";
+            let slug = (pd.slug || bName).toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || `user-${Date.now().toString(36)}`;
+            const slugTaken = await storage.getSmartProfileBySlug(slug);
+            if (slugTaken) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
+
+            await storage.createSmartProfile({
+              userId, slug, businessName: bName, displayName: realName || bName,
+              profession: pd.profession?.trim() || "Professional", themeColor: "#2563EB",
+              knowledgeBase: pd.knowledgeBase || null, onboardingComplete: true, isActive: true,
+            });
+            profile = await storage.getSmartProfileByUserId(userId);
+            profileAutoCreated = true;
+            console.log(`[discovery-pre] Auto-created profile "${slug}" for user ${userId}`);
+          } else if (forceNow) {
+            const [user] = await db.select().from(users).where(eq(users.id, userId));
+            const realName = user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : null;
+            const slug = `user-${Date.now().toString(36)}`;
+            await storage.createSmartProfile({
+              userId, slug, businessName: realName || "My Business", displayName: realName || "My Business",
+              profession: "Professional", themeColor: "#2563EB", knowledgeBase: null, onboardingComplete: true, isActive: true,
+            });
+            profile = await storage.getSmartProfileByUserId(userId);
+            profileAutoCreated = true;
+            console.log(`[discovery-pre] Force-created fallback profile "${slug}" for user ${userId}`);
+          }
+        } catch (preErr: any) {
+          console.error("[discovery-pre] Pre-creation error:", preErr?.message);
+        }
+      }
 
       let businessContext = "No business profile configured yet.";
       let currentKB = "";
@@ -1569,8 +1639,8 @@ Profile Active: ${profile.isActive ? "Yes" : "No"}
 Onboarding Complete: ${profile.onboardingComplete ? "Yes" : "No"}`;
       }
 
-      const history = await storage.getOwnerChatHistory(userId, 20);
-      const chatHistory = history.map(m => ({
+      const history = await storage.getOwnerChatHistory(userId, 50);
+      const chatHistory = history.slice(-20).map(m => ({
         role: m.role as "user" | "model",
         parts: [{ text: m.content }],
       }));
@@ -1875,7 +1945,8 @@ ${targetLabel}:`;
       }
 
       const isMasterProfile = profile?.isMaster === true;
-      const isDiscoveryMode = !isMasterProfile && profile && !currentKB.trim() && history.length < 6;
+      const userMessageCount = history.filter(m => m.role === "user").length;
+      const isDiscoveryMode = !isMasterProfile && profile && !currentKB.trim() && userMessageCount < 8 && !profileAutoCreated;
       const isLearningMode = !isMasterProfile && profile && !isDiscoveryMode;
 
       const discoveryPrompt = `You are Arya, a smart AI assistant who is meeting a new user for the first time. Your job is to INTERVIEW them to understand who they are and what they need, so you can become their perfect AI assistant.
@@ -1905,7 +1976,9 @@ INTERVIEW FLOW:
 PROFILE CONTEXT:
 ${businessContext}
 
-STYLE: Be concise, warm, and efficient. Respect the user's time. Short messages only.`;
+${userMessageCount >= 4 ? `URGENT: The user has already sent ${userMessageCount} messages. You MUST wrap up NOW. Summarize everything you know about them in 2-3 sentences and say "Great, I have everything I need to get started! Your profile is being set up now." Do NOT ask any more questions.` : ""}
+
+STYLE: Be concise, warm, and efficient. Respect the user's time. Short messages only (2-4 sentences max).`;
 
       const continuousLearningAddendum = `
 CONTINUOUS LEARNING MODE:
@@ -2055,75 +2128,7 @@ Your capabilities:
       await storage.createOwnerChatMessage({ userId, role: "model", content: reply });
 
       if (noProfile && !profile) {
-        (async () => {
-          try {
-            const existingCheck = await storage.getSmartProfileByUserId(userId);
-            if (existingCheck) return;
-
-            const recentMessages = await storage.getOwnerChatHistory(userId, 20);
-            if (recentMessages.length >= 4) {
-              const conversationText = recentMessages.map(m => `${m.role === "user" ? "Owner" : "Arya"}: ${m.content}`).join("\n");
-              const profileExtractPrompt = `Analyze this conversation between a new user and their AI assistant. Extract profile information to create their smart profile.
-
-CONVERSATION:
-${conversationText}
-
-TASK: Extract the following fields from the conversation. If a field is not mentioned, leave it as an empty string.
-Respond in EXACTLY this JSON format:
-{
-  "businessName": "the business or service name, or personal name if personal use",
-  "profession": "their profession or field",
-  "knowledgeBase": "structured summary of all information gathered (services, prices, hours, location, etc.)",
-  "slug": "a URL-friendly slug based on their name or business (lowercase, hyphens only, no spaces)"
-}
-
-RULES:
-- Only extract info that was EXPLICITLY stated by the owner
-- slug must be lowercase letters, numbers, and hyphens only
-- If not enough info yet (no business name or profession), respond with exactly: NOT_READY
-- Output ONLY the JSON or NOT_READY — nothing else`;
-
-              const extractResult = await gemini.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: [{ role: "user", parts: [{ text: profileExtractPrompt }] }],
-                config: { maxOutputTokens: 2000 },
-              });
-
-              const extracted = (extractResult.text || "").trim();
-              if (extracted && extracted !== "NOT_READY" && !extracted.startsWith("NOT_READY")) {
-                try {
-                  const cleanJson = extracted.replace(/```json\n?|```\n?/g, "").trim();
-                  const profileData = JSON.parse(cleanJson);
-                  if (profileData.businessName && profileData.profession) {
-                    let slug = (profileData.slug || profileData.businessName).toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
-                    const slugTaken = await storage.getSmartProfileBySlug(slug);
-                    if (slugTaken) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
-
-                    const [user] = await db.select().from(users).where(eq(users.id, userId));
-                    const realName = user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : null;
-
-                    await storage.createSmartProfile({
-                      userId,
-                      slug,
-                      businessName: profileData.businessName,
-                      displayName: realName || profileData.businessName,
-                      profession: profileData.profession,
-                      themeColor: "#2563EB",
-                      knowledgeBase: profileData.knowledgeBase || null,
-                      onboardingComplete: true,
-                      isActive: true,
-                    });
-                    console.log(`[discovery] Auto-created profile "${slug}" for user ${userId}`);
-                  }
-                } catch (parseErr: any) {
-                  console.error("[discovery] Failed to parse profile JSON:", parseErr?.message);
-                }
-              }
-            }
-          } catch (autoErr: any) {
-            console.error("[discovery] Auto-create profile error:", autoErr?.message);
-          }
-        })();
+        console.log(`[discovery] User ${userId} still has no profile after ${preUserMsgCount + 1} user messages — pre-creation will handle on next request`);
       }
 
       const hasSubstantiveInput = message.trim().length > 10 || uploadedFiles.length > 0;
