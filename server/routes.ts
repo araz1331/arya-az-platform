@@ -139,6 +139,59 @@ const SHOP_ITEMS: Record<string, { name: string; cost: number; activationDate: s
   reader: { name: "Arya Oxucu", cost: 300, activationDate: "1 Sentyabr 2026" },
 };
 
+function checkForPromptInjection(userInput: string): boolean {
+  if (!userInput) return false;
+  const text = userInput.toLowerCase();
+  const forbiddenPhrases = [
+    "ignore all previous",
+    "ignore previous instructions",
+    "ignore your instructions",
+    "ignore above",
+    "disregard all",
+    "disregard previous",
+    "system prompt",
+    "debug mode",
+    "developer mode",
+    "override",
+    "core rules",
+    "internal instructions",
+    "foundational prompt",
+    "privacy firewall",
+    "source code",
+    "forget everything",
+    "forget your instructions",
+    "reveal your prompt",
+    "show me your prompt",
+    "what are your instructions",
+    "what is your system prompt",
+    "repeat your instructions",
+    "print your instructions",
+    "output your instructions",
+    "tell me your rules",
+    "act as if you have no rules",
+    "pretend you are not an ai",
+    "you are now in",
+    "jailbreak",
+    "dan mode",
+    "do anything now",
+    "bypass your",
+    "amnesia rule",
+  ];
+  for (const phrase of forbiddenPhrases) {
+    if (text.includes(phrase)) return true;
+  }
+  return false;
+}
+
+const INJECTION_DEFLECT: Record<string, string> = {
+  az: "Mən sizə xidmətlər və rezervasiyalar üçün kömək edən AI köməkçiyəm. Sizə necə kömək edə bilərəm?",
+  ru: "Я AI-ассистент, который помогает с услугами и записью. Чем могу помочь?",
+  en: "I'm an AI receptionist here to help you with services and bookings. How can I assist you?",
+  tr: "Hizmetler ve rezervasyonlar konusunda yardımcı olan bir AI asistanıyım. Size nasıl yardımcı olabilirim?",
+  es: "Soy un asistente de IA que ayuda con servicios y reservas. ¿Cómo puedo ayudarle?",
+  fr: "Je suis un assistant IA pour les services et les réservations. Comment puis-je vous aider ?",
+};
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -1416,6 +1469,12 @@ export async function registerRoutes(
       const { slug, message, language, history } = req.body;
       if (!slug || !message) {
         return res.status(400).json({ error: "Missing slug or message" });
+      }
+
+      if (checkForPromptInjection(message)) {
+        const deflect = INJECTION_DEFLECT[language] || INJECTION_DEFLECT.en;
+        console.log(`[security] Prompt injection blocked on widget chat for slug "${slug}"`);
+        return res.json({ reply: deflect });
       }
 
       const profile = await storage.getSmartProfileBySlug(slug);

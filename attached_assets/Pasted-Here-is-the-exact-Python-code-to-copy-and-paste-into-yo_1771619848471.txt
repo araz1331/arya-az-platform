@@ -1,0 +1,55 @@
+Here is the exact Python code to copy and paste into your Replit backend (likely your main.py or app.py file).
+
+Step 1: Paste the Tripwire Function
+Put this function somewhere near the top of your file, above your chat routes. It contains all the exact phrases your attacker used, plus a few other common ones.
+
+Python
+def check_for_attacks(user_input):
+    """
+    Acts as a security tripwire. Returns True if a prompt injection is detected.
+    """
+    if not user_input:
+        return False
+        
+    text = user_input.lower()
+    
+    # The "Blacklist" of known hacker phrases
+    forbidden_phrases = [
+        "ignore all previous",
+        "system prompt",
+        "debug mode",
+        "developer mode",
+        "override",
+        "core rules",
+        "internal instructions",
+        "foundational prompt",
+        "privacy firewall",
+        "source code",
+        "forget everything"
+    ]
+    
+    # Check if any forbidden phrase is in the user's message
+    for phrase in forbidden_phrases:
+        if phrase in text:
+            return True # Attack detected!
+            
+    return False # Safe to process
+Step 2: Add it to your Chat Route
+Find the part of your code that handles the incoming customer chat (usually a route like @app.route('/api/chat') or similar).
+
+Add the Tripwire check right at the very beginning of the function, before you send the text to the AI model.
+
+Python
+# Look for your existing chat function, which probably looks something like this:
+@app.route('/api/chat', methods=['POST'])
+def handle_chat():
+    user_message = request.json.get("message")
+    
+    # --- 🚨 ADD THIS TRIPWIRE BLOCK RIGHT HERE 🚨 ---
+    if check_for_attacks(user_message):
+        # Immediately reject the attacker with a polite, generic response.
+        # This completely blocks the attack and saves you OpenAI API costs.
+        return {"reply": "I am just an AI receptionist here to help you with booking and services. How can I assist you today?"}
+    # ------------------------------------------------
+    
+    # ... Your normal code that sends the message to OpenAI goes here ...
