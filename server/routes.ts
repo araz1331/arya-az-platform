@@ -15,6 +15,7 @@ import * as path from "path";
 import { detectAudioFormat, speechToText } from "./replit_integrations/audio/client";
 import { handleInboundWhatsApp, sendMissedLeadAlert, detectAndSendAppointmentConfirmation, startWhatsAppScheduler, sendWhatsAppMessage } from "./whatsapp-service";
 import { uploadToS3 } from "./s3";
+import twilio from "twilio";
 
 function isValidWebhookUrl(urlStr: string): boolean {
   try {
@@ -2900,20 +2901,17 @@ Output the complete merged knowledge base. Output ONLY the text, nothing else.`;
     try {
       const authToken = process.env.TWILIO_AUTH_TOKEN;
       if (authToken) {
-        const crypto = await import("crypto");
         const twilioSig = req.headers["x-twilio-signature"] as string;
         if (!twilioSig) {
           console.warn("[whatsapp-webhook] Missing X-Twilio-Signature header");
           return res.status(403).send("Forbidden");
         }
-        const protocol = req.headers["x-forwarded-proto"] || req.protocol;
-        const host = req.headers["host"] || "";
-        const webhookUrl = `${protocol}://${host}${req.originalUrl}`;
-        const sortedParams = Object.keys(req.body).sort().reduce((acc: string, key: string) => acc + key + req.body[key], "");
-        const expectedSig = crypto.createHmac("sha1", authToken).update(webhookUrl + sortedParams).digest("base64");
-        if (twilioSig !== expectedSig) {
-          console.warn("[whatsapp-webhook] Invalid Twilio signature");
-          return res.status(403).send("Forbidden");
+        const publicUrl = process.env.PUBLIC_APP_URL || `https://${req.headers.host}`;
+        const webhookUrl = `${publicUrl}${req.originalUrl}`;
+        const isValid = twilio.validateRequest(authToken, twilioSig, webhookUrl, req.body);
+        if (!isValid) {
+          console.warn(`[whatsapp-webhook] BLOCKED: Invalid Twilio signature from IP ${req.ip}`);
+          return res.status(403).send("Forbidden: Invalid Twilio Signature");
         }
       }
 
