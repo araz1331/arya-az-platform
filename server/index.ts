@@ -15,7 +15,20 @@ process.on("uncaughtException", (err) => {
 });
 
 const app = express();
+app.set("trust proxy", 1);
 const httpServer = createServer(app);
+
+const ALLOWED_HOSTS = ["arya.az", "www.arya.az", "hirearya.com", "www.hirearya.com"];
+
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === "production") {
+    const host = (req.hostname || req.headers.host || "").split(":")[0].toLowerCase();
+    if (!ALLOWED_HOSTS.includes(host)) {
+      return res.status(403).json({ error: "Direct access not allowed. Use https://arya.az" });
+    }
+  }
+  next();
+});
 
 const ALLOWED_ORIGINS = [
   "https://arya.az",
