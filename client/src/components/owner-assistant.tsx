@@ -54,9 +54,12 @@ export default function OwnerAssistant({ autoOpen = false, inline = false }: { a
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const userJustSentRef = useRef(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -70,8 +73,24 @@ export default function OwnerAssistant({ autoOpen = false, inline = false }: { a
   }, [open, historyLoaded]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    if (userJustSentRef.current) {
+      userJustSentRef.current = false;
+      textareaRef.current?.focus();
+      return;
+    }
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+    if (isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      textareaRef.current?.focus();
+    }
+  }, [isLoading]);
 
   useEffect(() => {
     return () => {
@@ -182,6 +201,7 @@ export default function OwnerAssistant({ autoOpen = false, inline = false }: { a
 
     setInput("");
     setPendingFiles([]);
+    userJustSentRef.current = true;
 
     const fileNames = currentFiles.map(f => f.file.name).join(", ");
     const userMsg: Message = {
@@ -383,7 +403,7 @@ export default function OwnerAssistant({ autoOpen = false, inline = false }: { a
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" data-testid="container-assistant-messages">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3" data-testid="container-assistant-messages">
         {messages.length === 0 && !isLoading && (
           <div className="flex flex-col items-center justify-center h-full text-center text-white/40 px-4">
             <Sparkles className="w-10 h-10 mb-3 opacity-40" />
@@ -490,6 +510,7 @@ export default function OwnerAssistant({ autoOpen = false, inline = false }: { a
             <Paperclip className="w-4 h-4" />
           </Button>
           <Textarea
+            ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
