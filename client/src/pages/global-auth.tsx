@@ -86,6 +86,7 @@ export default function GlobalAuthPage({ onBack }: { onBack: () => void }) {
       return res.json();
     },
     onSuccess: () => {
+      queryClient.clear();
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
     onError: (err: any) => {
@@ -105,6 +106,7 @@ export default function GlobalAuthPage({ onBack }: { onBack: () => void }) {
       return res.json();
     },
     onSuccess: () => {
+      queryClient.clear();
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
     onError: (err: any) => {

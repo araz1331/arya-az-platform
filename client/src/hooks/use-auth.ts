@@ -36,6 +36,7 @@ export function useAuth() {
       });
     },
     onSuccess: () => {
+      queryClient.clear();
       queryClient.setQueryData(["/api/auth/user"], null);
     },
   });
