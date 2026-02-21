@@ -1,0 +1,51 @@
+To maintain your "Fortress AI" status, you need to implement these four specific security layers for Telegram:
+
+1. The Webhook "Secret Path" (Anti-Scanning)
+Hackers use bots to scan the internet for common endpoints like /telegram or /webhook. If they find yours, they can bypass Telegram and send "fake" messages directly to your server to drain your API budget.
+
+The Fix: Use a UUID or a long random string in your URL.
+
+Implementation: Instead of your-app.repl.co/telegram, use your-app.repl.co/telegram/{{BOT_TOKEN}}. Only Telegram knows your token, so only Telegram can find the door.
+
+2. Telegram User ID Whitelisting (Owner Protection)
+On WhatsApp, you know your own phone number. On Telegram, anyone can change their username to "Admin" or "Araz Mamet" to try and trick the AI into giving up control.
+
+The Fix: Hardcode your numerical Telegram User ID in your Replit Secrets.
+
+The Rule: If a message asks for "Admin Data" or "Stats," the code must check: if (ctx.from.id !== process.env.OWNER_TELEGRAM_ID) return;.
+
+Why: This prevents "Social Engineering" where an attacker pretends to be you to change the bot's settings.
+
+3. Aggressive Rate Limiting (The "Troll" Shield)
+Telegram is free to use, which means an attacker can write a script to send 1,000 messages a second to your bot, potentially costing you hundreds of dollars in Gemini API fees before your Google alert even wakes up.
+
+The Fix: Implement a "Cooldown" per user.
+
+The Rule: Max 5 messages per 60 seconds per User ID. If they exceed this, the bot ignores them for 10 minutes.
+
+4. Media & File Filtering (Input Sanitization)
+Telegram allows users to send Voice Notes, PDF files, and Images. Attackers can embed "Prompt Injections" inside file metadata or images.
++1
+
+The Fix: Ignore everything that isn't text for now.
+
+The Code: ```javascript
+bot.on('message', (ctx) => {
+if (!ctx.message.text) {
+return ctx.reply("Uzr, men faqat matnli xabarlarni tushunaman."); // "Sorry, I only understand text."
+}
+});
+
+
+---
+
+### **The "CEO" Security Update**
+To keep your **Comparative Analysis** table honest, you can now add a new row:
+
+| Security Feature | Arya.az | Standard Telegram Bots |
+| :--- | :--- | :--- |
+| **Request Origin Validation** | ✅ Verified via Secret Token | ❌ Open Webhooks |
+| **Rate Limit Protection** | ✅ Anti-Spam Cooldowns | ❌ Vulnerable to API Draining |
+| **Admin Shield** | ✅ ID-based Authentication | ⚠️ Username-based (Spoofable) |
+
+**Would you like me to write the specific middleware for Replit that handles the Rate Limiting so a single person can't spam your API?**

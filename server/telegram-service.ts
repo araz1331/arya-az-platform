@@ -1,4 +1,5 @@
 import { Telegraf } from "telegraf";
+import { createHash } from "crypto";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { GoogleGenAI } from "@google/genai";
@@ -7,25 +8,43 @@ import { logPromptInjection } from "./security-alerts";
 import { redactPII } from "./pii-redact";
 import type { Express } from "express";
 
-const tgRateTracker = new Map<string, { count: number; resetAt: number }>();
-const TG_RATE_LIMIT = 15;
-const TG_RATE_WINDOW = 60 * 60 * 1000;
+const tgRateTracker = new Map<string, { count: number; resetAt: number; banned: boolean; banUntil: number; banNotified: boolean }>();
+const TG_RATE_LIMIT = 5;
+const TG_RATE_WINDOW = 60 * 1000;
+const TG_BAN_DURATION = 10 * 60 * 1000;
 
-function checkTelegramRateLimit(chatId: string): boolean {
+function checkTelegramRateLimit(chatId: string): { limited: boolean; newBan: boolean } {
   const now = Date.now();
   const entry = tgRateTracker.get(chatId);
-  if (!entry || now > entry.resetAt) {
-    tgRateTracker.set(chatId, { count: 1, resetAt: now + TG_RATE_WINDOW });
-    return false;
+  if (entry?.banned && now < entry.banUntil) {
+    if (entry.banNotified) return { limited: true, newBan: false };
+    entry.banNotified = true;
+    return { limited: true, newBan: true };
   }
-  entry.count++;
-  return entry.count > TG_RATE_LIMIT;
+  if (entry?.banned && now >= entry.banUntil) {
+    tgRateTracker.delete(chatId);
+  }
+  const current = tgRateTracker.get(chatId);
+  if (!current || now > current.resetAt) {
+    tgRateTracker.set(chatId, { count: 1, resetAt: now + TG_RATE_WINDOW, banned: false, banUntil: 0, banNotified: false });
+    return { limited: false, newBan: false };
+  }
+  current.count++;
+  if (current.count > TG_RATE_LIMIT) {
+    current.banned = true;
+    current.banUntil = now + TG_BAN_DURATION;
+    current.banNotified = false;
+    console.log(`[telegram-security] Rate limit ban: chatId=${chatId} for 10 minutes`);
+    return { limited: true, newBan: true };
+  }
+  return { limited: false, newBan: false };
 }
 
 setInterval(() => {
   const now = Date.now();
   tgRateTracker.forEach((entry, key) => {
-    if (now > entry.resetAt) tgRateTracker.delete(key);
+    if (now > entry.resetAt && !entry.banned) tgRateTracker.delete(key);
+    if (entry.banned && now > entry.banUntil) tgRateTracker.delete(key);
   });
 }, 5 * 60_000);
 
@@ -55,6 +74,11 @@ function checkForPromptInjection(userInput: string): boolean {
     if (text.includes(phrase)) return true;
   }
   return false;
+}
+
+function isOwnerTelegram(userId: number): boolean {
+  const ownerId = process.env.OWNER_TELEGRAM_ID;
+  return !!ownerId && userId.toString() === ownerId;
 }
 
 let bot: Telegraf | null = null;
@@ -110,12 +134,40 @@ export function initTelegramBot(app: Express) {
     }
   });
 
-  bot.on("text", async (ctx) => {
+  bot.command("stats", async (ctx) => {
+    if (!isOwnerTelegram(ctx.from.id)) {
+      await ctx.reply("I'm an AI receptionist here to help you with services and bookings. How can I assist you?");
+      return;
+    }
+    try {
+      const totalConvos = await db.execute(sql`SELECT COUNT(*) as c FROM telegram_conversations`);
+      const today = await db.execute(sql`
+        SELECT COUNT(*) as c FROM telegram_conversations WHERE last_inbound_at > NOW() - INTERVAL '24 hours'
+      `);
+      const activeBans = Array.from(tgRateTracker.values()).filter(e => e.banned && Date.now() < e.banUntil).length;
+      await ctx.reply(
+        `*📊 Telegram Bot Stats*\n\nTotal conversations: ${(totalConvos.rows[0] as any).c}\nLast 24h: ${(today.rows[0] as any).c}\nActive bans: ${activeBans}`,
+        { parse_mode: "Markdown" }
+      );
+    } catch {
+      await ctx.reply("Error fetching stats.");
+    }
+  });
+
+  bot.on("message", async (ctx) => {
+    if (!("text" in ctx.message) || !ctx.message.text) {
+      await ctx.reply("Sorry, I can only process text messages at the moment. Please type your question.");
+      return;
+    }
+
     const chatId = ctx.chat.id.toString();
     const userMessage = ctx.message.text;
 
-    if (checkTelegramRateLimit(chatId)) {
-      await ctx.reply("You've sent too many messages. Please wait a while before trying again.");
+    const rateCheck = checkTelegramRateLimit(chatId);
+    if (rateCheck.limited) {
+      if (rateCheck.newBan) {
+        await ctx.reply("⏳ Too many messages. You've been temporarily paused for 10 minutes. Please try again later.");
+      }
       return;
     }
 
@@ -144,7 +196,12 @@ export function initTelegramBot(app: Express) {
     }
   });
 
-  const secretPath = `/api/telegram/webhook/${token.split(":")[0]}`;
+  const webhookSecret = createHash("sha256").update(token).digest("hex");
+  const secretPath = `/api/telegram/webhook/${webhookSecret}`;
+
+  bot.telegram.setMyCommands([
+    { command: "start", description: "Start chatting with a business AI assistant" },
+  ]).catch(() => {});
 
   app.use(bot.webhookCallback(secretPath));
 
