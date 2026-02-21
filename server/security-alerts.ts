@@ -51,7 +51,7 @@ async function sendAlert(message: string) {
 }
 
 export async function logPromptInjection(context: {
-  channel: "widget" | "owner" | "whatsapp";
+  channel: "widget" | "owner" | "whatsapp" | "telegram";
   slug?: string;
   ip?: string;
   from?: string;

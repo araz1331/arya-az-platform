@@ -6,6 +6,7 @@ import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { WebhookHandlers } from "./webhookHandlers";
 import { logRateLimitHit, logHostBlockedRequest } from "./security-alerts";
+import { initTelegramBot } from "./telegram-service";
 
 process.on("unhandledRejection", (reason) => {
   console.error("Unhandled promise rejection:", reason);
@@ -42,7 +43,7 @@ const ALLOWED_ORIGINS = [
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
-  if (req.path === "/api/whatsapp/webhook" || req.path === "/api/stripe/webhook") {
+  if (req.path === "/api/whatsapp/webhook" || req.path === "/api/stripe/webhook" || req.path.startsWith("/api/telegram/webhook")) {
     return next();
   }
 
@@ -114,6 +115,7 @@ setInterval(() => {
 app.use("/api/smart-profile/chat", rateLimiter(15, 60_000));
 app.use("/api/owner-chat", rateLimiter(20, 60_000));
 app.use("/api/whatsapp/webhook", rateLimiter(30, 60_000));
+app.use("/api/telegram/webhook", rateLimiter(30, 60_000));
 app.use("/api/auth/login", rateLimiter(10, 60_000));
 app.use("/api/auth/register", rateLimiter(5, 60_000));
 
@@ -223,6 +225,7 @@ async function initStripe() {
       console.warn("bootstrapViews failed (non-fatal):", err.message);
     });
     await initStripe();
+    initTelegramBot(app);
     await registerRoutes(httpServer, app);
   } catch (err) {
     console.error("Failed to register routes:", err);
