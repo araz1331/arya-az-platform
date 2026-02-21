@@ -1549,7 +1549,7 @@ Your Role - AI Receptionist:
         ],
         config: {
           systemInstruction: systemPrompt,
-          maxOutputTokens: 300,
+          maxOutputTokens: 1500,
         },
       });
 
@@ -1604,7 +1604,7 @@ Your Role - AI Receptionist:
       if (!userId) return res.status(401).json({ error: "Unauthorized" });
       const { title } = req.body;
       if (!title) return res.status(400).json({ error: "Title required" });
-      await storage.updateOwnerChatSessionTitle(req.params.sessionId, userId, title);
+      await storage.updateOwnerChatSessionTitle(req.params.sessionId as string, userId, title);
       res.json({ success: true });
     } catch (err: any) {
       console.error("Update session error:", err?.message);
@@ -1616,7 +1616,7 @@ Your Role - AI Receptionist:
     try {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      await storage.deleteOwnerChatSession(req.params.sessionId, userId);
+      await storage.deleteOwnerChatSession(req.params.sessionId as string, userId);
       res.json({ success: true });
     } catch (err: any) {
       console.error("Delete session error:", err?.message);
