@@ -782,45 +782,45 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
 
       <main className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="overflow-x-auto -mx-3 sm:-mx-4 px-3 sm:px-4 mb-4 sm:mb-6">
-            <TabsList className="inline-flex w-auto min-w-full gap-0">
-              <TabsTrigger value="setup" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" data-testid="tab-setup">
+          <div className="mb-4 sm:mb-6">
+            <TabsList className="flex flex-wrap h-auto gap-1 p-1">
+              <TabsTrigger value="setup" className="gap-1 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5" data-testid="tab-setup">
                 <Sparkles className="w-3.5 h-3.5 shrink-0" />
                 <span className="hidden sm:inline">{t("dashTabSetup")}</span>
-                <span className="sm:hidden truncate">{t("dashTabSetupShort")}</span>
+                <span className="sm:hidden">{t("dashTabSetupShort")}</span>
               </TabsTrigger>
-              <TabsTrigger value="profile" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" disabled={!hasProfile} data-testid="tab-profile">
+              <TabsTrigger value="profile" className="gap-1 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5" disabled={!hasProfile} data-testid="tab-profile">
                 <User className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{t("dashTabProfile")}</span>
+                {t("dashTabProfile")}
               </TabsTrigger>
-              <TabsTrigger value="leads" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" data-testid="tab-leads">
+              <TabsTrigger value="leads" className="gap-1 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5" data-testid="tab-leads">
                 <Users className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{t("dashTabLeadsShort")}</span>
+                {t("dashTabLeadsShort")}
               </TabsTrigger>
-              <TabsTrigger value="crm" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" disabled={!hasProfile} data-testid="tab-crm">
+              <TabsTrigger value="crm" className="gap-1 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5" disabled={!hasProfile} data-testid="tab-crm">
                 <PlugZap className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">CRM</span>
+                CRM
               </TabsTrigger>
-              <TabsTrigger value="whatsapp" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" disabled={!hasProfile} data-testid="tab-whatsapp">
+              <TabsTrigger value="whatsapp" className="gap-1 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5" disabled={!hasProfile} data-testid="tab-whatsapp">
                 <Phone className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">WhatsApp</span>
+                WhatsApp
               </TabsTrigger>
-              <TabsTrigger value="telegram" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" disabled={!hasProfile} data-testid="tab-telegram">
+              <TabsTrigger value="telegram" className="gap-1 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5" disabled={!hasProfile} data-testid="tab-telegram">
                 <Send className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{t("dashTelegramTitle")}</span>
+                {t("dashTelegramTitle")}
               </TabsTrigger>
-              <TabsTrigger value="widget" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" disabled={!hasProfile} data-testid="tab-widget">
+              <TabsTrigger value="widget" className="gap-1 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5" disabled={!hasProfile} data-testid="tab-widget">
                 <Code className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{t("dashTabWidget")}</span>
+                {t("dashTabWidget")}
               </TabsTrigger>
-              <TabsTrigger value="analytics" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" disabled={!hasProfile} data-testid="tab-analytics">
+              <TabsTrigger value="analytics" className="gap-1 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5" disabled={!hasProfile} data-testid="tab-analytics">
                 <BarChart3 className="w-3.5 h-3.5 shrink-0" />
                 <span className="hidden sm:inline">{t("dashTabAnalytics")}</span>
-                <span className="sm:hidden truncate">{t("dashTabAnalyticsShort")}</span>
+                <span className="sm:hidden">{t("dashTabAnalyticsShort")}</span>
               </TabsTrigger>
-              <TabsTrigger value="billing" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" data-testid="tab-billing">
+              <TabsTrigger value="billing" className="gap-1 text-xs sm:text-sm px-2.5 sm:px-3 py-1.5" data-testid="tab-billing">
                 <CreditCard className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{t("dashTabBilling")}</span>
+                {t("dashTabBilling")}
               </TabsTrigger>
             </TabsList>
           </div>
