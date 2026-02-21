@@ -102,9 +102,9 @@ export async function sendWhatsAppMessage(toNumber: string, body: string): Promi
     if (res.ok) {
       try {
         const parsed = JSON.parse(responseBody);
-        console.log(`[whatsapp] Message sent to ${toNumber} | SID: ${parsed.sid} | Status: ${parsed.status}`);
+        console.log(`[whatsapp] Message sent to ${toNumber} | SID: ${parsed.sid} | Status: ${parsed.status} | ErrorCode: ${parsed.error_code || 'none'} | ErrorMessage: ${parsed.error_message || 'none'}`);
       } catch {
-        console.log(`[whatsapp] Message sent to ${toNumber}`);
+        console.log(`[whatsapp] Message sent to ${toNumber} | Raw: ${responseBody.substring(0, 200)}`);
       }
       return true;
     } else {
