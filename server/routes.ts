@@ -2813,6 +2813,54 @@ Output the complete merged knowledge base. Output ONLY the text, nothing else.`;
     }
   });
 
+  let cachedBotUsername: string | null = null;
+  let botUsernameFetchedAt = 0;
+
+  app.get("/api/smart-profile/telegram-settings", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+      if (!cachedBotUsername || Date.now() - botUsernameFetchedAt > 3600_000) {
+        try {
+          const token = process.env.TELEGRAM_BOT_TOKEN;
+          if (token) {
+            const resp = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+            const data = await resp.json();
+            if (data.ok && data.result?.username) {
+              cachedBotUsername = data.result.username;
+              botUsernameFetchedAt = Date.now();
+            }
+          }
+        } catch {}
+      }
+      res.json({
+        telegramChatEnabled: profile.telegramChatEnabled || false,
+        botUsername: cachedBotUsername,
+      });
+    } catch (error) {
+      console.error("[telegram-settings] Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.patch("/api/smart-profile/telegram-settings", isAuthenticated, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+      const profile = await storage.getSmartProfileByUserId(userId);
+      if (!profile) return res.status(404).json({ message: "No profile found" });
+      const { telegramChatEnabled } = req.body;
+      if (typeof telegramChatEnabled !== "boolean") return res.status(400).json({ message: "Invalid value" });
+      await storage.updateSmartProfile(profile.id, { telegramChatEnabled });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[telegram-settings-update] Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   app.post("/api/smart-profile/whatsapp-test", isAuthenticated, async (req, res) => {
     try {
       const userId = getUserId(req);

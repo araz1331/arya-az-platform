@@ -9,7 +9,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye, Pencil, Loader2, Shield, MessageSquare, Lightbulb, Zap, FileText, PlugZap, Phone, BarChart3, User, CreditCard, CheckCircle2, Star } from "lucide-react";
+import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye, Pencil, Loader2, Shield, MessageSquare, Lightbulb, Zap, FileText, PlugZap, Phone, BarChart3, User, CreditCard, CheckCircle2, Star, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import AryaWidget from "@/components/arya-widget";
@@ -217,6 +217,104 @@ function LeadsPanel({ profileId, t }: { profileId: string; t: (key: any) => stri
           </div>
         </Card>
       ))}
+    </div>
+  );
+}
+
+function TelegramSection({ profile, t }: { profile: SmartProfileData; t: (key: any) => string }) {
+  const [copied, setCopied] = useState(false);
+  const [enabled, setEnabled] = useState(false);
+  const [toggling, setToggling] = useState(false);
+  const { toast } = useToast();
+
+  const { data: telegramSettings, isLoading } = useQuery<{ telegramChatEnabled: boolean; botUsername: string | null }>({
+    queryKey: ["/api/smart-profile/telegram-settings"],
+  });
+
+  useEffect(() => {
+    if (telegramSettings) setEnabled(telegramSettings.telegramChatEnabled);
+  }, [telegramSettings]);
+
+  const botUsername = telegramSettings?.botUsername || "AryaAI_bot";
+  const telegramLink = `https://t.me/${botUsername}?start=${profile.slug}`;
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(telegramLink);
+    setCopied(true);
+    toast({ title: t("dashTelegramCopied") });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const toggleTelegram = async () => {
+    setToggling(true);
+    try {
+      await apiRequest("PATCH", "/api/smart-profile/telegram-settings", { telegramChatEnabled: !enabled });
+      setEnabled(!enabled);
+      queryClient.invalidateQueries({ queryKey: ["/api/smart-profile/telegram-settings"] });
+      toast({ title: !enabled ? t("dashTelegramEnabled") : t("dashTelegramDisabled") });
+    } catch {
+      toast({ title: "Failed to update", variant: "destructive" });
+    } finally {
+      setToggling(false);
+    }
+  };
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+
+  return (
+    <div className="space-y-4" data-testid="container-telegram-section">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-lg flex items-center gap-2" data-testid="text-telegram-heading">
+          <Send className="w-5 h-5" />
+          {t("dashTelegramTitle")}
+        </h2>
+        <Button
+          variant={enabled ? "default" : "outline"}
+          size="sm"
+          onClick={toggleTelegram}
+          disabled={toggling}
+          data-testid="button-telegram-toggle"
+        >
+          {toggling ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+          {enabled ? t("dashTelegramDisabled") : t("dashTelegramToggle")}
+        </Button>
+      </div>
+
+      <Card className="p-5" data-testid="card-telegram-guide">
+        <p className="text-sm text-muted-foreground mb-4">{t("dashTelegramDesc")}</p>
+
+        <div className="space-y-3">
+          <div className="flex items-start gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+            <span className="text-sm">{t("dashTelegramStep1")}</span>
+          </div>
+
+          <div className="flex items-start gap-2.5">
+            <Link2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="text-sm">{t("dashTelegramStep2")}</span>
+              <div className="mt-2 flex items-center gap-2">
+                <code className="flex-1 min-w-0 text-xs bg-muted px-3 py-2 rounded-md truncate block" data-testid="text-telegram-link">
+                  {telegramLink}
+                </code>
+                <Button size="sm" variant="outline" onClick={copyLink} data-testid="button-telegram-copy">
+                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2.5">
+            <ExternalLink className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+            <span className="text-sm text-muted-foreground">{t("dashTelegramStep3")}</span>
+          </div>
+
+          <div className="flex items-start gap-2.5">
+            <MessageSquare className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+            <span className="text-sm text-muted-foreground">{t("dashTelegramStep4")}</span>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }
@@ -707,6 +805,10 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
                 <Phone className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate">WhatsApp</span>
               </TabsTrigger>
+              <TabsTrigger value="telegram" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" disabled={!hasProfile} data-testid="tab-telegram">
+                <Send className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{t("dashTelegramTitle")}</span>
+              </TabsTrigger>
               <TabsTrigger value="widget" className="flex-1 gap-1 text-xs sm:text-sm px-2 sm:px-3" disabled={!hasProfile} data-testid="tab-widget">
                 <Code className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate">{t("dashTabWidget")}</span>
@@ -852,6 +954,10 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
             {hasProfile && (
               <AryaWidget key="whatsapp" profileId={userProfile?.id ?? ""} defaultLang={lang} initialView="whatsapp" />
             )}
+          </TabsContent>
+
+          <TabsContent value="telegram">
+            {hasProfile && <TelegramSection profile={profile} t={t} />}
           </TabsContent>
 
           <TabsContent value="widget">
