@@ -14,7 +14,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { detectAudioFormat, speechToText } from "./replit_integrations/audio/client";
 import { logPromptInjection, logTwilioSignatureFailure, logRateLimitHit, getRecentSecurityLogs } from "./security-alerts";
-import { handleInboundWhatsApp, sendMissedLeadAlert, detectAndSendAppointmentConfirmation, startWhatsAppScheduler, sendWhatsAppMessage } from "./whatsapp-service";
+import { handleInboundWhatsApp, sendMissedLeadAlert, detectAndSendAppointmentConfirmation, startWhatsAppScheduler, sendWhatsAppMessage, sendWhatsAppTemplateNotification, initWhatsAppTemplates } from "./whatsapp-service";
 import { uploadToS3 } from "./s3";
 import twilio from "twilio";
 
@@ -44,8 +44,7 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 1
 }
 
 async function sendWhatsAppNotification(toNumber: string, leadName: string, leadPhone: string, leadEmail: string, businessName: string): Promise<boolean> {
-  const body = `*New Lead — ${businessName}*\n\nName: ${leadName || "—"}\nPhone: ${leadPhone || "—"}\nEmail: ${leadEmail || "—"}\n\n_Sent by Arya AI_`;
-  return sendWhatsAppMessage(toNumber, body);
+  return sendWhatsAppTemplateNotification(toNumber, businessName, leadName, leadPhone, leadEmail);
 }
 
 const gemini = new GoogleGenAI({
@@ -3169,6 +3168,7 @@ Output the complete merged knowledge base. Output ONLY the text, nothing else.`;
   });
 
   startWhatsAppScheduler();
+  initWhatsAppTemplates().catch(err => console.error("[whatsapp-template] Init error:", err));
 
   seedDemoProfiles().catch(err => console.error("[seed] Demo profiles seed error:", err));
 

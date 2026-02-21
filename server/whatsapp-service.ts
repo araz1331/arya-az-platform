@@ -70,10 +70,150 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 1
   }
 }
 
-export async function sendWhatsAppMessage(toNumber: string, body: string): Promise<boolean> {
+let cachedLeadTemplateSid: string | null = null;
+let templateApproved = false;
+let templateInitPromise: Promise<void> | null = null;
+
+async function getTwilioAuth(): Promise<{ accountSid: string; authToken: string; authHeader: string } | null> {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
-  if (!accountSid || !authToken) {
+  if (!accountSid || !authToken) return null;
+  return { accountSid, authToken, authHeader: "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64") };
+}
+
+async function findOrCreateLeadTemplate(): Promise<string | null> {
+  const auth = await getTwilioAuth();
+  if (!auth) return null;
+
+  try {
+    let pageUrl: string | null = "https://content.twilio.com/v1/Content?PageSize=50";
+    while (pageUrl) {
+      const listRes = await fetchWithTimeout(pageUrl, {
+        method: "GET",
+        headers: { "Authorization": auth.authHeader },
+      }, 15000);
+      if (!listRes.ok) break;
+      const data = await listRes.json();
+      const existing = data.contents?.find((c: any) => c.friendly_name === "arya_new_lead_notification");
+      if (existing) {
+        console.log(`[whatsapp-template] Found existing template: ${existing.sid}`);
+        return existing.sid;
+      }
+      pageUrl = data.meta?.next_page_url || null;
+    }
+
+    const createRes = await fetchWithTimeout("https://content.twilio.com/v1/Content", {
+      method: "POST",
+      headers: {
+        "Authorization": auth.authHeader,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        friendly_name: "arya_new_lead_notification",
+        language: "en",
+        variables: {
+          "1": "Business Name",
+          "2": "Lead Name",
+          "3": "Lead Phone",
+          "4": "Lead Email",
+        },
+        types: {
+          "twilio/text": {
+            body: "New lead for {{1}}!\n\nName: {{2}}\nPhone: {{3}}\nEmail: {{4}}\n\nSent by Arya AI",
+          },
+        },
+      }),
+    }, 15000);
+
+    if (!createRes.ok) {
+      const errBody = await createRes.text();
+      console.error(`[whatsapp-template] Failed to create template (${createRes.status}):`, errBody);
+      return null;
+    }
+
+    const created = await createRes.json();
+    console.log(`[whatsapp-template] Created template: ${created.sid}`);
+
+    const approvalRes = await fetchWithTimeout(
+      `https://content.twilio.com/v1/Content/${created.sid}/ApprovalRequests/whatsapp`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": auth.authHeader,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          "Name": "arya_new_lead_notification",
+          "Category": "UTILITY",
+        }).toString(),
+      },
+      15000
+    );
+    if (approvalRes.ok) {
+      console.log(`[whatsapp-template] Template submitted for WhatsApp approval`);
+    } else {
+      const approvalErr = await approvalRes.text();
+      console.warn(`[whatsapp-template] Approval submission failed (${approvalRes.status}):`, approvalErr);
+    }
+
+    return created.sid;
+  } catch (e) {
+    console.error("[whatsapp-template] Error:", e);
+    return null;
+  }
+}
+
+async function checkTemplateApprovalStatus(templateSid: string): Promise<string> {
+  const auth = await getTwilioAuth();
+  if (!auth) return "unknown";
+  try {
+    const res = await fetchWithTimeout(
+      `https://content.twilio.com/v1/Content/${templateSid}/ApprovalRequests`,
+      { method: "GET", headers: { "Authorization": auth.authHeader } },
+      10000
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const status = data.whatsapp?.status || data.status || "unknown";
+      console.log(`[whatsapp-template] Approval response:`, JSON.stringify(data).substring(0, 300));
+      return status;
+    }
+  } catch (e) {
+    console.error("[whatsapp-template] Status check error:", e);
+  }
+  return "unknown";
+}
+
+export async function initWhatsAppTemplates(): Promise<void> {
+  if (templateInitPromise) return templateInitPromise;
+  templateInitPromise = (async () => {
+    try {
+      const sid = await findOrCreateLeadTemplate();
+      if (sid) {
+        cachedLeadTemplateSid = sid;
+        const status = await checkTemplateApprovalStatus(sid);
+        templateApproved = status === "approved";
+        console.log(`[whatsapp-template] Lead notification template: ${sid} (approval: ${status}, usable: ${templateApproved})`);
+      }
+    } catch (e) {
+      console.error("[whatsapp-template] Init error:", e);
+    }
+  })();
+  return templateInitPromise;
+}
+
+async function refreshTemplateStatus(): Promise<void> {
+  if (!cachedLeadTemplateSid || templateApproved) return;
+  const status = await checkTemplateApprovalStatus(cachedLeadTemplateSid);
+  templateApproved = status === "approved";
+  if (templateApproved) {
+    console.log(`[whatsapp-template] Template now approved!`);
+  }
+}
+
+export async function sendWhatsAppMessage(toNumber: string, body: string): Promise<boolean> {
+  const auth = await getTwilioAuth();
+  if (!auth) {
     console.error("[whatsapp] Missing TWILIO credentials");
     return false;
   }
@@ -88,12 +228,12 @@ export async function sendWhatsAppMessage(toNumber: string, body: string): Promi
   const to = `whatsapp:${toNumber.startsWith("+") ? toNumber : "+" + toNumber}`;
 
   try {
-    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${auth.accountSid}/Messages.json`;
     const params = new URLSearchParams({ To: to, From: fromNumber, Body: body });
     const res = await fetchWithTimeout(url, {
       method: "POST",
       headers: {
-        "Authorization": "Basic " + Buffer.from(`${accountSid}:${authToken}`).toString("base64"),
+        "Authorization": auth.authHeader,
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: params.toString(),
@@ -115,6 +255,77 @@ export async function sendWhatsAppMessage(toNumber: string, body: string): Promi
     console.error("[whatsapp] Error:", e);
     return false;
   }
+}
+
+export async function sendWhatsAppTemplateNotification(
+  toNumber: string,
+  businessName: string,
+  leadName: string,
+  leadPhone: string,
+  leadEmail: string
+): Promise<boolean> {
+  const auth = await getTwilioAuth();
+  if (!auth) {
+    console.error("[whatsapp] Missing TWILIO credentials");
+    return false;
+  }
+
+  const cleanedTo = toNumber.replace(/[\s\-\+\(\)]/g, "");
+  if (!isAllowedDestination(cleanedTo)) {
+    console.warn(`[whatsapp-geofence] Blocked outbound to disallowed destination: ${toNumber}`);
+    return false;
+  }
+
+  const fromNumber = "whatsapp:+12792030206";
+  const to = `whatsapp:${toNumber.startsWith("+") ? toNumber : "+" + toNumber}`;
+  const url = `https://api.twilio.com/2010-04-01/Accounts/${auth.accountSid}/Messages.json`;
+
+  if (!templateApproved && cachedLeadTemplateSid) {
+    await refreshTemplateStatus();
+  }
+
+  if (cachedLeadTemplateSid && templateApproved) {
+    try {
+      const params = new URLSearchParams({
+        To: to,
+        From: fromNumber,
+        ContentSid: cachedLeadTemplateSid,
+        ContentVariables: JSON.stringify({
+          "1": businessName || "Your Business",
+          "2": leadName || "—",
+          "3": leadPhone || "—",
+          "4": leadEmail || "—",
+        }),
+      });
+      const res = await fetchWithTimeout(url, {
+        method: "POST",
+        headers: {
+          "Authorization": auth.authHeader,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: params.toString(),
+      }, 15000);
+      const responseBody = await res.text();
+      if (res.ok) {
+        try {
+          const parsed = JSON.parse(responseBody);
+          console.log(`[whatsapp-template] Notification sent to ${toNumber} | SID: ${parsed.sid} | Status: ${parsed.status}`);
+        } catch {
+          console.log(`[whatsapp-template] Notification sent to ${toNumber}`);
+        }
+        return true;
+      } else {
+        console.warn(`[whatsapp-template] Template send failed (${res.status}), falling back to regular message:`, responseBody);
+      }
+    } catch (e) {
+      console.warn("[whatsapp-template] Template send error, falling back:", e);
+    }
+  } else {
+    console.log(`[whatsapp] Template not yet approved (approved=${templateApproved}), using regular message`);
+  }
+
+  const body = `*New Lead — ${businessName}*\n\nName: ${leadName || "—"}\nPhone: ${leadPhone || "—"}\nEmail: ${leadEmail || "—"}\n\n_Sent by Arya AI_`;
+  return sendWhatsAppMessage(toNumber, body);
 }
 
 export async function runDailySummaries() {
