@@ -1573,11 +1573,63 @@ Your Role - AI Receptionist:
     }
   });
 
+  app.get("/api/owner-chat/sessions", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const sessions = await storage.getOwnerChatSessions(userId);
+      res.json({ sessions });
+    } catch (err: any) {
+      console.error("Owner chat sessions error:", err?.message);
+      res.status(500).json({ error: "Failed to load sessions" });
+    }
+  });
+
+  app.post("/api/owner-chat/sessions", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const { title } = req.body || {};
+      const session = await storage.createOwnerChatSession(userId, title || "New chat");
+      res.json({ session });
+    } catch (err: any) {
+      console.error("Create session error:", err?.message);
+      res.status(500).json({ error: "Failed to create session" });
+    }
+  });
+
+  app.patch("/api/owner-chat/sessions/:sessionId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      const { title } = req.body;
+      if (!title) return res.status(400).json({ error: "Title required" });
+      await storage.updateOwnerChatSessionTitle(req.params.sessionId, userId, title);
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("Update session error:", err?.message);
+      res.status(500).json({ error: "Failed to update session" });
+    }
+  });
+
+  app.delete("/api/owner-chat/sessions/:sessionId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+      await storage.deleteOwnerChatSession(req.params.sessionId, userId);
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("Delete session error:", err?.message);
+      res.status(500).json({ error: "Failed to delete session" });
+    }
+  });
+
   app.get("/api/owner-chat/history", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req);
       if (!userId) return res.status(401).json({ error: "Unauthorized" });
-      const messages = await storage.getOwnerChatHistory(userId, 100);
+      const sessionId = req.query.sessionId as string | undefined;
+      const messages = await storage.getOwnerChatHistory(userId, 100, sessionId);
       res.json({ messages });
     } catch (err: any) {
       console.error("Owner chat history error:", err?.message);
@@ -1595,6 +1647,7 @@ Your Role - AI Receptionist:
       if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
       const message = req.body.message || "";
+      const sessionId = req.body.sessionId || null;
       const uploadedFiles = (req.files as Express.Multer.File[]) || [];
       if (!message?.trim() && uploadedFiles.length === 0) return res.status(400).json({ error: "Message or file required" });
 
@@ -1605,7 +1658,7 @@ Your Role - AI Receptionist:
       let profile = await storage.getSmartProfileByUserId(userId);
       let profileAutoCreated = false;
 
-      const preHistory = await storage.getOwnerChatHistory(userId, 50);
+      const preHistory = await storage.getOwnerChatHistory(userId, 50, sessionId || undefined);
       const preUserMsgCount = preHistory.filter(m => m.role === "user").length;
 
       if (!profile && preUserMsgCount >= 3) {
@@ -1689,7 +1742,7 @@ Profile Active: ${profile.isActive ? "Yes" : "No"}
 Onboarding Complete: ${profile.onboardingComplete ? "Yes" : "No"}`;
       }
 
-      const history = await storage.getOwnerChatHistory(userId, 50);
+      const history = await storage.getOwnerChatHistory(userId, 50, sessionId || undefined);
       const chatHistory = history.slice(-20).map(m => ({
         role: m.role as "user" | "model",
         parts: [{ text: m.content }],
@@ -1722,7 +1775,7 @@ Onboarding Complete: ${profile.onboardingComplete ? "Yes" : "No"}`;
         const fileTags = fileUrls.map(u => `[file:${u}]`).join(" ");
         savedContent = `${fileTags} ${savedContent}`.trim();
       }
-      await storage.createOwnerChatMessage({ userId, role: "user", content: savedContent });
+      await storage.createOwnerChatMessage({ userId, role: "user", content: savedContent, sessionId });
 
       let updateApplied = false;
       let noProfile = false;
@@ -2188,7 +2241,7 @@ Your capabilities:
 
       const reply = result.text || "Sorry, I couldn't process that. Please try again.";
 
-      await storage.createOwnerChatMessage({ userId, role: "model", content: reply });
+      await storage.createOwnerChatMessage({ userId, role: "model", content: reply, sessionId });
 
       if (noProfile && !profile) {
         console.log(`[discovery] User ${userId} still has no profile after ${preUserMsgCount + 1} user messages — pre-creation will handle on next request`);

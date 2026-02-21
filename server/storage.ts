@@ -7,10 +7,11 @@ import {
   type WidgetMessage, type InsertWidgetMessage,
   type SmartProfile, type InsertSmartProfile,
   type OwnerChatMessage, type InsertOwnerChatMessage,
+  type OwnerChatSession, type InsertOwnerChatSession,
   type GlobalKnowledgeBase,
   profiles, recordings, transactions, vouchers,
   voiceDonations, widgetMessages, smartProfiles, ownerChatMessages,
-  globalKnowledgeBase,
+  ownerChatSessions, globalKnowledgeBase,
 } from "@shared/schema";
 import { users } from "@shared/models/auth";
 import { db } from "./db";
@@ -54,7 +55,11 @@ export interface IStorage {
   createSmartProfile(profile: InsertSmartProfile): Promise<SmartProfile>;
   updateSmartProfile(id: string, data: Partial<InsertSmartProfile>): Promise<SmartProfile>;
 
-  getOwnerChatHistory(userId: string, limit?: number): Promise<OwnerChatMessage[]>;
+  getOwnerChatSessions(userId: string): Promise<OwnerChatSession[]>;
+  createOwnerChatSession(userId: string, title?: string): Promise<OwnerChatSession>;
+  updateOwnerChatSessionTitle(sessionId: string, userId: string, title: string): Promise<void>;
+  deleteOwnerChatSession(sessionId: string, userId: string): Promise<void>;
+  getOwnerChatHistory(userId: string, limit?: number, sessionId?: string): Promise<OwnerChatMessage[]>;
   createOwnerChatMessage(message: InsertOwnerChatMessage): Promise<OwnerChatMessage>;
 
   getGlobalKnowledgeBase(): Promise<string | null>;
@@ -384,7 +389,37 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(voiceDonations).orderBy(desc(voiceDonations.createdAt)).limit(200);
   }
 
-  async getOwnerChatHistory(userId: string, limit = 50): Promise<OwnerChatMessage[]> {
+  async getOwnerChatSessions(userId: string): Promise<OwnerChatSession[]> {
+    return db.select().from(ownerChatSessions)
+      .where(eq(ownerChatSessions.userId, userId))
+      .orderBy(desc(ownerChatSessions.lastMessageAt));
+  }
+
+  async createOwnerChatSession(userId: string, title = "New chat"): Promise<OwnerChatSession> {
+    const [created] = await db.insert(ownerChatSessions).values({ userId, title }).returning();
+    return created;
+  }
+
+  async updateOwnerChatSessionTitle(sessionId: string, userId: string, title: string): Promise<void> {
+    await db.update(ownerChatSessions).set({ title })
+      .where(sql`${ownerChatSessions.id} = ${sessionId} AND ${ownerChatSessions.userId} = ${userId}`);
+  }
+
+  async deleteOwnerChatSession(sessionId: string, userId: string): Promise<void> {
+    const [session] = await db.select().from(ownerChatSessions)
+      .where(sql`${ownerChatSessions.id} = ${sessionId} AND ${ownerChatSessions.userId} = ${userId}`);
+    if (!session) return;
+    await db.delete(ownerChatMessages).where(eq(ownerChatMessages.sessionId, sessionId));
+    await db.delete(ownerChatSessions).where(eq(ownerChatSessions.id, sessionId));
+  }
+
+  async getOwnerChatHistory(userId: string, limit = 50, sessionId?: string): Promise<OwnerChatMessage[]> {
+    if (sessionId) {
+      return db.select().from(ownerChatMessages)
+        .where(sql`${ownerChatMessages.userId} = ${userId} AND ${ownerChatMessages.sessionId} = ${sessionId}`)
+        .orderBy(ownerChatMessages.createdAt)
+        .limit(limit);
+    }
     return db.select().from(ownerChatMessages)
       .where(eq(ownerChatMessages.userId, userId))
       .orderBy(ownerChatMessages.createdAt)
@@ -393,6 +428,9 @@ export class DatabaseStorage implements IStorage {
 
   async createOwnerChatMessage(message: InsertOwnerChatMessage): Promise<OwnerChatMessage> {
     const [created] = await db.insert(ownerChatMessages).values(message).returning();
+    if (message.sessionId) {
+      await db.update(ownerChatSessions).set({ lastMessageAt: new Date() }).where(eq(ownerChatSessions.id, message.sessionId));
+    }
     return created;
   }
 

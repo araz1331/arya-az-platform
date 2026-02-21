@@ -166,9 +166,27 @@ export const insertTelegramConversationSchema = createInsertSchema(telegramConve
 export type InsertTelegramConversation = z.infer<typeof insertTelegramConversationSchema>;
 export type TelegramConversation = typeof telegramConversations.$inferSelect;
 
+export const ownerChatSessions = pgTable("owner_chat_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  title: text("title").default("New chat"),
+  createdAt: timestamp("created_at").defaultNow(),
+  lastMessageAt: timestamp("last_message_at").defaultNow(),
+});
+
+export const insertOwnerChatSessionSchema = createInsertSchema(ownerChatSessions).omit({
+  id: true,
+  createdAt: true,
+  lastMessageAt: true,
+});
+
+export type InsertOwnerChatSession = z.infer<typeof insertOwnerChatSessionSchema>;
+export type OwnerChatSession = typeof ownerChatSessions.$inferSelect;
+
 export const ownerChatMessages = pgTable("owner_chat_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
+  sessionId: varchar("session_id"),
   role: text("role").notNull(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
