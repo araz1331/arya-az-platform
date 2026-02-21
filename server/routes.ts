@@ -526,9 +526,11 @@ export async function registerRoutes(
               ORDER BY created_at ASC
             `);
             const userMsgs = allMsgs.rows.filter((m: any) => m.role === "user");
+            console.log(`[crm-auto] Profile ${profile?.slug}: userMsgs=${userMsgs.length}, hasAltegio=${!!hasAltegio}, hasWebhook=${!!hasWebhook}, hasWhatsApp=${!!hasWhatsApp}`);
             if (userMsgs.length >= 2) {
               const convoText = allMsgs.rows.map((m: any) => `${m.role}: ${m.content}`).join("\n");
               const hasContact = /(\+?\d[\d\s\-()]{7,})|(\b\d{10,}\b)/.test(convoText);
+              console.log(`[crm-auto] Contact detected: ${hasContact}`);
               if (hasContact) {
                 if (hasAltegio) {
                   const alreadySent = await db.execute(sql`
@@ -569,7 +571,7 @@ export async function registerRoutes(
                           console.error(`[altegio-auto] Failed for ${profile!.slug}:`, altRes.status);
                         }
                       }
-                    } catch {}
+                    } catch (altErr) { console.error("[altegio-auto] Parse/send error:", altErr); }
                   }
                 }
 
@@ -612,7 +614,7 @@ export async function registerRoutes(
                           console.error(`[webhook-auto] Failed for ${profile!.slug}:`, whRes.status);
                         }
                       }
-                    } catch {}
+                    } catch (whErr) { console.error("[webhook-auto] Parse/send error:", whErr); }
                   }
                 }
 
@@ -630,6 +632,7 @@ export async function registerRoutes(
                     try {
                       const raw = extractResult.text?.trim() || "{}";
                       const json = JSON.parse(raw.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
+                      console.log(`[crm-auto] WhatsApp extract result: name=${json.name}, phone=${json.phone}, email=${json.email}`);
                       if (json.name || json.phone || json.email) {
                         const sent = await sendWhatsAppNotification(
                           profile!.whatsappNumber!,
@@ -638,6 +641,7 @@ export async function registerRoutes(
                           json.email || "",
                           profile!.businessName
                         );
+                        console.log(`[crm-auto] WhatsApp notification sent: ${sent}`);
                         if (sent) {
                           await storage.createWidgetMessage({
                             profileId, sessionId, role: "system",
@@ -646,7 +650,7 @@ export async function registerRoutes(
                           });
                         }
                       }
-                    } catch {}
+                    } catch (waErr) { console.error("[whatsapp-auto] Parse/send error:", waErr); }
                   }
                 }
               }
