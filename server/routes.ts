@@ -538,7 +538,7 @@ export async function registerRoutes(
                   `);
                   if (!alreadySent.rows.length) {
                     const extractResult = await gemini.models.generateContent({
-                      model: "gemini-2.0-flash",
+                      model: "gemini-2.5-flash",
                       contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON: {"name":"","phone":"","comment":""}.\n\n${convoText}`,
                     });
                     try {
@@ -581,7 +581,7 @@ export async function registerRoutes(
                   `);
                   if (!alreadySentWh.rows.length) {
                     const extractResult = await gemini.models.generateContent({
-                      model: "gemini-2.0-flash",
+                      model: "gemini-2.5-flash",
                       contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON: {"name":"","phone":"","email":"","comment":""}.\n\n${convoText}`,
                     });
                     try {
@@ -624,7 +624,7 @@ export async function registerRoutes(
                   `);
                   if (!alreadySentWa.rows.length) {
                     const extractResult = await gemini.models.generateContent({
-                      model: "gemini-2.0-flash",
+                      model: "gemini-2.5-flash",
                       contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON: {"name":"","phone":"","email":"","comment":""}.\n\n${convoText}`,
                     });
                     try {
@@ -2615,7 +2615,7 @@ Output the complete merged knowledge base. Output ONLY the text, nothing else.`;
         .join("\n");
 
       const extractResult = await gemini.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON with these fields: {"name": "client name or empty string", "phone": "phone number or empty string", "comment": "brief summary of what they want"}. Do not include any other text.\n\nConversation:\n${conversationText}`,
       });
 
@@ -2772,7 +2772,7 @@ Output the complete merged knowledge base. Output ONLY the text, nothing else.`;
       const conversationText = messages.rows.map((m: any) => `${m.role}: ${m.content}`).join("\n");
 
       const extractResult = await gemini.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON with these fields: {"name": "client name or empty string", "phone": "phone number or empty string", "email": "email or empty string", "comment": "brief summary of what they want"}. Do not include any other text.\n\nConversation:\n${conversationText}`,
       });
 
@@ -3022,7 +3022,7 @@ Output the complete merged knowledge base. Output ONLY the text, nothing else.`;
       const conversationText = messages.rows.map((m: any) => `${m.role}: ${m.content}`).join("\n");
 
       const extractResult = await gemini.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON: {"name":"","phone":"","email":"","comment":""}.\n\n${conversationText}`,
       });
 

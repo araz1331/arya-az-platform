@@ -402,7 +402,7 @@ async function detectAndNotifyLead(
 
   try {
     const extractResult = await gemini.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON: {"name":"","phone":"","email":""}.\n\n${convoText}`,
     });
     const raw = extractResult.text?.trim() || "{}";

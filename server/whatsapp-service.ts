@@ -225,7 +225,7 @@ export async function runFollowUps() {
 
         try {
           const extractResult = await gemini.models.generateContent({
-            model: "gemini-2.0-flash",
+            model: "gemini-2.5-flash",
             contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON: {"name":"","phone":"","email":""}.\n\n${convoText}`,
           });
           const raw = extractResult.text?.trim() || "{}";
@@ -633,7 +633,7 @@ Your Role:
           if (!alreadyNotified.rows.length) {
             try {
               const extractResult = await gemini.models.generateContent({
-                model: "gemini-2.0-flash",
+                model: "gemini-2.5-flash",
                 contents: `Extract the client's contact information from this conversation. Return ONLY valid JSON: {"name":"","phone":"","email":""}.\n\n${convoText}`,
               });
               const raw = extractResult.text?.trim() || "{}";
@@ -683,7 +683,7 @@ export async function detectAndSendAppointmentConfirmation(profileId: string, se
     if (alreadySent.rows.length) return;
 
     const extractResult = await gemini.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       contents: `This is a conversation between a customer and an AI receptionist. Does the conversation contain a booking/appointment request WITH the customer's phone number? If yes, extract: {"hasBooking":true,"name":"","phone":"","details":"brief description of what they want to book"}. If no booking, return {"hasBooking":false}. Return ONLY valid JSON.\n\n${convoText}`,
     });
 
