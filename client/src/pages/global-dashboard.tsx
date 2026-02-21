@@ -89,6 +89,8 @@ function AnalyticsSummary({ profileId, t }: { profileId: string; t: (key: any) =
   const { data, isLoading } = useQuery<AnalyticsData>({
     queryKey: ["/api/smart-profile/analytics"],
     enabled: !!profileId,
+    staleTime: 30000,
+    refetchInterval: 30000,
   });
 
   if (isLoading || !data || data.totalMessages === 0) return null;
@@ -121,11 +123,14 @@ function LeadsPanel({ profileId, t }: { profileId: string; t: (key: any) => stri
   const { data: leads = [], isLoading } = useQuery<LeadSession[]>({
     queryKey: ["/api/smart-profile/leads"],
     enabled: !!profileId,
+    staleTime: 30000,
+    refetchInterval: 30000,
   });
 
   const { data: messages = [] } = useQuery<LeadMessage[]>({
     queryKey: ["/api/smart-profile/leads", selectedSession],
     enabled: !!selectedSession,
+    staleTime: 10000,
   });
 
   if (isLoading) {
