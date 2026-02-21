@@ -36,7 +36,9 @@ export function useAuth() {
       });
     },
     onSuccess: () => {
-      queryClient.clear();
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== "/api/auth/user",
+      });
       queryClient.setQueryData(["/api/auth/user"], null);
     },
   });

@@ -40,9 +40,11 @@ export default function AuthPage({ onBack }: { onBack: () => void }) {
       const res = await apiRequest("POST", "/api/auth/login", { email, password });
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.clear();
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    onSuccess: (userData) => {
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== "/api/auth/user",
+      });
+      queryClient.setQueryData(["/api/auth/user"], userData);
     },
     onError: (err: any) => {
       const msg = extractErrorMessage(err);
@@ -60,9 +62,11 @@ export default function AuthPage({ onBack }: { onBack: () => void }) {
       });
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.clear();
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    onSuccess: (userData) => {
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== "/api/auth/user",
+      });
+      queryClient.setQueryData(["/api/auth/user"], userData);
     },
     onError: (err: any) => {
       const msg = extractErrorMessage(err);
