@@ -115,6 +115,7 @@ export const smartProfiles = pgTable("smart_profiles", {
   whatsappFollowupHours: integer("whatsapp_followup_hours").notNull().default(24),
   whatsappAppointmentConfirm: boolean("whatsapp_appointment_confirm").notNull().default(false),
   whatsappPin: text("whatsapp_pin"),
+  telegramChatEnabled: boolean("telegram_chat_enabled").notNull().default(false),
   isMaster: boolean("is_master").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -146,6 +147,24 @@ export const insertWhatsappConversationSchema = createInsertSchema(whatsappConve
 
 export type InsertWhatsappConversation = z.infer<typeof insertWhatsappConversationSchema>;
 export type WhatsappConversation = typeof whatsappConversations.$inferSelect;
+
+export const telegramConversations = pgTable("telegram_conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  profileId: varchar("profile_id").notNull(),
+  telegramChatId: text("telegram_chat_id").notNull(),
+  sessionId: text("session_id").notNull(),
+  lastInboundAt: timestamp("last_inbound_at"),
+  lastOutboundAt: timestamp("last_outbound_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertTelegramConversationSchema = createInsertSchema(telegramConversations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTelegramConversation = z.infer<typeof insertTelegramConversationSchema>;
+export type TelegramConversation = typeof telegramConversations.$inferSelect;
 
 export const ownerChatMessages = pgTable("owner_chat_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
