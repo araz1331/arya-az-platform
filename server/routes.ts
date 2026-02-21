@@ -4,7 +4,7 @@ import { setupSession, registerAuthRoutes, isAuthenticated, getUserId } from "./
 import { storage } from "./storage";
 import { db } from "./db";
 import { users } from "@shared/models/auth";
-import { smartProfiles } from "@shared/schema";
+import { smartProfiles, ownerChatMessages } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import multer from "multer";
 import { GoogleGenAI } from "@google/genai";
@@ -1621,6 +1621,32 @@ Your Role - AI Receptionist:
     } catch (err: any) {
       console.error("Delete session error:", err?.message);
       res.status(500).json({ error: "Failed to delete session" });
+    }
+  });
+
+  app.post("/api/owner-chat/sessions/migrate-orphans", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const orphanMessages = await storage.getOwnerChatHistory(userId, 200);
+      const orphans = orphanMessages.filter(m => !m.sessionId);
+      if (orphans.length === 0) {
+        return res.json({ migrated: 0 });
+      }
+
+      const firstMsg = orphans.find(m => m.role === "user");
+      const title = firstMsg ? firstMsg.content.slice(0, 40).replace(/\n/g, " ").trim() : "Previous chats";
+      const session = await storage.createOwnerChatSession(userId, title);
+
+      await db.update(ownerChatMessages)
+        .set({ sessionId: session.id })
+        .where(sql`${ownerChatMessages.userId} = ${userId} AND ${ownerChatMessages.sessionId} IS NULL`);
+
+      res.json({ session, migrated: orphans.length });
+    } catch (err: any) {
+      console.error("Migrate orphans error:", err?.message);
+      res.status(500).json({ error: "Failed to migrate" });
     }
   });
 

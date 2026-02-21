@@ -98,11 +98,14 @@ export default function OwnerAssistant({ autoOpen = false, inline = false }: { a
     if (userJustSentRef.current) {
       userJustSentRef.current = false;
       textareaRef.current?.focus();
+      container.scrollTop = container.scrollHeight;
       return;
     }
     const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
     if (isNearBottom) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+      });
     }
   }, [messages]);
 
@@ -120,12 +123,18 @@ export default function OwnerAssistant({ autoOpen = false, inline = false }: { a
 
   const loadSessions = async () => {
     try {
+      const migrateRes = await fetch("/api/owner-chat/sessions/migrate-orphans", {
+        method: "POST",
+        credentials: "include",
+      });
+
       const res = await fetch("/api/owner-chat/sessions", { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
-        setSessions(data.sessions || []);
-        if (data.sessions?.length > 0 && !activeSessionId) {
-          setActiveSessionId(data.sessions[0].id);
+        const loadedSessions: Session[] = data.sessions || [];
+        setSessions(loadedSessions);
+        if (loadedSessions.length > 0 && !activeSessionId) {
+          setActiveSessionId(loadedSessions[0].id);
         }
       }
       setSessionsLoaded(true);
