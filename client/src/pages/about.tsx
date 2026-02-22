@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Waves, Globe, ArrowLeft } from "lucide-react";
+import { Waves, Globe, ArrowLeft, MessageCircle, Rocket } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
@@ -147,6 +147,33 @@ export default function AboutPage() {
             <p>{t("aboutP6")}</p>
             <p>{t("aboutP7")}</p>
             <p className="text-xl sm:text-2xl font-bold text-white pt-4">{t("aboutSignoff")}</p>
+          </motion.div>
+
+          <motion.div variants={fadeInUp} className="mt-10 pt-8 border-t border-white/10">
+            <p className="text-white/80 text-base sm:text-lg leading-relaxed mb-5">
+              I didn't build Arya alone. I built her with her own help. Want to see?
+            </p>
+            <a
+              href="/u/arazio"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium transition-all hover:scale-[1.02]"
+              data-testid="link-ask-arya"
+            >
+              <MessageCircle className="w-5 h-5" />
+              Ask Arya how we did it
+            </a>
+          </motion.div>
+
+          <motion.div variants={fadeInUp} className="mt-8">
+            <a
+              href="https://www.producthunt.com/products/arya-2?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-arya-2"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 px-5 py-3 rounded-xl bg-[#ff6154]/10 border border-[#ff6154]/30 hover:bg-[#ff6154]/20 transition-all hover:scale-[1.02]"
+              data-testid="link-about-product-hunt"
+            >
+              <Rocket className="w-5 h-5 text-[#ff6154]" />
+              <span className="text-white/90 text-sm font-medium">We're live on Product Hunt! Upvote us</span>
+            </a>
           </motion.div>
         </motion.div>
       </section>

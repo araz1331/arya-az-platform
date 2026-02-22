@@ -872,6 +872,18 @@ export default function SmartProfile({ slug, onBack, allowOwnerMode = false }: {
       )}
 
       <div className="flex-1 overflow-y-auto px-4 py-3 -mt-2 space-y-3 pb-36 z-0" data-testid="smart-messages">
+        {slug === "arazio" && (
+          <a
+            href="https://www.producthunt.com/products/arya-2"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#ff6154]/10 border border-[#ff6154]/20 text-sm text-[#ff6154] hover:bg-[#ff6154]/20 transition-colors mx-auto w-fit"
+            data-testid="link-ph-banner-chat"
+          >
+            <svg width="16" height="16" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="20" fill="#FF6154"/><path d="M22.6 13H16v14h4v-4h2.6c3.53 0 6.4-2.24 6.4-5s-2.87-5-6.4-5zm0 6H20v-2h2.6c.88 0 1.4.45 1.4 1s-.52 1-1.4 1z" fill="#fff"/></svg>
+            We're on Product Hunt — upvote us!
+          </a>
+        )}
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             {m.role === "user" && editingIndex === i ? (
