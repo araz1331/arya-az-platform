@@ -154,6 +154,22 @@ export default function GlobalHome() {
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  useEffect(() => {
+    const hasStored = localStorage.getItem("arya_global_lang");
+    if (hasStored) return;
+    const geoMap: Record<string, GlobalLanguage> = { AZ: "az", UZ: "uz", KZ: "kk" };
+    fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) })
+      .then(r => r.json())
+      .then(data => {
+        const mapped = geoMap[data?.country_code?.toUpperCase()];
+        if (mapped) {
+          setLangState(mapped);
+          setStoredGlobalLanguage(mapped);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const toggleMute = useCallback(() => {
     if (videoRef.current) {
       videoRef.current.muted = !videoRef.current.muted;

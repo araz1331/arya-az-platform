@@ -1,5 +1,11 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import { type Language, type TranslationKey, t as translate, getStoredLanguage, setStoredLanguage } from "@/lib/i18n";
+
+const COUNTRY_TO_LANG: Record<string, Language> = {
+  AZ: "az",
+  UZ: "uz",
+  KZ: "kk",
+};
 
 interface LanguageContextType {
   language: Language;
@@ -11,6 +17,23 @@ const LanguageContext = createContext<LanguageContextType | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLang] = useState<Language>(getStoredLanguage);
+
+  useEffect(() => {
+    const hasStored = typeof window !== "undefined" && localStorage.getItem("arya_lang");
+    if (hasStored) return;
+
+    fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) })
+      .then(r => r.json())
+      .then(data => {
+        const code = data?.country_code?.toUpperCase();
+        const lang = COUNTRY_TO_LANG[code];
+        if (lang) {
+          setLang(lang);
+          setStoredLanguage(lang);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const setLanguage = useCallback((lang: Language) => {
     setLang(lang);
