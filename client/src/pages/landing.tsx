@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
+import aryaUzVideo from "@assets/Arya_UZ_1771751992292.mp4";
 import { LanguageSelector } from "@/components/language-selector";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -20,7 +21,7 @@ const stagger = {
 };
 
 export default function Landing({ onStart, onLogin, onDemoClick }: { onStart: () => void; onLogin?: () => void; onDemoClick?: (slug: string) => void }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { data: stats } = useQuery<{ totalUsers: number; totalRecordings: number; totalHours: number }>({
     queryKey: ["/api/stats"],
   });
@@ -159,6 +160,7 @@ export default function Landing({ onStart, onLogin, onDemoClick }: { onStart: ()
               <div className="rounded-md overflow-hidden shadow-2xl">
                 <video
                   ref={videoRef}
+                  key={language}
                   autoPlay
                   loop
                   muted
@@ -166,7 +168,7 @@ export default function Landing({ onStart, onLogin, onDemoClick }: { onStart: ()
                   className="w-full block"
                   data-testid="video-hero-intro"
                 >
-                  <source src="/intro.mp4" type="video/mp4" />
+                  <source src={language === "uz" ? aryaUzVideo : "/intro.mp4"} type="video/mp4" />
                 </video>
               </div>
               <button
