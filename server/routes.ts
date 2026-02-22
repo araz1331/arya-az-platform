@@ -189,6 +189,42 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/contact", async (req: Request, res: Response) => {
+    try {
+      const { name, email, message } = req.body;
+      if (!name?.trim() || !email?.trim() || !message?.trim()) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS contact_messages (
+          id SERIAL PRIMARY KEY,
+          name TEXT NOT NULL,
+          email TEXT NOT NULL,
+          message TEXT NOT NULL,
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+      `);
+      await db.execute(sql`
+        INSERT INTO contact_messages (name, email, message)
+        VALUES (${name.trim()}, ${email.trim()}, ${message.trim()})
+      `);
+      console.log(`[contact] New message from ${name} <${email}>: ${message.substring(0, 100)}`);
+
+      try {
+        const { sendWhatsAppMessage } = await import("./whatsapp-service");
+        const adminNumber = process.env.ADMIN_WHATSAPP_NUMBER;
+        if (adminNumber) {
+          await sendWhatsAppMessage(adminNumber, `📩 New Contact Form Message\n\nFrom: ${name}\nEmail: ${email}\n\nMessage:\n${message}`);
+        }
+      } catch {}
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Contact form error:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
   app.get("/api/geo", async (req: Request, res: Response) => {
     try {
       const isDev = process.env.NODE_ENV === "development";

@@ -7,7 +7,7 @@ import {
   Globe, Wrench, GraduationCap, UtensilsCrossed, Camera, Paintbrush, Link2,
   ChevronDown, ArrowRight, Check, Waves, MessageSquare, Zap, Star, Quote,
   Settings, Languages, UserPlus, Code, Mic, BarChart3, Volume2, VolumeX,
-  Flame, ShieldCheck, Crown, AlertTriangle, Lock, PlugZap, Smartphone, X, Send
+  Flame, ShieldCheck, Crown, AlertTriangle, Lock, PlugZap, Smartphone, X, Send, Mail, Loader2
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -156,6 +156,10 @@ export default function GlobalHome() {
   const [yearly, setYearly] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [contactForm, setContactForm] = useState({ name: "", email: "", message: "" });
+  const [contactSending, setContactSending] = useState(false);
+  const [contactSent, setContactSent] = useState(false);
 
   useEffect(() => {
     const hasStored = localStorage.getItem("arya_global_lang");
@@ -188,6 +192,23 @@ export default function GlobalHome() {
     setLangState(l);
     setStoredGlobalLanguage(l);
   }, []);
+
+  const handleContactSubmit = async () => {
+    if (!contactForm.name.trim() || !contactForm.email.trim() || !contactForm.message.trim()) return;
+    setContactSending(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(contactForm),
+      });
+      if (res.ok) {
+        setContactSent(true);
+        setContactForm({ name: "", email: "", message: "" });
+      }
+    } catch {}
+    setContactSending(false);
+  };
 
   const t = useCallback((key: Parameters<typeof gt>[1]) => gt(lang, key), [lang]);
 
@@ -961,6 +982,10 @@ export default function GlobalHome() {
             </div>
             <div className="flex flex-wrap gap-6 text-sm">
               <a href="/about" className="text-muted-foreground hover:text-foreground transition-colors" data-testid="link-footer-about">{t("navOurStory")}</a>
+              <button onClick={() => { setContactOpen(true); setContactSent(false); }} className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1" data-testid="button-contact-us">
+                <Mail className="w-3.5 h-3.5" />
+                Contact Us
+              </button>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t">
@@ -978,6 +1003,70 @@ export default function GlobalHome() {
           </div>
         </div>
       </footer>
+
+      {contactOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setContactOpen(false)}>
+          <Card className="w-full max-w-md p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <Mail className="w-5 h-5 text-primary" />
+                Contact Us
+              </h3>
+              <button onClick={() => setContactOpen(false)} className="text-muted-foreground hover:text-foreground" data-testid="button-contact-close">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {contactSent ? (
+              <div className="text-center py-8 space-y-3">
+                <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
+                  <Check className="w-6 h-6 text-green-600" />
+                </div>
+                <p className="font-medium">Message sent!</p>
+                <p className="text-sm text-muted-foreground">We'll get back to you soon.</p>
+                <Button variant="outline" size="sm" onClick={() => setContactOpen(false)} data-testid="button-contact-done">Close</Button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Your name"
+                    value={contactForm.name}
+                    onChange={(e) => setContactForm(f => ({ ...f, name: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    data-testid="input-contact-name"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Your email"
+                    value={contactForm.email}
+                    onChange={(e) => setContactForm(f => ({ ...f, email: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-md border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    data-testid="input-contact-email"
+                  />
+                  <textarea
+                    placeholder="Your message..."
+                    rows={4}
+                    value={contactForm.message}
+                    onChange={(e) => setContactForm(f => ({ ...f, message: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-md border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    data-testid="input-contact-message"
+                  />
+                </div>
+                <Button
+                  className="w-full gap-2"
+                  disabled={contactSending || !contactForm.name.trim() || !contactForm.email.trim() || !contactForm.message.trim()}
+                  onClick={handleContactSubmit}
+                  data-testid="button-contact-send"
+                >
+                  {contactSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Send Message
+                </Button>
+              </>
+            )}
+          </Card>
+        </div>
+      )}
 
       <FloatingAryaChat lang={lang} />
     </div>
