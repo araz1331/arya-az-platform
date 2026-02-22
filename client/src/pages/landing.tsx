@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
 import aryaUzVideo from "@assets/Arya_UZ_1771751992292.mp4";
+import aryaKkVideo from "@assets/Arya_KZ_1771752451761.mp4";
 import { LanguageSelector } from "@/components/language-selector";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -168,7 +169,7 @@ export default function Landing({ onStart, onLogin, onDemoClick }: { onStart: ()
                   className="w-full block"
                   data-testid="video-hero-intro"
                 >
-                  <source src={language === "uz" ? aryaUzVideo : "/intro.mp4"} type="video/mp4" />
+                  <source src={language === "uz" ? aryaUzVideo : language === "kk" ? aryaKkVideo : "/intro.mp4"} type="video/mp4" />
                 </video>
               </div>
               <button
