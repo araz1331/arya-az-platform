@@ -917,8 +917,9 @@ export async function registerRoutes(
         return res.status(404).json({ message: "User has no smart profile yet. They need to create one first." });
       }
 
-      const proExpiresAt = isPro && days
+      const proExpiresAt = isPro && days && days > 0
         ? new Date(Date.now() + days * 24 * 60 * 60 * 1000)
+        : isPro && (!days || days === 0) ? null
         : isPro ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null;
 
       await storage.updateSmartProfile(profile.id, {

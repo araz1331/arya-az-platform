@@ -345,9 +345,9 @@ function UsersTab({ users, isLoading }: { users: AdminUser[]; isLoading: boolean
           )}
           {!proDialog.currentPro && (
             <div className="space-y-2">
-              <label className="text-sm font-medium">Duration (days)</label>
+              <label className="text-sm font-medium">Duration</label>
               <div className="flex items-center gap-2 flex-wrap">
-                {["7", "30", "90", "365"].map((d) => (
+                {["7", "30", "90", "365", "0"].map((d) => (
                   <Button
                     key={d}
                     variant={proDays === d ? "default" : "outline"}
@@ -355,7 +355,7 @@ function UsersTab({ users, isLoading }: { users: AdminUser[]; isLoading: boolean
                     onClick={() => setProDays(d)}
                     data-testid={`button-days-${d}`}
                   >
-                    {d === "365" ? "1 year" : `${d} days`}
+                    {d === "0" ? "Lifetime" : d === "365" ? "1 year" : `${d} days`}
                   </Button>
                 ))}
               </div>
