@@ -967,9 +967,14 @@ export default function GlobalHome() {
             <p className="text-xs text-muted-foreground">
               &copy; 2026 {t("footerCopyright")}
             </p>
-            <p className="text-sm text-muted-foreground flex items-center gap-2" data-testid="text-footer-based">
-              Arya AI. Based in <span className="inline-flex items-center gap-1"><span>🇺🇸</span> USA</span> & <span className="inline-flex items-center gap-1"><span>🇦🇿</span> Azerbaijan</span>.
-            </p>
+            <div className="flex items-center gap-4">
+              <a href="https://www.producthunt.com/products/arya-2?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-arya-2" target="_blank" rel="noopener noreferrer" data-testid="link-product-hunt">
+                <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1083821&theme=light&t=1771784905631" alt="Arya on Product Hunt" width="200" height="43" loading="lazy" />
+              </a>
+              <p className="text-sm text-muted-foreground flex items-center gap-2" data-testid="text-footer-based">
+                Arya AI. Based in <span className="inline-flex items-center gap-1"><span>🇺🇸</span> USA</span> & <span className="inline-flex items-center gap-1"><span>🇦🇿</span> Azerbaijan</span>.
+              </p>
+            </div>
           </div>
         </div>
       </footer>
