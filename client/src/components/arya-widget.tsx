@@ -737,6 +737,8 @@ export default function AryaWidget({ profileId, defaultLang, initialView }: { pr
   const { data: leadsData } = useQuery<any[]>({
     queryKey: ["/api/smart-profile/leads"],
     enabled: !!smartProfile?.id,
+    staleTime: 30000,
+    refetchInterval: 30000,
   });
 
   const { data: altegioSettings } = useQuery<{ altegioPartnerToken: string; altegioUserToken: string; altegioCompanyId: string; altegioAutoSend: boolean }>({
