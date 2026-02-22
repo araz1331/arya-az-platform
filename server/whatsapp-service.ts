@@ -668,11 +668,18 @@ async function handleCustomerMessage(waNumber: string, body: string, profileId?:
     if (slugMatch) {
       const slug = slugMatch[1].toLowerCase();
       const slugProfile = await db.execute(sql`
-        SELECT id FROM smart_profiles WHERE LOWER(slug) = ${slug} AND whatsapp_chat_enabled = true AND is_active = true LIMIT 1
+        SELECT id, whatsapp_chat_enabled FROM smart_profiles WHERE LOWER(slug) = ${slug} AND is_active = true LIMIT 1
       `);
       if (slugProfile.rows.length) {
-        targetProfileId = (slugProfile.rows[0] as any).id;
-        console.log(`[whatsapp] Matched slug "${slug}" from message body`);
+        const matched = slugProfile.rows[0] as any;
+        if (matched.whatsapp_chat_enabled) {
+          targetProfileId = matched.id;
+          console.log(`[whatsapp] Matched slug "${slug}" from message body`);
+        } else {
+          console.log(`[whatsapp] Slug "${slug}" exists but WhatsApp chat not enabled`);
+          await sendWhatsAppMessage(waNumber, `This business ("${slug}") hasn't enabled WhatsApp chat yet. Please visit their profile page to contact them: https://arya.az/u/${slug}`);
+          return { handled: true, type: "slug-not-enabled" };
+        }
       }
     }
   }
