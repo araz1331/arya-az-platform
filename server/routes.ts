@@ -155,6 +155,8 @@ const INJECTION_DEFLECT: Record<string, string> = {
   tr: "Hizmetler ve rezervasyonlar konusunda yardımcı olan bir AI asistanıyım. Size nasıl yardımcı olabilirim?",
   es: "Soy un asistente de IA que ayuda con servicios y reservas. ¿Cómo puedo ayudarle?",
   fr: "Je suis un assistant IA pour les services et les réservations. Comment puis-je vous aider ?",
+  uz: "Men xizmatlar va bandlovlar bo'yicha yordam beradigan AI yordamchiman. Sizga qanday yordam bera olaman?",
+  kk: "Мен қызметтер мен брондау бойынша көмектесетін AI көмекшісімін. Сізге қалай көмектесе аламын?",
 };
 
 export async function registerRoutes(
@@ -1479,7 +1481,7 @@ export async function registerRoutes(
         profession = profile.profession || "";
         if (language === "ru" && profile.knowledgeBaseRu) {
           knowledgeBase = profile.knowledgeBaseRu;
-        } else if (["en", "es", "fr", "tr"].includes(language) && profile.knowledgeBaseEn) {
+        } else if (["en", "es", "fr", "tr", "uz", "kk"].includes(language) && profile.knowledgeBaseEn) {
           knowledgeBase = profile.knowledgeBaseEn;
         } else {
           knowledgeBase = profile.knowledgeBase || "";
@@ -1493,7 +1495,7 @@ export async function registerRoutes(
       const globalKB = await storage.getGlobalKnowledgeBase();
 
       const langMap: Record<string, string> = {
-        az: "Azerbaijani", ru: "Russian", en: "English", es: "Spanish", fr: "French", tr: "Turkish",
+        az: "Azerbaijani", ru: "Russian", en: "English", es: "Spanish", fr: "French", tr: "Turkish", uz: "Uzbek", kk: "Kazakh",
         ar: "Arabic", zh: "Chinese", hi: "Hindi", bn: "Bengali", pt: "Portuguese", ja: "Japanese",
         ko: "Korean", de: "German", it: "Italian", vi: "Vietnamese", th: "Thai", pl: "Polish",
         uk: "Ukrainian", nl: "Dutch", ro: "Romanian", el: "Greek", cs: "Czech", sv: "Swedish",

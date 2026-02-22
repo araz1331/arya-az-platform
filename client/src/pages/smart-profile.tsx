@@ -127,6 +127,8 @@ const GREETINGS: Record<string, Record<string, (name: string, profession: string
     es: (name, _prof) => `¡Hola! Soy Arya, el asistente de IA de ${name}. ¿En qué puedo ayudarte?`,
     fr: (name, _prof) => `Bonjour ! Je suis Arya, l'assistant IA de ${name}. Comment puis-je vous aider ?`,
     tr: (name, _prof) => `Merhaba! Ben Arya, ${name}'in yapay zeka asistanıyım. Size nasıl yardımcı olabilirim?`,
+    uz: (name, _prof) => `Salom! Men Arya, ${name}ning sun'iy intellekt yordamchisiman. Sizga qanday yordam bera olaman?`,
+    kk: (name, _prof) => `Сәлем! Мен Arya, ${name} жасанды интеллект көмекшісімін. Сізге қалай көмектесе аламын?`,
   },
   fallback: {
     az: (name, _prof) => `Salam! Mən Arya, ${name}-nin Sİ köməkçisiyəm. Sizə necə kömək edə bilərəm?`,
@@ -135,6 +137,8 @@ const GREETINGS: Record<string, Record<string, (name: string, profession: string
     es: (name, _prof) => `¡Hola! Soy Arya, el asistente de IA de ${name}. ¿En qué puedo ayudarte?`,
     fr: (name, _prof) => `Bonjour ! Je suis Arya, l'assistant IA de ${name}. Comment puis-je vous aider ?`,
     tr: (name, _prof) => `Merhaba! Ben Arya, ${name}'in yapay zeka asistanıyım. Size nasıl yardımcı olabilirim?`,
+    uz: (name, _prof) => `Salom! Men Arya, ${name}ning sun'iy intellekt yordamchisiman. Sizga qanday yordam bera olaman?`,
+    kk: (name, _prof) => `Сәлем! Мен Arya, ${name} жасанды интеллект көмекшісімін. Сізге қалай көмектесе аламын?`,
   },
   newUser: {
     az: (_n, _p) => "Salam! Mən Arya, sizin Sİ köməkçinizəm. Sizə necə kömək edə bilərəm?",
@@ -143,6 +147,8 @@ const GREETINGS: Record<string, Record<string, (name: string, profession: string
     es: (_n, _p) => "¡Hola! Soy Arya, tu asistente de IA. ¿En qué puedo ayudarte?",
     fr: (_n, _p) => "Bonjour ! Je suis Arya, votre assistant IA. Comment puis-je vous aider ?",
     tr: (_n, _p) => "Merhaba! Ben Arya, yapay zeka asistanınızım. Size nasıl yardımcı olabilirim?",
+    uz: (_n, _p) => "Salom! Men Arya, sizning sun'iy intellekt yordamchingizman. Sizga qanday yordam bera olaman?",
+    kk: (_n, _p) => "Сәлем! Мен Arya, сіздің жасанды интеллект көмекшіңізмін. Сізге қалай көмектесе аламын?",
   },
 };
 
@@ -187,21 +193,13 @@ export default function SmartProfile({ slug, onBack, allowOwnerMode = false }: {
   const [profileLoading, setProfileLoading] = useState(true);
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [showTutorial, setShowTutorial] = useState(() => slug === "new-user");
-  const [language, setLanguage] = useState<"az" | "ru" | "en" | "es" | "fr" | "tr">(() => {
+  const [language, setLanguage] = useState<"az" | "ru" | "en" | "es" | "fr" | "tr" | "uz" | "kk">(() => {
+    const supported = ["az", "ru", "en", "es", "fr", "tr", "uz", "kk"] as const;
     const params = new URLSearchParams(window.location.search);
     const urlLang = params.get("lang");
-    if (urlLang === "az") return "az";
-    if (urlLang === "ru") return "ru";
-    if (urlLang === "en") return "en";
-    if (urlLang === "es") return "es";
-    if (urlLang === "fr") return "fr";
-    if (urlLang === "tr") return "tr";
+    if (urlLang && (supported as readonly string[]).includes(urlLang)) return urlLang as typeof supported[number];
     const browserLang = (navigator.language || "").toLowerCase().slice(0, 2);
-    if (browserLang === "az") return "az";
-    if (browserLang === "ru") return "ru";
-    if (browserLang === "es") return "es";
-    if (browserLang === "fr") return "fr";
-    if (browserLang === "tr") return "tr";
+    if ((supported as readonly string[]).includes(browserLang)) return browserLang as typeof supported[number];
     return "en";
   });
   const [pendingVoiceText, setPendingVoiceText] = useState<string | null>(null);
@@ -245,7 +243,7 @@ export default function SmartProfile({ slug, onBack, allowOwnerMode = false }: {
         .then(() => {
           setMessages(prev => [...prev, {
             role: "assistant",
-            text: ({ az: "PRO abunəlik aktivləşdirildi! 3 gün pulsuz sınaq.", ru: "PRO подписка активирована! 3 дня бесплатно.", en: "PRO subscription activated! 3 days free trial.", es: "¡Suscripción PRO activada! 3 días de prueba gratis.", fr: "Abonnement PRO activé ! 3 jours d'essai gratuit.", tr: "PRO abonelik aktifleştirildi! 3 gün ücretsiz deneme." })[language] || "PRO subscription activated! 3 days free trial."
+            text: ({ az: "PRO abunəlik aktivləşdirildi! 3 gün pulsuz sınaq.", ru: "PRO подписка активирована! 3 дня бесплатно.", en: "PRO subscription activated! 3 days free trial.", es: "¡Suscripción PRO activada! 3 días de prueba gratis.", fr: "Abonnement PRO activé ! 3 jours d'essai gratuit.", tr: "PRO abonelik aktifleştirildi! 3 gün ücretsiz deneme.", uz: "PRO obuna faollashtirildi! 3 kun bepul sinov.", kk: "PRO жазылым белсендірілді! 3 күн тегін сынақ." } as Record<string, string>)[language] || "PRO subscription activated! 3 days free trial."
           }]);
         })
         .catch(() => {});
@@ -340,6 +338,8 @@ export default function SmartProfile({ slug, onBack, allowOwnerMode = false }: {
     es: `¡Hola! Soy el Asistente Ejecutivo de ${ownerName}. Puedo actualizar tu información, ayudar con estrategia y gestionar tu recepcionista IA.`,
     fr: `Bonjour ! Je suis l'Assistant Exécutif de ${ownerName}. Je peux mettre à jour vos informations et gérer votre réceptionniste IA.`,
     tr: `Merhaba! Ben ${ownerName}'in Yönetici Asistanıyım. İş bilgilerinizi güncelleyebilir, strateji ve yönetimde yardımcı olabilirim.`,
+    uz: `Salom! Men ${ownerName}ning Ijrochi Yordamchisiman. Biznes ma'lumotlaringizni yangilashim, strategiya va boshqaruvda yordam berishim mumkin.`,
+    kk: `Сәлем! Мен ${ownerName} атқарушы көмекшісімін. Бизнес ақпаратыңызды жаңартып, стратегия мен басқаруға көмектесе аламын.`,
   });
 
   useEffect(() => {
@@ -724,26 +724,28 @@ export default function SmartProfile({ slug, onBack, allowOwnerMode = false }: {
               <MessageSquare className="w-7 h-7" />
             </div>
             <h2 className="text-2xl font-bold mb-2">
-              {{ az: "Xoş Gəldiniz!", ru: "Добро пожаловать!", en: "Welcome!", es: "¡Bienvenido!", fr: "Bienvenue !", tr: "Hoş Geldiniz!" }[language]}
+              {{ az: "Xoş Gəldiniz!", ru: "Добро пожаловать!", en: "Welcome!", es: "¡Bienvenido!", fr: "Bienvenue !", tr: "Hoş Geldiniz!", uz: "Xush kelibsiz!", kk: "Қош келдіңіз!" }[language]}
             </h2>
             <p className="text-muted-foreground mb-6 leading-relaxed">
-              {{ az: <>Bu sizin <b className="text-foreground">Demo Səhifənizdir</b>. Aşağıdakı <b className="text-foreground">mikrofon düyməsin</b>i sıxın və Arya ilə danışın.</>,
+              {({ az: <>Bu sizin <b className="text-foreground">Demo Səhifənizdir</b>. Aşağıdakı <b className="text-foreground">mikrofon düyməsin</b>i sıxın və Arya ilə danışın.</>,
                  ru: <>Это ваша <b className="text-foreground">Демо Страница</b>. Нажмите <b className="text-foreground">кнопку микрофона</b> ниже и поговорите с Arya.</>,
                  en: <>This is your <b className="text-foreground">Demo Page</b>. Press the <b className="text-foreground">microphone button</b> below and talk to Arya.</>,
                  es: <>Esta es tu <b className="text-foreground">Página Demo</b>. Pulsa el <b className="text-foreground">botón del micrófono</b> abajo y habla con Arya.</>,
                  fr: <>Ceci est votre <b className="text-foreground">Page Démo</b>. Appuyez sur le <b className="text-foreground">bouton micro</b> ci-dessous et parlez à Arya.</>,
                  tr: <>Bu sizin <b className="text-foreground">Demo Sayfanızdır</b>. Aşağıdaki <b className="text-foreground">mikrofon düğmesine</b> basın ve Arya ile konuşun.</>,
-              }[language]}
+                 uz: <>Bu sizning <b className="text-foreground">Demo Sahifangiz</b>. Quyidagi <b className="text-foreground">mikrofon tugmasini</b> bosing va Arya bilan gaplashing.</>,
+                 kk: <>Бұл сіздің <b className="text-foreground">Демо бетіңіз</b>. Төмендегі <b className="text-foreground">микрофон түймесін</b> басыңыз және Arya-мен сөйлесіңіз.</>,
+              } as Record<string, React.ReactNode>)[language]}
             </p>
 
             <div className="space-y-3 text-left text-sm bg-muted p-4 rounded-md mb-6">
               <div className="flex items-center gap-3">
                 <Mic className="w-4 h-4 text-primary shrink-0" />
-                <span>{{ az: '"Sən nə edə bilərsən?"', ru: '"Что ты умеешь?"', en: '"What can you do?"', es: '"¿Qué puedes hacer?"', fr: '"Que peux-tu faire ?"', tr: '"Ne yapabilirsin?"' }[language]}</span>
+                <span>{{ az: '"Sən nə edə bilərsən?"', ru: '"Что ты умеешь?"', en: '"What can you do?"', es: '"¿Qué puedes hacer?"', fr: '"Que peux-tu faire ?"', tr: '"Ne yapabilirsin?"', uz: '"Sen nima qila olasan?"', kk: '"Сен не істей аласың?"' }[language]}</span>
               </div>
               <div className="flex items-center gap-3">
                 <MessageSquare className="w-4 h-4 text-primary shrink-0" />
-                <span>{{ az: '"Müştəriləri necə qarşılayırsan?"', ru: '"Как ты встречаешь клиентов?"', en: '"How do you greet customers?"', es: '"¿Cómo recibes a los clientes?"', fr: '"Comment accueillez-vous les clients ?"', tr: '"Müşterileri nasıl karşılıyorsun?"' }[language]}</span>
+                <span>{{ az: '"Müştəriləri necə qarşılayırsan?"', ru: '"Как ты встречаешь клиентов?"', en: '"How do you greet customers?"', es: '"¿Cómo recibes a los clientes?"', fr: '"Comment accueillez-vous les clients ?"', tr: '"Müşterileri nasıl karşılıyorsun?"', uz: '"Mijozlarni qanday kutib olasan?"', kk: '"Клиенттерді қалай қарсы аласың?"' }[language]}</span>
               </div>
             </div>
 
@@ -752,13 +754,13 @@ export default function SmartProfile({ slug, onBack, allowOwnerMode = false }: {
               onClick={() => setShowTutorial(false)}
               data-testid="button-tutorial-close"
             >
-              {{ az: "Aydındır, Başlayaq", ru: "Понятно, начнём", en: "Got it, let's start", es: "Entendido, empecemos", fr: "Compris, commençons", tr: "Anladım, başlayalım" }[language]}
+              {{ az: "Aydındır, Başlayaq", ru: "Понятно, начнём", en: "Got it, let's start", es: "Entendido, empecemos", fr: "Compris, commençons", tr: "Anladım, başlayalım", uz: "Tushundim, boshlaymiz", kk: "Түсіндім, бастайық" }[language]}
             </Button>
           </div>
 
           <div className="mt-6 animate-bounce text-white/70 hidden md:flex items-center gap-2 text-sm font-medium">
             <ChevronDown className="w-5 h-5" />
-            {{ az: "Mikrofon aşağıdadır", ru: "Микрофон внизу", en: "Microphone is below", es: "El micrófono está abajo", fr: "Le micro est en bas", tr: "Mikrofon aşağıda" }[language]}
+            {{ az: "Mikrofon aşağıdadır", ru: "Микрофон внизу", en: "Microphone is below", es: "El micrófono está abajo", fr: "Le micro est en bas", tr: "Mikrofon aşağıda", uz: "Mikrofon pastda", kk: "Микрофон төменде" }[language]}
           </div>
         </div>
       )}
@@ -792,8 +794,8 @@ export default function SmartProfile({ slug, onBack, allowOwnerMode = false }: {
               ) : (
                 <>
                   <Sparkles className="w-3 h-3" />
-                  <span className="hidden sm:inline">{{ az: "3 Gün Pulsuz", ru: "3 Дня Бесплатно", en: "3 Days Free", es: "3 Días Gratis", fr: "3 Jours Gratuits", tr: "3 Gün Ücretsiz" }[language]}</span>
-                  <span className="sm:hidden">{{ az: "Pulsuz", ru: "Бесплатно", en: "Free", es: "Gratis", fr: "Gratuit", tr: "Ücretsiz" }[language]}</span>
+                  <span className="hidden sm:inline">{{ az: "3 Gün Pulsuz", ru: "3 Дня Бесплатно", en: "3 Days Free", es: "3 Días Gratis", fr: "3 Jours Gratuits", tr: "3 Gün Ücretsiz", uz: "3 kun bepul", kk: "3 күн тегін" }[language]}</span>
+                  <span className="sm:hidden">{{ az: "Pulsuz", ru: "Бесплатно", en: "Free", es: "Gratis", fr: "Gratuit", tr: "Ücretsiz", uz: "Bepul", kk: "Тегін" }[language]}</span>
                   <Badge className="bg-white/20 text-white border-transparent text-[10px] px-1.5 py-0">PRO</Badge>
                 </>
               )}
@@ -1016,8 +1018,8 @@ export default function SmartProfile({ slug, onBack, allowOwnerMode = false }: {
                   </div>
                   <span className="text-xs font-medium">
                     {isTranscribing
-                      ? ({ az: "Emal olunur...", ru: "Обработка...", en: "Processing...", es: "Procesando...", fr: "Traitement...", tr: "İşleniyor..." }[language] || "Processing...")
-                      : ({ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening...", es: "Escuchando...", fr: "J'écoute...", tr: "Dinliyorum..." }[language] || "Listening...")}
+                      ? ({ az: "Emal olunur...", ru: "Обработка...", en: "Processing...", es: "Procesando...", fr: "Traitement...", tr: "İşleniyor...", uz: "Qayta ishlanmoqda...", kk: "Өңделуде..." }[language] || "Processing...")
+                      : ({ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening...", es: "Escuchando...", fr: "J'écoute...", tr: "Dinliyorum...", uz: "Tinglayman...", kk: "Тыңдап тұрмын..." }[language] || "Listening...")}
                   </span>
                 </div>
               )}

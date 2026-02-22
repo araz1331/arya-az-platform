@@ -27,6 +27,8 @@ const GREETINGS: Record<string, (name: string, prof: string) => string> = {
   es: (name, prof) => `¡Hola! Soy ${name}, ${prof}. ¿En qué puedo ayudarte?`,
   fr: (name, prof) => `Bonjour ! Je suis ${name}, ${prof}. Comment puis-je vous aider ?`,
   tr: (name, prof) => `Merhaba! Ben ${name}, ${prof}. Size nasıl yardımcı olabilirim?`,
+  uz: (name, prof) => `Salom! Men ${name}, ${prof}. Sizga qanday yordam bera olaman?`,
+  kk: (name, prof) => `Сәлем! Мен ${name}, ${prof}. Сізге қалай көмектесе аламын?`,
 };
 
 const PLACEHOLDERS: Record<string, string> = {
@@ -36,6 +38,8 @@ const PLACEHOLDERS: Record<string, string> = {
   es: "Escribe un mensaje...",
   fr: "Écrivez un message...",
   tr: "Bir mesaj yazın...",
+  uz: "Xabar yozing...",
+  kk: "Хабарлама жазыңыз...",
 };
 
 export default function EmbedChat({ slug }: { slug: string }) {
@@ -44,16 +48,13 @@ export default function EmbedChat({ slug }: { slug: string }) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [language, setLanguage] = useState<"az" | "ru" | "en" | "es" | "fr" | "tr">(() => {
+  const [language, setLanguage] = useState<"az" | "ru" | "en" | "es" | "fr" | "tr" | "uz" | "kk">(() => {
+    const supported = ["az", "ru", "en", "es", "fr", "tr", "uz", "kk"] as const;
     const params = new URLSearchParams(window.location.search);
     const urlLang = params.get("lang");
-    if (urlLang === "az" || urlLang === "ru" || urlLang === "en" || urlLang === "es" || urlLang === "fr" || urlLang === "tr") return urlLang;
+    if (urlLang && (supported as readonly string[]).includes(urlLang)) return urlLang as typeof supported[number];
     const browserLang = (navigator.language || "").toLowerCase().slice(0, 2);
-    if (browserLang === "az") return "az";
-    if (browserLang === "ru") return "ru";
-    if (browserLang === "es") return "es";
-    if (browserLang === "fr") return "fr";
-    if (browserLang === "tr") return "tr";
+    if ((supported as readonly string[]).includes(browserLang)) return browserLang as typeof supported[number];
     return "en";
   });
   const [profileLoading, setProfileLoading] = useState(true);
@@ -391,8 +392,8 @@ export default function EmbedChat({ slug }: { slug: string }) {
                 </div>
                 <span style={{ fontSize: 10, color: isTranscribing ? themeColor : "#ef4444", fontWeight: 500 }}>
                   {isTranscribing
-                    ? ({ az: "Emal olunur...", ru: "Обработка...", en: "Processing..." }[language] || "Processing...")
-                    : ({ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening..." }[language] || "Listening...")}
+                    ? (({ az: "Emal olunur...", ru: "Обработка...", en: "Processing...", es: "Procesando...", fr: "Traitement...", tr: "İşleniyor...", uz: "Qayta ishlanmoqda...", kk: "Өңделуде..." }) as Record<string, string>)[language] || "Processing..."
+                    : (({ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening...", es: "Escuchando...", fr: "J'écoute...", tr: "Dinliyorum...", uz: "Tinglayman...", kk: "Тыңдап тұрмын..." }) as Record<string, string>)[language] || "Listening..."}
                 </span>
               </div>
             )}
