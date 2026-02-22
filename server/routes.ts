@@ -528,12 +528,16 @@ export async function registerRoutes(
             console.log(`[crm-auto] Profile ${profile?.slug}: userMsgs=${userMsgs.length}, hasAltegio=${!!hasAltegio}, hasWebhook=${!!hasWebhook}, hasWhatsApp=${!!hasWhatsApp}`);
             if (userMsgs.length >= 2) {
               const convoText = allMsgs.rows.map((m: any) => `${m.role}: ${m.content}`).join("\n");
+              const rawContent = content || "";
+              const convoTextWithRaw = rawContent
+                ? convoText + `\n\n[LATEST RAW USER MESSAGE (before privacy redaction)]:\nuser: ${rawContent}`
+                : convoText;
               const rawConvoText = allMsgs.rows.map((m: any) => {
                 if (m.content_type === "system") return "";
                 return `${m.role}: ${m.content}`;
               }).filter(Boolean).join("\n");
               const contactRegex = /(\+?\d[\d\s\-()]{7,})|(\b\d{10,}\b)|(\[PHONE REDACTED\])/;
-              const hasContact = contactRegex.test(convoText) || contactRegex.test(content || "");
+              const hasContact = contactRegex.test(convoText) || contactRegex.test(rawContent);
               console.log(`[crm-auto] Contact detected: ${hasContact} (checked stored msgs + current content)`);
               if (hasContact) {
                 if (hasAltegio) {
@@ -545,7 +549,7 @@ export async function registerRoutes(
                   if (!alreadySent.rows.length) {
                     const extractResult = await gemini.models.generateContent({
                       model: "gemini-2.5-flash",
-                      contents: `Extract the client's contact information from this conversation. Note: some user messages may show [PHONE REDACTED] - in that case, look for the phone number in the assistant's response where it was echoed back. Return ONLY valid JSON: {"name":"","phone":"","comment":""}.\n\n${convoText}`,
+                      contents: `Extract the client's contact information from this conversation. The latest raw user message (at the bottom) contains the unredacted text — use it to extract real phone numbers/emails. Return ONLY valid JSON: {"name":"","phone":"","comment":""}.\n\n${convoTextWithRaw}`,
                     });
                     try {
                       const raw = extractResult.text?.trim() || "{}";
@@ -588,7 +592,7 @@ export async function registerRoutes(
                   if (!alreadySentWh.rows.length) {
                     const extractResult = await gemini.models.generateContent({
                       model: "gemini-2.5-flash",
-                      contents: `Extract the client's contact information from this conversation. Note: some user messages may show [PHONE REDACTED] - in that case, look for the phone number in the assistant's response where it was echoed back. Return ONLY valid JSON: {"name":"","phone":"","email":"","comment":""}.\n\n${convoText}`,
+                      contents: `Extract the client's contact information from this conversation. The latest raw user message (at the bottom) contains the unredacted text — use it to extract real phone numbers/emails. Return ONLY valid JSON: {"name":"","phone":"","email":"","comment":""}.\n\n${convoTextWithRaw}`,
                     });
                     try {
                       const raw = extractResult.text?.trim() || "{}";
@@ -631,7 +635,7 @@ export async function registerRoutes(
                   if (!alreadySentWa.rows.length) {
                     const extractResult = await gemini.models.generateContent({
                       model: "gemini-2.5-flash",
-                      contents: `Extract the client's contact information from this conversation. Note: some user messages may show [PHONE REDACTED] - in that case, look for the phone number in the assistant's response where it was echoed back. Return ONLY valid JSON: {"name":"","phone":"","email":"","comment":""}.\n\n${convoText}`,
+                      contents: `Extract the client's contact information from this conversation. The latest raw user message (at the bottom) contains the unredacted text — use it to extract real phone numbers/emails. Return ONLY valid JSON: {"name":"","phone":"","email":"","comment":""}.\n\n${convoTextWithRaw}`,
                     });
                     try {
                       const raw = extractResult.text?.trim() || "{}";
