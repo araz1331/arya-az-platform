@@ -1321,6 +1321,7 @@ export async function registerRoutes(
           quantity: 1,
         }],
         mode: "subscription",
+        allow_promotion_codes: true,
         subscription_data: {
           trial_period_days: 3,
         },
@@ -1370,6 +1371,7 @@ export async function registerRoutes(
         payment_method_types: ["card"],
         line_items: [{ price: priceId, quantity: 1 }],
         mode: "payment",
+        allow_promotion_codes: true,
         success_url: `${baseUrl}/dashboard?checkout=founder-success`,
         cancel_url: `${baseUrl}/?checkout=cancel`,
         metadata: { userId, type: "founding_member" },
@@ -1429,6 +1431,7 @@ export async function registerRoutes(
         payment_method_types: ["card"],
         line_items: [{ price: priceId, quantity: 1 }],
         mode: "subscription",
+        allow_promotion_codes: true,
         success_url: `${baseUrl}/dashboard?checkout=${plan}-success`,
         cancel_url: `${baseUrl}/?checkout=cancel`,
         metadata: { userId, type: plan },
