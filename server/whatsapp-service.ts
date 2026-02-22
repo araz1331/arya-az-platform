@@ -338,6 +338,7 @@ export async function runDailySummaries() {
         AND whatsapp_number != ''
     `);
 
+    console.log(`[whatsapp-summary] Found ${profiles.rows.length} profiles with summaries enabled`);
     const now = new Date();
     for (const p of profiles.rows as any[]) {
       const lastSent = p.whatsapp_summary_last_sent ? new Date(p.whatsapp_summary_last_sent) : null;
@@ -346,7 +347,13 @@ export async function runDailySummaries() {
 
       if (lastSent) {
         const hoursSince = (now.getTime() - lastSent.getTime()) / (1000 * 60 * 60);
-        if (hoursSince < hoursNeeded) continue;
+        console.log(`[whatsapp-summary] ${p.business_name}: lastSent=${lastSent.toISOString()}, hoursSince=${hoursSince.toFixed(1)}, needed=${hoursNeeded}`);
+        if (hoursSince < hoursNeeded) {
+          console.log(`[whatsapp-summary] ${p.business_name}: Skipping, not enough time elapsed`);
+          continue;
+        }
+      } else {
+        console.log(`[whatsapp-summary] ${p.business_name}: Never sent before, sending now`);
       }
 
       const sinceDate = lastSent || new Date(now.getTime() - hoursNeeded * 60 * 60 * 1000);
@@ -376,13 +383,17 @@ export async function runDailySummaries() {
 
       const body = `*${period} Summary — ${p.business_name}*\n\nConversations: ${s.total_sessions || 0}\nCustomer messages: ${s.user_messages || 0}\nAI responses: ${s.ai_messages || 0}\nLeads detected: ${leadCount}\n\n_Arya AI Report_`;
 
+      console.log(`[whatsapp-summary] Sending ${freq} summary to ${p.whatsapp_number} for ${p.business_name}...`);
       const sent = await sendWhatsAppMessage(p.whatsapp_number, body);
+      console.log(`[whatsapp-summary] Send result for ${p.business_name}: ${sent}`);
       if (sent) {
         await db.execute(sql`
           UPDATE smart_profiles SET whatsapp_summary_last_sent = NOW()
           WHERE id = ${p.id}
         `);
         console.log(`[whatsapp-summary] Sent ${freq} summary for ${p.business_name}`);
+      } else {
+        console.error(`[whatsapp-summary] FAILED to send ${freq} summary for ${p.business_name} to ${p.whatsapp_number}`);
       }
     }
   } catch (err) {
