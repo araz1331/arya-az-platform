@@ -17,6 +17,9 @@ import {
   getStoredGlobalLanguage, setStoredGlobalLanguage
 } from "@/lib/global-i18n";
 import aryaAvatarImg from "@assets/Arya_avatar_1771538275062.png";
+import aryaUzVideo from "@assets/Arya_UZ_1771751992292.mp4";
+import aryaKkVideo from "@assets/Arya_KZ_1771752451761.mp4";
+import aryaAzVideo from "@assets/Arya_az_1771752545322.mp4";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 30 },
@@ -438,7 +441,7 @@ export default function GlobalHome() {
                 className="w-full h-auto"
                 data-testid="video-hero-demo"
               >
-                <source src={lang === "es" ? "/videos/arya-demo-es.mp4" : lang === "ru" ? "/videos/arya-demo-ru.mp4" : lang === "fr" ? "/videos/arya-demo-fr.mp4" : lang === "tr" ? "/videos/arya-demo-tr.mp4" : "/videos/arya-demo.mp4"} type="video/mp4" />
+                <source src={lang === "uz" ? aryaUzVideo : lang === "kk" ? aryaKkVideo : lang === "az" ? aryaAzVideo : lang === "es" ? "/videos/arya-demo-es.mp4" : lang === "ru" ? "/videos/arya-demo-ru.mp4" : lang === "fr" ? "/videos/arya-demo-fr.mp4" : lang === "tr" ? "/videos/arya-demo-tr.mp4" : "/videos/arya-demo.mp4"} type="video/mp4" />
               </video>
               <button
                 type="button"
