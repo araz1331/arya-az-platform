@@ -530,9 +530,9 @@ function UsersTab({ users, isLoading }: { users: AdminUser[]; isLoading: boolean
                         </a>
                       )}
                     </div>
-                    {u.isPro && u.proExpiresAt && (
+                    {u.isPro && (
                       <div className="text-[10px] text-muted-foreground mt-0.5" data-testid={`text-pro-expires-${u.id}`}>
-                        expires {formatDate(u.proExpiresAt)}
+                        {u.proExpiresAt ? `expires ${formatDate(u.proExpiresAt)}` : "Lifetime"}
                       </div>
                     )}
                   </td>
