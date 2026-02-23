@@ -404,7 +404,7 @@ export default function GlobalHome() {
           variants={stagger}
         >
           <motion.div variants={fadeInUp}>
-            <Badge variant="secondary" className="mb-6 bg-white/10 text-white border-white/20 text-sm px-4 py-1.5">
+            <Badge variant="secondary" className="mt-0.5 mb-6 bg-white/10 text-white border-white/20 text-sm px-4 py-1.5">
               <Zap className="w-3.5 h-3.5 mr-1.5" />
               The New Standard for AI Reception
             </Badge>
