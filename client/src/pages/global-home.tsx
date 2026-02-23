@@ -768,38 +768,37 @@ export default function GlobalHome() {
           </motion.div>
 
           <motion.div variants={fadeInUp} className="flex flex-col items-center">
-            <div className="w-full max-w-2xl rounded-lg overflow-hidden shadow-2xl border border-slate-700" style={{ fontFamily: "'Courier New', Courier, monospace" }} data-testid="card-battle-logs">
+            <div className="w-full max-w-2xl rounded-lg overflow-hidden shadow-2xl border border-slate-700" data-testid="card-battle-logs">
               <div className="bg-slate-800 px-4 py-2.5 flex items-center justify-between">
                 <div className="flex gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-500" />
                   <div className="w-3 h-3 rounded-full bg-yellow-500" />
                   <div className="w-3 h-3 rounded-full bg-green-500" />
                 </div>
-                <div className="text-slate-400 text-xs">arya_fortress_logs.sh</div>
+                <div className="text-slate-400 text-xs">{t("battleTitle")}</div>
               </div>
               <div className="bg-black p-5 sm:p-6 space-y-4 text-sm">
-                <div className="flex gap-2">
-                  <span className="text-red-400 shrink-0">[ATTACK]</span>
+                <div className="flex gap-3 items-start">
+                  <span className="text-red-400 shrink-0 text-xs font-medium px-1.5 py-0.5 bg-red-400/10 rounded">{t("battleSpamLabel")}</span>
                   <span className="text-slate-300">"{t("battleAttack1")}"</span>
                 </div>
-                <div className="flex gap-2">
-                  <span className="text-green-400 shrink-0">[ARYA]</span>
+                <div className="flex gap-3 items-start">
+                  <span className="text-green-400 shrink-0 text-xs font-medium px-1.5 py-0.5 bg-green-400/10 rounded">Arya</span>
                   <span className="text-white">"{t("battleReply1")}"</span>
                 </div>
                 <div className="border-t border-slate-800 my-2" />
-                <div className="flex gap-2">
-                  <span className="text-red-400 shrink-0">[ATTACK]</span>
+                <div className="flex gap-3 items-start">
+                  <span className="text-red-400 shrink-0 text-xs font-medium px-1.5 py-0.5 bg-red-400/10 rounded">{t("battleSpamLabel")}</span>
                   <span className="text-slate-300">"{t("battleAttack2")}"</span>
                 </div>
-                <div className="flex gap-2">
-                  <span className="text-blue-400 font-bold shrink-0">[SHIELD ACTIVE]</span>
+                <div className="flex gap-3 items-start">
+                  <span className="text-blue-400 shrink-0 text-xs font-medium px-1.5 py-0.5 bg-blue-400/10 rounded">{t("battleShieldLabel")}</span>
                   <span className="text-yellow-400">{t("battleShield")}</span>
                 </div>
-                <div className="flex gap-2">
-                  <span className="text-green-400 shrink-0">[ARYA]</span>
+                <div className="flex gap-3 items-start">
+                  <span className="text-green-400 shrink-0 text-xs font-medium px-1.5 py-0.5 bg-green-400/10 rounded">Arya</span>
                   <span className="text-white">"{t("battleReply2")}"</span>
                 </div>
-                <div className="animate-pulse text-green-400 mt-4">_</div>
               </div>
             </div>
           </motion.div>
