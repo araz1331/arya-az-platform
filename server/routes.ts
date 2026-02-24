@@ -1327,8 +1327,7 @@ export async function registerRoutes(
 
       const stripe = await getUncachableStripeClient();
       const [u] = await db.select().from(users).where(eq(users.id, userId));
-      const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
-      const baseUrl = domains ? `https://${domains}` : `${req.protocol}://${req.get("host")}`;
+      const baseUrl = process.env.PUBLIC_APP_URL || `${req.protocol}://${req.get("host")}`;
 
       const smartProfile = await storage.getSmartProfileByUserId(userId);
       let customerId = smartProfile?.stripeCustomerId;
@@ -1382,8 +1381,7 @@ export async function registerRoutes(
 
       const stripe = await getUncachableStripeClient();
       const [u] = await db.select().from(users).where(eq(users.id, userId));
-      const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
-      const baseUrl = domains ? `https://${domains}` : `${req.protocol}://${req.get("host")}`;
+      const baseUrl = process.env.PUBLIC_APP_URL || `${req.protocol}://${req.get("host")}`;
 
       const smartProfile = await storage.getSmartProfileByUserId(userId);
       let customerId = smartProfile?.stripeCustomerId;
@@ -1441,8 +1439,7 @@ export async function registerRoutes(
 
       const stripe = await getUncachableStripeClient();
       const [u] = await db.select().from(users).where(eq(users.id, userId));
-      const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
-      const baseUrl = domains ? `https://${domains}` : `${req.protocol}://${req.get("host")}`;
+      const baseUrl = process.env.PUBLIC_APP_URL || `${req.protocol}://${req.get("host")}`;
 
       const smartProfile = await storage.getSmartProfileByUserId(userId);
       let customerId = smartProfile?.stripeCustomerId;
