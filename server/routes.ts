@@ -1361,7 +1361,7 @@ export async function registerRoutes(
         subscription_data: {
           trial_period_days: 3,
         },
-        success_url: `${baseUrl}/u/${slug}?checkout=success`,
+        success_url: `${baseUrl}/checkout/success?plan=pro`,
         cancel_url: `${baseUrl}/u/${slug}?checkout=cancel`,
       });
 
@@ -1407,7 +1407,7 @@ export async function registerRoutes(
         line_items: [{ price: priceId, quantity: 1 }],
         mode: "payment",
         allow_promotion_codes: true,
-        success_url: `${baseUrl}/dashboard?checkout=founder-success`,
+        success_url: `${baseUrl}/checkout/success?plan=founder`,
         cancel_url: `${baseUrl}/?checkout=cancel`,
         metadata: { userId, type: "founding_member" },
       });
@@ -1466,7 +1466,7 @@ export async function registerRoutes(
         line_items: [{ price: priceId, quantity: 1 }],
         mode: "subscription",
         allow_promotion_codes: true,
-        success_url: `${baseUrl}/dashboard?checkout=${plan}-success`,
+        success_url: `${baseUrl}/checkout/success?plan=${plan}`,
         cancel_url: `${baseUrl}/?checkout=cancel`,
         metadata: { userId, type: plan },
       });

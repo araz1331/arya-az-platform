@@ -16,6 +16,7 @@ import EmbedChat from "@/pages/embed-chat";
 import GlobalHome from "@/pages/global-home";
 import AboutPage from "@/pages/about";
 import TermsPage from "@/pages/terms";
+import CheckoutSuccess from "@/pages/checkout-success";
 import ConsentModal from "@/components/consent-modal";
 
 const LANG_PREFIX = "/az";
@@ -45,6 +46,11 @@ function isTermsPath(): boolean {
   return path === "/terms" || path === "/terms/";
 }
 
+function isCheckoutSuccessPath(): boolean {
+  const path = window.location.pathname;
+  return path === "/checkout/success" || path === "/checkout/success/";
+}
+
 function isDashboardPath(): boolean {
   const path = window.location.pathname;
   return path === "/dashboard" || path.startsWith("/dashboard/");
@@ -62,6 +68,12 @@ function getAzSubPath(): string {
 }
 
 function getRedirectForLegacy(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  const checkout = params.get("checkout");
+  if (checkout && checkout.includes("success") && isDashboardPath()) {
+    const plan = checkout.replace("-success", "");
+    return `/checkout/success?plan=${plan}`;
+  }
   return null;
 }
 
@@ -303,6 +315,17 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <TermsPage />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (isCheckoutSuccessPath()) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <CheckoutSuccess />
         </TooltipProvider>
       </QueryClientProvider>
     );
