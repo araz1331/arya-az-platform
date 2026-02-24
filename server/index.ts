@@ -20,7 +20,7 @@ const app = express();
 app.set("trust proxy", 1);
 const httpServer = createServer(app);
 
-const ALLOWED_HOSTS = ["arya.az", "www.arya.az", "hirearya.com", "www.hirearya.com"];
+const ALLOWED_HOSTS = ["arya.az", "www.arya.az", "hirearya.com", "www.hirearya.com", "arya-az.replit.app"];
 
 app.use((req, res, next) => {
   if (process.env.NODE_ENV === "production") {
@@ -38,6 +38,7 @@ const ALLOWED_ORIGINS = [
   "https://www.arya.az",
   "https://hirearya.com",
   "https://www.hirearya.com",
+  "https://arya-az.replit.app",
 ];
 
 app.use((req, res, next) => {
