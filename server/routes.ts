@@ -1592,20 +1592,38 @@ Your Role - AI Receptionist:
         parts: [{ text: m.text }],
       }));
 
-      const result = await gemini.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [
-          ...chatHistory,
-          { role: "user", parts: [{ text: message }] },
-        ],
-        config: {
-          systemInstruction: systemPrompt,
-          maxOutputTokens: 1500,
-        },
-      });
+      const chatContents = [
+        ...chatHistory,
+        { role: "user", parts: [{ text: message }] },
+      ];
 
+      let reply = "";
       const fallbacks: Record<string, string> = { az: "Bağışlayın, yenidən cəhd edin.", ru: "Извините, попробуйте снова.", en: "Sorry, please try again.", es: "Lo siento, inténtelo de nuevo.", fr: "Désolé, veuillez réessayer.", tr: "Üzgünüm, tekrar deneyin." };
-      const reply = result.text || fallbacks[language] || fallbacks.en;
+
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const result = await gemini.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: chatContents,
+          config: {
+            systemInstruction: systemPrompt,
+            maxOutputTokens: 2000,
+          },
+        });
+
+        const finishReason = result.candidates?.[0]?.finishReason;
+        reply = result.text || "";
+
+        if (finishReason === "MAX_TOKENS" || (!reply && finishReason !== "STOP")) {
+          console.warn(`[widget-chat] Truncated response (attempt ${attempt + 1}, reason: ${finishReason}), retrying...`);
+          continue;
+        }
+
+        if (reply) break;
+      }
+
+      if (!reply) {
+        reply = fallbacks[language] || fallbacks.en;
+      }
 
       if (profile && req.body.sessionId) {
         const missedPatterns = /I don't have (that |this )?information|I'm not sure|I can't answer|contact .* directly|check with the team|don't have access/i;
@@ -2304,19 +2322,30 @@ Your capabilities:
         userParts.push({ text: message.trim() || "Hello" });
       }
 
-      const result = await gemini.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [
-          ...chatHistory,
-          { role: "user", parts: userParts },
-        ],
-        config: {
-          systemInstruction: responseSystemPrompt,
-          maxOutputTokens: 2000,
-        },
-      });
+      let reply = "";
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const result = await gemini.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [
+            ...chatHistory,
+            { role: "user", parts: userParts },
+          ],
+          config: {
+            systemInstruction: responseSystemPrompt,
+            maxOutputTokens: 2000,
+          },
+        });
 
-      const reply = result.text || "Sorry, I couldn't process that. Please try again.";
+        const finishReason = result.candidates?.[0]?.finishReason;
+        reply = result.text || "";
+
+        if (finishReason === "MAX_TOKENS" || (!reply && finishReason !== "STOP")) {
+          console.warn(`[owner-chat] Truncated response (attempt ${attempt + 1}, reason: ${finishReason}), retrying...`);
+          continue;
+        }
+        if (reply) break;
+      }
+      if (!reply) reply = "Sorry, I couldn't process that. Please try again.";
 
       await storage.createOwnerChatMessage({ userId, role: "model", content: reply, sessionId });
 

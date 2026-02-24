@@ -817,19 +817,30 @@ Your Role:
 - You can take orders, bookings, appointments, and inquiries`;
 
   try {
-    const result = await gemini.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        ...chatHistory,
-        { role: "user", parts: [{ text: body }] },
-      ],
-      config: {
-        systemInstruction: systemPrompt,
-        maxOutputTokens: 500,
-      },
-    });
+    let reply = "";
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const result = await gemini.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          ...chatHistory,
+          { role: "user", parts: [{ text: body }] },
+        ],
+        config: {
+          systemInstruction: systemPrompt,
+          maxOutputTokens: 1500,
+        },
+      });
 
-    const reply = result.text || "Sorry, please try again.";
+      const finishReason = result.candidates?.[0]?.finishReason;
+      reply = result.text || "";
+
+      if (finishReason === "MAX_TOKENS" || (!reply && finishReason !== "STOP")) {
+        console.warn(`[whatsapp-chat] Truncated response (attempt ${attempt + 1}, reason: ${finishReason}), retrying...`);
+        continue;
+      }
+      if (reply) break;
+    }
+    if (!reply) reply = "Sorry, please try again.";
 
     await db.execute(sql`
       INSERT INTO widget_messages (id, profile_id, session_id, role, content, content_type)
