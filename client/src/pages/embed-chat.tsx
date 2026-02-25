@@ -66,7 +66,9 @@ export default function EmbedChat({ slug }: { slug: string }) {
   const sessionIdRef = useRef(generateSessionId());
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [micError, setMicError] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -126,6 +128,10 @@ export default function EmbedChat({ slug }: { slug: string }) {
     return () => {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
         try { mediaRecorderRef.current.stop(); } catch {}
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
       }
     };
   }, []);
@@ -188,6 +194,19 @@ export default function EmbedChat({ slug }: { slug: string }) {
     en: "Instagram/Facebook browser blocks microphone access. Open this link in Safari or Chrome — the mic will work there.",
   };
 
+  const getStream = async (): Promise<MediaStream> => {
+    if (streamRef.current) {
+      const tracks = streamRef.current.getTracks();
+      const alive = tracks.length > 0 && tracks.every(t => t.readyState === "live");
+      if (alive) return streamRef.current;
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    streamRef.current = stream;
+    return stream;
+  };
+
   const toggleRecording = async () => {
     if (isRecording) {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
@@ -204,7 +223,8 @@ export default function EmbedChat({ slug }: { slug: string }) {
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setMicError(false);
+      const stream = await getStream();
       audioChunksRef.current = [];
 
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
@@ -220,7 +240,6 @@ export default function EmbedChat({ slug }: { slug: string }) {
       };
 
       recorder.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop());
         setIsRecording(false);
 
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
@@ -243,10 +262,19 @@ export default function EmbedChat({ slug }: { slug: string }) {
         }
       };
 
+      recorder.onerror = () => {
+        setIsRecording(false);
+        setMicError(true);
+      };
+
       mediaRecorderRef.current = recorder;
       recorder.start();
       setIsRecording(true);
-    } catch {}
+    } catch {
+      setIsRecording(false);
+      setMicError(true);
+      streamRef.current = null;
+    }
   };
 
   const confirmPendingVoice = () => {
