@@ -24,6 +24,7 @@ interface SmartProfileData {
   id: string;
   slug: string;
   businessName: string;
+  displayName: string | null;
   profession: string;
   knowledgeBase: string | null;
   profileImageUrl: string | null;
@@ -332,6 +333,9 @@ function EmbedCodeSection({ slug, profile, t }: { slug: string; profile: SmartPr
   const [saving, setSaving] = useState(false);
   const [greetingText, setGreetingText] = useState(profile.greeting || "");
   const [savingGreeting, setSavingGreeting] = useState(false);
+  const [headerDisplayName, setHeaderDisplayName] = useState(profile.displayName || "");
+  const [headerBusinessName, setHeaderBusinessName] = useState(profile.businessName || "");
+  const [savingHeader, setSavingHeader] = useState(false);
   const { toast } = useToast();
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const embedCode = `<script src="${origin}/widget.js" data-slug="${slug}" data-color="#2563EB"></script>`;
@@ -380,8 +384,67 @@ function EmbedCodeSection({ slug, profile, t }: { slug: string; profile: SmartPr
     }
   };
 
+  const saveHeaderInfo = async () => {
+    if (!headerDisplayName.trim() || !headerBusinessName.trim()) {
+      toast({ title: t("dashHeaderRequired"), variant: "destructive" });
+      return;
+    }
+    setSavingHeader(true);
+    try {
+      await apiRequest("PATCH", "/api/smart-profile", { displayName: headerDisplayName.trim(), businessName: headerBusinessName.trim() });
+      queryClient.invalidateQueries({ queryKey: ["/api/smart-profile"] });
+      toast({ title: t("dashHeaderSaved") });
+    } catch {
+      toast({ title: "Failed to save", variant: "destructive" });
+    } finally {
+      setSavingHeader(false);
+    }
+  };
+
+  const headerChanged = headerDisplayName !== (profile.displayName || "") || headerBusinessName !== (profile.businessName || "");
+
   return (
     <div className="space-y-4 mt-6 pt-6 border-t" data-testid="container-embed-section">
+      <Card className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <User className="w-4 h-4 text-muted-foreground" />
+          <h3 className="font-semibold text-sm" data-testid="text-header-title">{t("dashHeaderTitle")}</h3>
+        </div>
+        <p className="text-xs text-muted-foreground mb-3" data-testid="text-header-desc">{t("dashHeaderDesc")}</p>
+        <div className="space-y-2">
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">{t("dashHeaderName")}</label>
+            <Input
+              value={headerDisplayName}
+              onChange={e => setHeaderDisplayName(e.target.value)}
+              placeholder={t("dashHeaderNamePlaceholder")}
+              className="text-sm"
+              data-testid="input-header-display-name"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">{t("dashHeaderBusiness")}</label>
+            <Input
+              value={headerBusinessName}
+              onChange={e => setHeaderBusinessName(e.target.value)}
+              placeholder={t("dashHeaderBusinessPlaceholder")}
+              className="text-sm"
+              data-testid="input-header-business-name"
+            />
+          </div>
+          <Button
+            size="sm"
+            onClick={saveHeaderInfo}
+            disabled={savingHeader || !headerChanged}
+            className="mt-1"
+            data-testid="button-save-header"
+          >
+            {savingHeader ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Check className="w-3.5 h-3.5 mr-1" />}
+            {t("dashSave")}
+          </Button>
+        </div>
+      </Card>
+
       <Card className="p-4">
         <div className="flex items-center gap-2 mb-3">
           <MessageSquare className="w-4 h-4 text-muted-foreground" />
