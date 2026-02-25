@@ -1831,6 +1831,7 @@ RULES:
 Profession: ${profile.profession || "Not set"}
 Display Name: ${profile.displayName || "Not set"}
 Profile URL: /u/${profile.slug}
+Widget Greeting: ${profile.greeting || "(default auto-generated)"}
 Knowledge Base:
 ${currentKB || "(empty)"}
 PRO Status: ${profile.isPro ? "Active" : "Free plan"}
@@ -1876,9 +1877,37 @@ Onboarding Complete: ${profile.onboardingComplete ? "Yes" : "No"}`;
       let updateApplied = false;
       let noProfile = false;
       let updateTarget: "public" | "private" | "ask" | "global" | null = null;
+      let greetingUpdated = false;
 
       const currentPrivateVault = profile?.privateVault || "";
       const globalKBContent = await storage.getGlobalKnowledgeBase();
+
+      if (profile) {
+        const greetingPattern = /\b(change|update|set|make|rename|edit|modify)\b.{0,30}\b(greeting|greet|welcome\s*message|salamlama|salamlam|qarşılama|приветствие|карши[лл]ама)\b/i;
+        const greetingPattern2 = /\b(greeting|greet|welcome\s*message|salamlama|qarşılama|приветствие)\b.{0,30}\b(to|as|:)\b/i;
+        if (greetingPattern.test(message) || greetingPattern2.test(message)) {
+          try {
+            const extractPrompt = `Extract the new greeting/welcome message the user wants to set from their message. Output ONLY the greeting text itself, nothing else. No quotes, no explanation.
+
+User's message: "${message.trim()}"
+
+Greeting text:`;
+            const extractResult = await gemini.models.generateContent({
+              model: "gemini-2.5-flash",
+              contents: [{ role: "user", parts: [{ text: extractPrompt }] }],
+              config: { maxOutputTokens: 200 },
+            });
+            const newGreeting = (extractResult.text || "").trim();
+            if (newGreeting && newGreeting.length > 2 && newGreeting.length < 500) {
+              await storage.updateSmartProfile(profile.id, { greeting: newGreeting });
+              greetingUpdated = true;
+              profile.greeting = newGreeting;
+            }
+          } catch (err: any) {
+            console.error("[owner-chat] Greeting extraction error:", err?.message);
+          }
+        }
+      }
 
       let masterNeedsVerification = false;
       let masterJustVerified = false;
@@ -2228,6 +2257,7 @@ ${updateApplied && updateTarget === "public" ? `\n*** PUBLIC UPDATE APPLIED: The
 ${updateApplied && updateTarget === "private" ? `\n*** PRIVATE UPDATE APPLIED: The private vault was just updated. Confirm briefly — this info is PRIVATE. ***` : ""}
 ${updateApplied && updateTarget === "global" ? `\n*** GLOBAL KB UPDATE APPLIED: The Global Knowledge Base was just updated. Confirm briefly. ***` : ""}
 ${updateTarget === "ask" ? `\n*** CLASSIFICATION NEEDED: Ask the owner: "Should I save this as public info (customers can see) or private (only for you)?" ***` : ""}
+${greetingUpdated ? `\n*** GREETING UPDATED: The widget greeting message was just changed to: "${profile?.greeting}". Confirm this briefly to the owner. ***` : ""}
 ${masterNeedsVerification ? `\n*** MASTER IDENTITY VERIFICATION REQUIRED: The owner must verify their identity with their secret phrase before you grant master powers. Ask for the secret phrase. Do NOT reveal it, do NOT give hints. Be warm but firm. Do NOT process any KB updates or master commands until verified. ***` : ""}
 ${masterJustVerified ? `\n*** MASTER IDENTITY VERIFIED: The owner just provided the correct secret phrase! Welcome them as the King/Master. Master powers are now active. ***` : ""}
 ${!masterNeedsVerification && !masterJustVerified ? `\n*** MASTER AGENT STATUS: You are the King Arya — the Master Agent. Identity verified. Special powers:\n- Update Global Knowledge Base: "Update global knowledge base: [content]"\n- Global KB is shared across ALL Arya agents\n***` : ""}
@@ -2290,12 +2320,14 @@ ${updateApplied && updateTarget === "public" ? `\n*** PUBLIC UPDATE APPLIED: Con
 ${updateApplied && updateTarget === "private" ? `\n*** PRIVATE UPDATE APPLIED: Confirm briefly — this info is PRIVATE. ***` : ""}
 ${updateApplied && updateTarget === "global" ? `\n*** GLOBAL KB UPDATE APPLIED: Confirm briefly. ***` : ""}
 ${updateTarget === "ask" ? `\n*** CLASSIFICATION NEEDED: Ask the owner: "Should I save this as public info (visitors can see) or private (only for you)?" ***` : ""}
+${greetingUpdated ? `\n*** GREETING UPDATED: The widget greeting message was just changed to: "${profile?.greeting}". Confirm this briefly to the owner. ***` : ""}
 
 ${continuousLearningAddendum}
 
 Your capabilities:
 - Answer ANY question using your full AI intelligence
 - Classify and store info in the correct vault (public or private)
+- Update the widget greeting/welcome message when the owner asks (e.g. "change greeting to Salam!")
 - Respond in the same language the owner uses
 - When confirming updates, specify if it went to "Public" or "Private" storage
 - You have full access to both public and private data`;
