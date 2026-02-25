@@ -1882,16 +1882,31 @@ Onboarding Complete: ${profile.onboardingComplete ? "Yes" : "No"}`;
       const currentPrivateVault = profile?.privateVault || "";
       const globalKBContent = await storage.getGlobalKnowledgeBase();
 
-      if (profile) {
-        const greetingPattern = /\b(change|update|set|make|rename|edit|modify)\b.{0,30}\b(greeting|greet|welcome\s*message|salamlama|salamlam|qarşılama|приветствие|карши[лл]ама)\b/i;
-        const greetingPattern2 = /\b(greeting|greet|welcome\s*message|salamlama|qarşılama|приветствие)\b.{0,30}\b(to|as|:)\b/i;
-        if (greetingPattern.test(message) || greetingPattern2.test(message)) {
+      if (profile && message.trim().length > 5) {
+        const greetingKeywords = /greeting|greet|welcome|приветстви|salamlam|qarşılam|karşılam|привітанн|salom|сәлем|hoş.?geldin|bienvenu|bienvenid/i;
+        const changeKeywords = /change|update|set|make|rename|edit|modify|измени|поменяй|смени|установи|напиши|сделай|dəyiş|yaz|təyin|değiştir/i;
+        let isGreetingRequest = greetingKeywords.test(message) && changeKeywords.test(message);
+
+        if (!isGreetingRequest) {
           try {
-            const extractPrompt = `Extract the new greeting/welcome message the user wants to set from their message. Output ONLY the greeting text itself, nothing else. No quotes, no explanation.
+            const detectPrompt = `Does this message ask to change/update/set a greeting, welcome message, or the first message shown in a chat widget? Answer ONLY "yes" or "no".
+Message: "${message.trim()}"`;
+            const detectResult = await gemini.models.generateContent({
+              model: "gemini-2.5-flash",
+              contents: [{ role: "user", parts: [{ text: detectPrompt }] }],
+              config: { maxOutputTokens: 10 },
+            });
+            isGreetingRequest = (detectResult.text || "").trim().toLowerCase().startsWith("yes");
+          } catch {}
+        }
+
+        if (isGreetingRequest) {
+          try {
+            const extractPrompt = `The user wants to change their chat widget greeting/welcome message. Extract the new greeting text from their message. Output ONLY the greeting text itself — no quotes, no explanation, no commentary.
 
 User's message: "${message.trim()}"
 
-Greeting text:`;
+New greeting:`;
             const extractResult = await gemini.models.generateContent({
               model: "gemini-2.5-flash",
               contents: [{ role: "user", parts: [{ text: extractPrompt }] }],

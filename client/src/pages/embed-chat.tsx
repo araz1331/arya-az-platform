@@ -66,9 +66,9 @@ export default function EmbedChat({ slug }: { slug: string }) {
   const sessionIdRef = useRef(generateSessionId());
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
+  const activeStreamRef = useRef<MediaStream | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [micError, setMicError] = useState(false);
+  const [micAllowed, setMicAllowed] = useState(true);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -129,9 +129,9 @@ export default function EmbedChat({ slug }: { slug: string }) {
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
         try { mediaRecorderRef.current.stop(); } catch {}
       }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(t => t.stop());
-        streamRef.current = null;
+      if (activeStreamRef.current) {
+        activeStreamRef.current.getTracks().forEach(t => t.stop());
+        activeStreamRef.current = null;
       }
     };
   }, []);
@@ -194,17 +194,11 @@ export default function EmbedChat({ slug }: { slug: string }) {
     en: "Instagram/Facebook browser blocks microphone access. Open this link in Safari or Chrome — the mic will work there.",
   };
 
-  const getStream = async (): Promise<MediaStream> => {
-    if (streamRef.current) {
-      const tracks = streamRef.current.getTracks();
-      const alive = tracks.length > 0 && tracks.every(t => t.readyState === "live");
-      if (alive) return streamRef.current;
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
+  const stopActiveStream = () => {
+    if (activeStreamRef.current) {
+      activeStreamRef.current.getTracks().forEach(t => t.stop());
+      activeStreamRef.current = null;
     }
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    streamRef.current = stream;
-    return stream;
   };
 
   const toggleRecording = async () => {
@@ -223,8 +217,10 @@ export default function EmbedChat({ slug }: { slug: string }) {
     }
 
     try {
-      setMicError(false);
-      const stream = await getStream();
+      stopActiveStream();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      activeStreamRef.current = stream;
+      setMicAllowed(true);
       audioChunksRef.current = [];
 
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
@@ -240,16 +236,20 @@ export default function EmbedChat({ slug }: { slug: string }) {
       };
 
       recorder.onstop = async () => {
+        stopActiveStream();
         setIsRecording(false);
+        mediaRecorderRef.current = null;
 
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        audioChunksRef.current = [];
         if (audioBlob.size < 1000) return;
 
         setIsTranscribing(true);
         try {
           const origin = window.location.origin;
           const formData = new FormData();
-          formData.append("audio", audioBlob, "recording.webm");
+          const ext = mimeType.includes("mp4") ? "mp4" : "webm";
+          formData.append("audio", audioBlob, `recording.${ext}`);
           const res = await fetch(`${origin}/api/transcribe`, { method: "POST", body: formData });
           if (!res.ok) throw new Error("Transcription failed");
           const data = await res.json();
@@ -263,17 +263,21 @@ export default function EmbedChat({ slug }: { slug: string }) {
       };
 
       recorder.onerror = () => {
+        stopActiveStream();
         setIsRecording(false);
-        setMicError(true);
+        mediaRecorderRef.current = null;
       };
 
       mediaRecorderRef.current = recorder;
       recorder.start();
       setIsRecording(true);
-    } catch {
+    } catch (err: any) {
+      stopActiveStream();
       setIsRecording(false);
-      setMicError(true);
-      streamRef.current = null;
+      mediaRecorderRef.current = null;
+      if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
+        setMicAllowed(false);
+      }
     }
   };
 
@@ -383,55 +387,41 @@ export default function EmbedChat({ slug }: { slug: string }) {
       </div>
 
       <div style={{ borderTop: "1px solid #e2e8f0", padding: "10px 12px", background: "#fff", flexShrink: 0 }}>
+        {(isRecording || isTranscribing) && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 8 }} data-testid="embed-recording-indicator">
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: isTranscribing ? themeColor : "#ef4444", animation: "pulse 1.5s infinite" }} />
+            <span style={{ fontSize: 12, color: isTranscribing ? themeColor : "#ef4444", fontWeight: 500 }}>
+              {isTranscribing
+                ? (({ az: "Emal olunur...", ru: "Обработка...", en: "Processing...", es: "Procesando...", fr: "Traitement...", tr: "İşleniyor...", uz: "Qayta ishlanmoqda...", kk: "Өңделуде..." }) as Record<string, string>)[language] || "Processing..."
+                : (({ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening...", es: "Escuchando...", fr: "J'écoute...", tr: "Dinliyorum...", uz: "Tinglayman...", kk: "Тыңдап тұрмын..." }) as Record<string, string>)[language] || "Listening..."}
+            </span>
+          </div>
+        )}
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={PLACEHOLDERS[language] || PLACEHOLDERS.az}
-            disabled={isLoading}
+            disabled={isLoading || isRecording}
             style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 14, outline: "none" }}
             data-testid="embed-input-message"
           />
-          {input.length > 0 ? (
+          {input.trim().length > 0 ? (
             <button
               onClick={handleSendText}
               disabled={isLoading}
-              style={{ width: 36, height: 36, borderRadius: 8, border: "none", background: themeColor, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+              style={{ width: 36, height: 36, borderRadius: 8, border: "none", background: themeColor, color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
               data-testid="embed-button-send"
             >
               <Send style={{ width: 16, height: 16 }} />
             </button>
-          ) : null}
-        </div>
-        {input.length === 0 && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 10, gap: 6 }}>
-            {(isRecording || isTranscribing) && (
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }} data-testid="embed-recording-indicator">
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: isTranscribing ? themeColor : "#ef4444", animation: "pulse 1.5s infinite" }} />
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 18 }}>
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      style={{
-                        width: 3, borderRadius: 2, background: isTranscribing ? themeColor : "#ef4444",
-                        animation: `soundWave 0.8s ease-in-out ${i * 0.12}s infinite alternate`,
-                      }}
-                    />
-                  ))}
-                </div>
-                <span style={{ fontSize: 10, color: isTranscribing ? themeColor : "#ef4444", fontWeight: 500 }}>
-                  {isTranscribing
-                    ? (({ az: "Emal olunur...", ru: "Обработка...", en: "Processing...", es: "Procesando...", fr: "Traitement...", tr: "İşleniyor...", uz: "Qayta ishlanmoqda...", kk: "Өңделуде..." }) as Record<string, string>)[language] || "Processing..."
-                    : (({ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening...", es: "Escuchando...", fr: "J'écoute...", tr: "Dinliyorum...", uz: "Tinglayman...", kk: "Тыңдап тұрмын..." }) as Record<string, string>)[language] || "Listening..."}
-                </span>
-              </div>
-            )}
+          ) : (
             <button
               onClick={toggleRecording}
               disabled={isLoading || isTranscribing}
               style={{
-                width: 48, height: 48, borderRadius: "50%", border: "none",
+                width: 36, height: 36, borderRadius: "50%", border: "none", flexShrink: 0,
                 background: isRecording ? "#ef4444" : isTranscribing ? `${themeColor}80` : themeColor,
                 color: "#fff", cursor: isTranscribing ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                 boxShadow: isRecording ? "0 0 0 4px rgba(239,68,68,0.3)" : "none",
@@ -440,10 +430,10 @@ export default function EmbedChat({ slug }: { slug: string }) {
               }}
               data-testid="embed-button-voice"
             >
-              {isRecording ? <Square style={{ width: 18, height: 18 }} /> : isTranscribing ? <Loader2 style={{ width: 20, height: 20, animation: "spin 1s linear infinite" }} /> : <Mic style={{ width: 20, height: 20 }} />}
+              {isRecording ? <Square style={{ width: 16, height: 16 }} /> : isTranscribing ? <Loader2 style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} /> : <Mic style={{ width: 16, height: 16 }} />}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div style={{ textAlign: "center", padding: "4px 0 8px", fontSize: 10, color: "#94a3b8" }}>
