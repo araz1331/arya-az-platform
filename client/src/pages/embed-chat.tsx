@@ -387,16 +387,6 @@ export default function EmbedChat({ slug }: { slug: string }) {
       </div>
 
       <div style={{ borderTop: "1px solid #e2e8f0", padding: "10px 12px", background: "#fff", flexShrink: 0 }}>
-        {(isRecording || isTranscribing) && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 8 }} data-testid="embed-recording-indicator">
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: isTranscribing ? themeColor : "#ef4444", animation: "pulse 1.5s infinite" }} />
-            <span style={{ fontSize: 12, color: isTranscribing ? themeColor : "#ef4444", fontWeight: 500 }}>
-              {isTranscribing
-                ? (({ az: "Emal olunur...", ru: "Обработка...", en: "Processing...", es: "Procesando...", fr: "Traitement...", tr: "İşleniyor...", uz: "Qayta ishlanmoqda...", kk: "Өңделуде..." }) as Record<string, string>)[language] || "Processing..."
-                : (({ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening...", es: "Escuchando...", fr: "J'écoute...", tr: "Dinliyorum...", uz: "Tinglayman...", kk: "Тыңдап тұрмын..." }) as Record<string, string>)[language] || "Listening..."}
-            </span>
-          </div>
-        )}
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <input
             value={input}
@@ -407,7 +397,7 @@ export default function EmbedChat({ slug }: { slug: string }) {
             style={{ flex: 1, padding: "8px 12px", borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 14, outline: "none" }}
             data-testid="embed-input-message"
           />
-          {input.trim().length > 0 ? (
+          {input.trim().length > 0 && (
             <button
               onClick={handleSendText}
               disabled={isLoading}
@@ -416,12 +406,25 @@ export default function EmbedChat({ slug }: { slug: string }) {
             >
               <Send style={{ width: 16, height: 16 }} />
             </button>
-          ) : (
+          )}
+        </div>
+        {input.trim().length === 0 && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 10, gap: 6 }}>
+            {(isRecording || isTranscribing) && (
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }} data-testid="embed-recording-indicator">
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: isTranscribing ? themeColor : "#ef4444", animation: "pulse 1.5s infinite" }} />
+                <span style={{ fontSize: 10, color: isTranscribing ? themeColor : "#ef4444", fontWeight: 500 }}>
+                  {isTranscribing
+                    ? (({ az: "Emal olunur...", ru: "Обработка...", en: "Processing...", es: "Procesando...", fr: "Traitement...", tr: "İşleniyor...", uz: "Qayta ishlanmoqda...", kk: "Өңделуде..." }) as Record<string, string>)[language] || "Processing..."
+                    : (({ az: "Dinləyirəm...", ru: "Слушаю...", en: "Listening...", es: "Escuchando...", fr: "J'écoute...", tr: "Dinliyorum...", uz: "Tinglayman...", kk: "Тыңдап тұрмын..." }) as Record<string, string>)[language] || "Listening..."}
+                </span>
+              </div>
+            )}
             <button
               onClick={toggleRecording}
               disabled={isLoading || isTranscribing}
               style={{
-                width: 36, height: 36, borderRadius: "50%", border: "none", flexShrink: 0,
+                width: 48, height: 48, borderRadius: "50%", border: "none",
                 background: isRecording ? "#ef4444" : isTranscribing ? `${themeColor}80` : themeColor,
                 color: "#fff", cursor: isTranscribing ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                 boxShadow: isRecording ? "0 0 0 4px rgba(239,68,68,0.3)" : "none",
@@ -430,10 +433,10 @@ export default function EmbedChat({ slug }: { slug: string }) {
               }}
               data-testid="embed-button-voice"
             >
-              {isRecording ? <Square style={{ width: 16, height: 16 }} /> : isTranscribing ? <Loader2 style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} /> : <Mic style={{ width: 16, height: 16 }} />}
+              {isRecording ? <Square style={{ width: 18, height: 18 }} /> : isTranscribing ? <Loader2 style={{ width: 20, height: 20, animation: "spin 1s linear infinite" }} /> : <Mic style={{ width: 20, height: 20 }} />}
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <div style={{ textAlign: "center", padding: "4px 0 8px", fontSize: 10, color: "#94a3b8" }}>
