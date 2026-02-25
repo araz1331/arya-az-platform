@@ -117,6 +117,7 @@ export const smartProfiles = pgTable("smart_profiles", {
   whatsappPin: text("whatsapp_pin"),
   telegramChatEnabled: boolean("telegram_chat_enabled").notNull().default(false),
   isMaster: boolean("is_master").notNull().default(false),
+  greeting: text("greeting"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

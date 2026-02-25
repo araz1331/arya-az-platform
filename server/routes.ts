@@ -1110,7 +1110,7 @@ export async function registerRoutes(
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
     const existing = await storage.getSmartProfileByUserId(userId);
     if (!existing) return res.status(404).json({ message: "No profile found" });
-    const allowedFields = ["businessName", "displayName", "profession", "themeColor", "knowledgeBase", "knowledgeBaseRu", "knowledgeBaseEn", "professionRu", "professionEn", "profileImageUrl", "slug", "isActive"] as const;
+    const allowedFields = ["businessName", "displayName", "profession", "themeColor", "knowledgeBase", "knowledgeBaseRu", "knowledgeBaseEn", "professionRu", "professionEn", "profileImageUrl", "slug", "isActive", "greeting"] as const;
     const safeData: Record<string, any> = {};
     for (const key of allowedFields) {
       if (key in req.body) safeData[key] = req.body[key];
@@ -1144,6 +1144,7 @@ export async function registerRoutes(
       user_id: profile.userId,
       is_pro: profile.isPro || false,
       pro_expires_at: profile.proExpiresAt || null,
+      greeting: profile.greeting || null,
     });
   });
 

@@ -14,6 +14,7 @@ interface ProfileData {
   profession_en: string;
   theme_color: string;
   profile_image_url: string | null;
+  greeting: string | null;
 }
 
 function generateSessionId() {
@@ -94,9 +95,10 @@ export default function EmbedChat({ slug }: { slug: string }) {
           profession_en: data.profession_en,
           theme_color: data.theme_color || "#2563EB",
           profile_image_url: data.profile_image_url,
+          greeting: data.greeting || null,
         });
-        const greetFn = GREETINGS[language] || GREETINGS.az;
-        setMessages([{ role: "assistant", text: greetFn(data.display_name, data.profession) }]);
+        const greetText = data.greeting || (GREETINGS[language] || GREETINGS.az)(data.display_name, data.profession);
+        setMessages([{ role: "assistant", text: greetText }]);
         setProfileLoading(false);
       })
       .catch(() => {

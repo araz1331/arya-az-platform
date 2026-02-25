@@ -31,6 +31,7 @@ interface SmartProfileData {
   isActive: boolean;
   isPro: boolean;
   proExpiresAt: string | null;
+  greeting: string | null;
 }
 
 interface LeadSession {
@@ -324,11 +325,13 @@ function TelegramSection({ profile, t }: { profile: SmartProfileData; t: (key: a
   );
 }
 
-function EmbedCodeSection({ slug, t }: { slug: string; t: (key: any) => string }) {
+function EmbedCodeSection({ slug, profile, t }: { slug: string; profile: SmartProfileData; t: (key: any) => string }) {
   const [copied, setCopied] = useState<string | null>(null);
   const [editingSlug, setEditingSlug] = useState(false);
   const [newSlug, setNewSlug] = useState(slug);
   const [saving, setSaving] = useState(false);
+  const [greetingText, setGreetingText] = useState(profile.greeting || "");
+  const [savingGreeting, setSavingGreeting] = useState(false);
   const { toast } = useToast();
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const embedCode = `<script src="${origin}/widget.js" data-slug="${slug}" data-color="#2563EB"></script>`;
@@ -364,8 +367,47 @@ function EmbedCodeSection({ slug, t }: { slug: string; t: (key: any) => string }
     }
   };
 
+  const saveGreeting = async () => {
+    setSavingGreeting(true);
+    try {
+      await apiRequest("PATCH", "/api/smart-profile", { greeting: greetingText || null });
+      queryClient.invalidateQueries({ queryKey: ["/api/smart-profile"] });
+      toast({ title: t("dashGreetingSaved") });
+    } catch {
+      toast({ title: "Failed to save greeting", variant: "destructive" });
+    } finally {
+      setSavingGreeting(false);
+    }
+  };
+
   return (
     <div className="space-y-4 mt-6 pt-6 border-t" data-testid="container-embed-section">
+      <Card className="p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <MessageSquare className="w-4 h-4 text-muted-foreground" />
+          <h3 className="font-semibold text-sm" data-testid="text-greeting-title">{t("dashGreetingTitle")}</h3>
+        </div>
+        <p className="text-xs text-muted-foreground mb-3" data-testid="text-greeting-desc">{t("dashGreetingDesc")}</p>
+        <div className="flex gap-2">
+          <Input
+            value={greetingText}
+            onChange={e => setGreetingText(e.target.value)}
+            placeholder={t("dashGreetingPlaceholder")}
+            className="text-sm"
+            data-testid="input-greeting"
+          />
+          <Button
+            size="sm"
+            onClick={saveGreeting}
+            disabled={savingGreeting || greetingText === (profile.greeting || "")}
+            data-testid="button-save-greeting"
+          >
+            {savingGreeting ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Check className="w-3.5 h-3.5 mr-1" />}
+            {t("dashSave")}
+          </Button>
+        </div>
+      </Card>
+
       <Card className="p-4">
         <div className="flex items-center gap-2 mb-3">
           <Link2 className="w-4 h-4 text-muted-foreground" />
@@ -862,7 +904,7 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
             <div className="mt-4">
               <AryaWidget profileId={userProfile?.id ?? ""} defaultLang={lang} />
             </div>
-            {hasProfile && <EmbedCodeSection slug={profile.slug} t={t} />}
+            {hasProfile && <EmbedCodeSection slug={profile.slug} profile={profile} t={t} />}
           </TabsContent>
 
           <TabsContent value="profile">
@@ -968,7 +1010,7 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
           <TabsContent value="widget">
             {hasProfile && (
               <div className="space-y-4 [&>div]:mt-0 [&>div]:pt-0 [&>div]:border-t-0">
-                <EmbedCodeSection slug={profile.slug} t={t} />
+                <EmbedCodeSection slug={profile.slug} profile={profile} t={t} />
               </div>
             )}
           </TabsContent>
