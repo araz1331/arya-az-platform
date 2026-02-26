@@ -17,6 +17,7 @@ import GlobalHome from "@/pages/global-home";
 import AboutPage from "@/pages/about";
 import TermsPage from "@/pages/terms";
 import CheckoutSuccess from "@/pages/checkout-success";
+import ResetPasswordPage from "@/pages/reset-password";
 import ConsentModal from "@/components/consent-modal";
 
 const LANG_PREFIX = "/az";
@@ -49,6 +50,11 @@ function isTermsPath(): boolean {
 function isCheckoutSuccessPath(): boolean {
   const path = window.location.pathname;
   return path === "/checkout/success" || path === "/checkout/success/";
+}
+
+function isResetPasswordPath(): boolean {
+  const path = window.location.pathname;
+  return path === "/reset-password" || path === "/reset-password/";
 }
 
 function isDashboardPath(): boolean {
@@ -326,6 +332,17 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <CheckoutSuccess />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
+  if (isResetPasswordPath()) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <ResetPasswordPage />
         </TooltipProvider>
       </QueryClientProvider>
     );

@@ -16,6 +16,22 @@ declare module "express-session" {
 
 const SALT_ROUNDS = 12;
 
+function getSupabaseUrl(): string {
+  const rawUrl = process.env.SUPABASE_URL || "";
+  if (rawUrl.startsWith("http") && !rawUrl.includes("pooler") && !rawUrl.includes("postgresql")) {
+    return rawUrl;
+  }
+  return "https://pypvjnzlkmoikfzhuwbm.supabase.co";
+}
+
+function getSupabaseAdmin() {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) return null;
+  return createClient(getSupabaseUrl(), serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
 export function setupSession(app: Express) {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000;
   const pgStore = connectPg(session);
@@ -40,6 +56,23 @@ export function setupSession(app: Express) {
       },
     })
   );
+}
+
+async function findOrCreateLocalUser(sbUser: { email?: string | null; user_metadata?: Record<string, any> }) {
+  const sbEmail = sbUser.email?.toLowerCase().trim();
+  if (!sbEmail) return null;
+
+  let [localUser] = await db.select().from(users).where(eq(users.email, sbEmail));
+  if (!localUser) {
+    const meta = sbUser.user_metadata || {};
+    [localUser] = await db.insert(users).values({
+      email: sbEmail,
+      passwordHash: "",
+      firstName: meta.first_name || meta.firstName || null,
+      lastName: meta.last_name || meta.lastName || null,
+    }).returning();
+  }
+  return localUser;
 }
 
 export function registerAuthRoutes(app: Express) {
@@ -168,11 +201,7 @@ export function registerAuthRoutes(app: Express) {
     if (!anonKey) {
       return res.status(500).json({ message: "Supabase not configured" });
     }
-    const rawUrl = process.env.SUPABASE_URL || "";
-    const apiUrl = rawUrl.startsWith("http") && !rawUrl.includes("pooler") && !rawUrl.includes("postgresql")
-      ? rawUrl
-      : "https://pypvjnzlkmoikfzhuwbm.supabase.co";
-    res.json({ url: apiUrl, anonKey });
+    res.json({ url: getSupabaseUrl(), anonKey });
   });
 
   app.post("/api/auth/supabase-login", async (req: Request, res: Response) => {
@@ -182,36 +211,19 @@ export function registerAuthRoutes(app: Express) {
         return res.status(400).json({ message: "Missing access token" });
       }
 
-      const supabaseKey = process.env.SUPABASE_ANON_KEY;
-      if (!supabaseKey) {
+      const supabaseAdmin = getSupabaseAdmin();
+      if (!supabaseAdmin) {
         return res.status(500).json({ message: "Supabase not configured" });
       }
 
-      const rawUrl = process.env.SUPABASE_URL || "";
-      const supabaseUrl = rawUrl.startsWith("http") && !rawUrl.includes("pooler") && !rawUrl.includes("postgresql")
-        ? rawUrl
-        : "https://pypvjnzlkmoikfzhuwbm.supabase.co";
-
-      const supabase = createClient(supabaseUrl, supabaseKey);
-      const { data: { user: sbUser }, error } = await supabase.auth.getUser(access_token);
+      const { data: { user: sbUser }, error } = await supabaseAdmin.auth.getUser(access_token);
       if (error || !sbUser) {
         return res.status(401).json({ message: "Invalid Supabase token" });
       }
 
-      const sbEmail = sbUser.email?.toLowerCase().trim();
-      if (!sbEmail) {
-        return res.status(400).json({ message: "No email in Supabase user" });
-      }
-
-      let [localUser] = await db.select().from(users).where(eq(users.email, sbEmail));
+      const localUser = await findOrCreateLocalUser(sbUser);
       if (!localUser) {
-        const meta = sbUser.user_metadata || {};
-        [localUser] = await db.insert(users).values({
-          email: sbEmail,
-          passwordHash: "",
-          firstName: meta.first_name || meta.firstName || null,
-          lastName: meta.last_name || meta.lastName || null,
-        }).returning();
+        return res.status(400).json({ message: "No email in Supabase user" });
       }
 
       if (localUser.deletedAt) {
@@ -227,6 +239,63 @@ export function registerAuthRoutes(app: Express) {
       res.json(safeUser);
     } catch (error) {
       console.error("[supabase-login] Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/auth/supabase-signup", async (req: Request, res: Response) => {
+    try {
+      const { access_token } = req.body;
+      if (!access_token) {
+        return res.status(400).json({ message: "Missing access token" });
+      }
+
+      const supabaseAdmin = getSupabaseAdmin();
+      if (!supabaseAdmin) {
+        return res.status(500).json({ message: "Supabase not configured" });
+      }
+
+      const { data: { user: sbUser }, error } = await supabaseAdmin.auth.getUser(access_token);
+      if (error || !sbUser) {
+        return res.status(401).json({ message: "Invalid Supabase token" });
+      }
+
+      const localUser = await findOrCreateLocalUser(sbUser);
+      if (!localUser) {
+        return res.status(400).json({ message: "No email in Supabase user" });
+      }
+
+      if (localUser.deletedAt) {
+        return res.status(403).json({ message: "Account deleted" });
+      }
+      if (localUser.isSuspended) {
+        return res.status(403).json({ message: "Account suspended" });
+      }
+
+      req.session.userId = localUser.id;
+
+      const { passwordHash: _, ...safeUser } = localUser;
+      res.status(201).json(safeUser);
+    } catch (error) {
+      console.error("[supabase-signup] Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/auth/sync-password", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { password } = req.body;
+      if (!password || typeof password !== "string" || password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
+      const userId = req.session.userId!;
+      const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+      await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("[sync-password] Error:", error);
       res.status(500).json({ message: "Server error" });
     }
   });

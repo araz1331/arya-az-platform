@@ -8,16 +8,16 @@ import { Label } from "@/components/ui/label";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Globe, Mail, Lock, User, ArrowLeft, ChevronDown, Eye, EyeOff } from "lucide-react";
+import { Globe, Mail, Lock, User, ArrowLeft, Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { apiRequest } from "@/lib/queryClient";
-import { getSupabase } from "@/lib/supabase";
+import { getSupaClient } from "@/lib/supabase";
 import {
   type GlobalLanguage, GLOBAL_LANGUAGES, gt,
   getStoredGlobalLanguage, setStoredGlobalLanguage
 } from "@/lib/global-i18n";
 
-type AuthMode = "login" | "register";
+type AuthMode = "login" | "register" | "forgot";
 
 function extractErrorMessage(err: any): string {
   if (!err?.message) return "";
@@ -70,6 +70,7 @@ export default function GlobalAuthPage({ onBack }: { onBack: () => void }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [lang, setLangState] = useState<GlobalLanguage>(getStoredGlobalLanguage());
   const queryClient = useQueryClient();
@@ -83,8 +84,8 @@ export default function GlobalAuthPage({ onBack }: { onBack: () => void }) {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      const supabase = await getSupabase();
-      const { data, error: sbError } = await supabase.auth.signInWithPassword({
+      const supaClient = await getSupaClient();
+      const { data, error: sbError } = await supaClient.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
@@ -110,8 +111,8 @@ export default function GlobalAuthPage({ onBack }: { onBack: () => void }) {
 
   const registerMutation = useMutation({
     mutationFn: async () => {
-      const supabase = await getSupabase();
-      const { data, error: sbError } = await supabase.auth.signUp({
+      const supaClient = await getSupaClient();
+      const { data, error: sbError } = await supaClient.auth.signUp({
         email: email.trim(),
         password,
         options: {
@@ -124,7 +125,7 @@ export default function GlobalAuthPage({ onBack }: { onBack: () => void }) {
       if (sbError) throw new Error(sbError.message);
       if (!data.session?.access_token) throw new Error("Check your email to confirm your account");
 
-      const res = await apiRequest("POST", "/api/auth/supabase-login", {
+      const res = await apiRequest("POST", "/api/auth/supabase-signup", {
         access_token: data.session.access_token,
       });
       return res.json();
@@ -141,9 +142,28 @@ export default function GlobalAuthPage({ onBack }: { onBack: () => void }) {
     },
   });
 
+  const forgotMutation = useMutation({
+    mutationFn: async () => {
+      const supaClient = await getSupaClient();
+      const redirectUrl = `${window.location.origin}/reset-password`;
+      const { error: sbError } = await supaClient.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: redirectUrl,
+      });
+      if (sbError) throw new Error(sbError.message);
+    },
+    onSuccess: () => {
+      setSuccessMsg(t("authResetSent"));
+    },
+    onError: (err: any) => {
+      const msg = extractErrorMessage(err);
+      setError(msg || "Failed to send reset email");
+    },
+  });
+
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccessMsg("");
     setFieldErrors({});
     const schema = z.object({
       email: z.string().email(t("authValidEmail")),
@@ -164,6 +184,7 @@ export default function GlobalAuthPage({ onBack }: { onBack: () => void }) {
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccessMsg("");
     setFieldErrors({});
     const schema = z.object({
       email: z.string().email(t("authValidEmail")),
@@ -181,7 +202,27 @@ export default function GlobalAuthPage({ onBack }: { onBack: () => void }) {
     registerMutation.mutate();
   };
 
-  const isPending = loginMutation.isPending || registerMutation.isPending;
+  const handleForgotSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccessMsg("");
+    setFieldErrors({});
+    const schema = z.object({
+      email: z.string().email(t("authValidEmail")),
+    });
+    const result = schema.safeParse({ email });
+    if (!result.success) {
+      const errs: Record<string, string> = {};
+      result.error.errors.forEach((e) => {
+        if (e.path[0]) errs[e.path[0] as string] = e.message;
+      });
+      setFieldErrors(errs);
+      return;
+    }
+    forgotMutation.mutate();
+  };
+
+  const isPending = loginMutation.isPending || registerMutation.isPending || forgotMutation.isPending;
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
@@ -212,26 +253,87 @@ export default function GlobalAuthPage({ onBack }: { onBack: () => void }) {
         </div>
 
         <Card className="p-6">
-          <div className="flex gap-2 mb-6">
-            <Button
-              variant={mode === "login" ? "default" : "outline"}
-              className="flex-1"
-              onClick={() => { setMode("login"); setError(""); setFieldErrors({}); }}
-              data-testid="button-global-tab-login"
-            >
-              {t("authSignIn")}
-            </Button>
-            <Button
-              variant={mode === "register" ? "default" : "outline"}
-              className="flex-1"
-              onClick={() => { setMode("register"); setError(""); setFieldErrors({}); }}
-              data-testid="button-global-tab-register"
-            >
-              {t("authSignUp")}
-            </Button>
-          </div>
+          {mode !== "forgot" && (
+            <div className="flex gap-2 mb-6">
+              <Button
+                variant={mode === "login" ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => { setMode("login"); setError(""); setSuccessMsg(""); setFieldErrors({}); }}
+                data-testid="button-global-tab-login"
+              >
+                {t("authSignIn")}
+              </Button>
+              <Button
+                variant={mode === "register" ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => { setMode("register"); setError(""); setSuccessMsg(""); setFieldErrors({}); }}
+                data-testid="button-global-tab-register"
+              >
+                {t("authSignUp")}
+              </Button>
+            </div>
+          )}
 
-          {mode === "login" ? (
+          {mode === "forgot" ? (
+            <form onSubmit={handleForgotSubmit} className="space-y-4">
+              <div className="text-center mb-2">
+                <h3 className="font-semibold text-lg">{t("authForgotTitle")}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{t("authForgotDesc")}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="forgot-email">{t("authEmail")}</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="forgot-email"
+                    type="email"
+                    placeholder={t("authEmailPlaceholder")}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    data-testid="input-forgot-email"
+                  />
+                </div>
+                {fieldErrors.email && (
+                  <p className="text-sm text-destructive">{fieldErrors.email}</p>
+                )}
+              </div>
+
+              {successMsg && (
+                <div className="text-sm text-green-600 bg-green-50 dark:bg-green-950/30 dark:text-green-400 p-3 rounded-md flex items-center gap-2" data-testid="text-reset-success">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  {successMsg}
+                </div>
+              )}
+
+              {error && (
+                <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md" data-testid="text-global-auth-error">
+                  {error}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isPending}
+                data-testid="button-forgot-submit"
+              >
+                {isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t("authPleaseWait")}</> : t("authSendReset")}
+              </Button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => { setMode("login"); setError(""); setSuccessMsg(""); setFieldErrors({}); }}
+                  className="text-sm text-muted-foreground underline underline-offset-2"
+                  data-testid="button-back-to-login"
+                >
+                  {t("authBackToLogin")}
+                </button>
+              </div>
+            </form>
+          ) : mode === "login" ? (
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="login-email">{t("authEmail")}</Label>
@@ -278,6 +380,17 @@ export default function GlobalAuthPage({ onBack }: { onBack: () => void }) {
                 {fieldErrors.password && (
                   <p className="text-sm text-destructive">{fieldErrors.password}</p>
                 )}
+              </div>
+
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => { setMode("forgot"); setError(""); setSuccessMsg(""); setFieldErrors({}); }}
+                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                  data-testid="button-forgot-password"
+                >
+                  {t("authForgotPassword")}
+                </button>
               </div>
 
               {error && (
@@ -392,19 +505,21 @@ export default function GlobalAuthPage({ onBack }: { onBack: () => void }) {
             </form>
           )}
 
-          <div className="mt-4 text-center">
-            <p className="text-sm text-muted-foreground">
-              {mode === "login" ? t("authNoAccount") + " " : t("authHaveAccount") + " "}
-              <button
-                type="button"
-                onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); setFieldErrors({}); }}
-                className="text-foreground font-medium underline underline-offset-2"
-                data-testid="button-global-switch-mode"
-              >
-                {mode === "login" ? t("authSignUp") : t("authSignIn")}
-              </button>
-            </p>
-          </div>
+          {mode !== "forgot" && (
+            <div className="mt-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                {mode === "login" ? t("authNoAccount") + " " : t("authHaveAccount") + " "}
+                <button
+                  type="button"
+                  onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); setSuccessMsg(""); setFieldErrors({}); }}
+                  className="text-foreground font-medium underline underline-offset-2"
+                  data-testid="button-global-switch-mode"
+                >
+                  {mode === "login" ? t("authSignUp") : t("authSignIn")}
+                </button>
+              </p>
+            </div>
+          )}
         </Card>
 
         <div className="mt-6 text-center">
