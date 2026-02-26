@@ -333,16 +333,6 @@ export default function GlobalHome() {
       popular: true,
       tier: "pro" as const,
     },
-    {
-      name: t("pricingAgency"),
-      price: t("pricingAgencyPrice"),
-      priceYearly: t("pricingAgencyPriceYearly"),
-      desc: t("pricingAgencyDesc"),
-      features: [t("pricingAgencyFeat1"), t("pricingAgencyFeat2"), t("pricingAgencyFeat3"), t("pricingAgencyFeat4")],
-      cta: t("pricingAgencyCta"),
-      popular: false,
-      tier: "agency" as const,
-    },
   ];
 
   return (
