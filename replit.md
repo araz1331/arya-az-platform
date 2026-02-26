@@ -11,7 +11,8 @@ The platform is built with a **React + Vite (TypeScript)** frontend, leveraging 
 
 **Key Architectural Decisions:**
 - **Modular Frontend:** Separate landing pages and dashboards for global SaaS (`/`) and Azerbaijani voice donation (`/az`).
-- **Custom Authentication:** Secure email/password authentication with bcrypt hashing and session management via `express-session` stored in PostgreSQL.
+- **Dual Authentication:** The `/az` voice donation section uses custom email/password auth (bcrypt + express-session). The global dashboard (`/dashboard`) uses **Supabase Auth** — login/signup happens via Supabase, then the Supabase token is exchanged for a local session via `POST /api/auth/supabase-login`. Both auth systems share the same local `users` table and express-session for downstream API access.
+- **Subscription Gating:** After login, `GET /api/subscription/check` verifies `has_chat` via the cross-service API at `sales.hirearya.com`. If `has_chat` is false, the dashboard shows a "Product Locked" overlay linking to `sales.hirearya.com/#pricing`.
 - **S3 Storage:** Utilizes AWS S3 for all file uploads (profile images, voice donations) with signed-URL access controls.
 - **Multi-language Support:** Global homepage supports EN/ES/RU/FR/TR, while the Azerbaijani section is localized. Smart Profiles support multilingual knowledge bases (Az/Ru/En).
 - **Voice Recording System:** Browser-based audio recording using WebM/Opus codec with iOS MP4 fallback, integrated with a milestone and token reward system.

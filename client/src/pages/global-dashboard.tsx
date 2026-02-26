@@ -9,7 +9,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye, Pencil, Loader2, Shield, MessageSquare, Lightbulb, Zap, FileText, PlugZap, Phone, BarChart3, User, CreditCard, CheckCircle2, Star, Send } from "lucide-react";
+import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye, Pencil, Loader2, Shield, MessageSquare, Lightbulb, Zap, FileText, PlugZap, Phone, BarChart3, User, CreditCard, CheckCircle2, Star, Send, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import AryaWidget from "@/components/arya-widget";
@@ -817,6 +817,14 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
     queryKey: ["/api/user"],
   });
 
+  const { data: subscription } = useQuery<{ has_chat: boolean; has_voice?: boolean; has_sales?: boolean }>({
+    queryKey: ["/api/subscription/check"],
+    staleTime: 1000 * 60 * 10,
+    retry: 1,
+  });
+
+  const hasChat = subscription?.has_chat !== false;
+
   const { toast } = useToast();
 
   useEffect(() => {
@@ -890,7 +898,36 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <main className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6 relative">
+        {!hasChat && (
+          <div className="absolute inset-0 z-40 bg-background/80 backdrop-blur-sm flex items-center justify-center" data-testid="overlay-product-locked">
+            <Card className="p-8 max-w-md mx-4 text-center shadow-lg">
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Lock className="w-8 h-8 text-primary" />
+                </div>
+              </div>
+              <h2 className="text-xl font-bold mb-2" data-testid="text-locked-title">Unlock Arya Chat</h2>
+              <p className="text-muted-foreground text-sm mb-6" data-testid="text-locked-desc">
+                Get access to AI chat, smart profiles, lead management, and all integrations.
+              </p>
+              <a
+                href="https://sales.hirearya.com/#pricing"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="link-unlock-pricing"
+              >
+                <Button className="w-full" size="lg">
+                  <Crown className="w-4 h-4 mr-2" />
+                  Unlock Arya Chat — $29/mo
+                </Button>
+              </a>
+              <p className="text-xs text-muted-foreground mt-3">
+                Already subscribed? Try logging out and back in.
+              </p>
+            </Card>
+          </div>
+        )}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="mb-4 sm:mb-6">
             <TabsList className="flex flex-wrap h-auto gap-1 p-1">

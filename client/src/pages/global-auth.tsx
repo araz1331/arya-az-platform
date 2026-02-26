@@ -11,6 +11,7 @@ import {
 import { Globe, Mail, Lock, User, ArrowLeft, ChevronDown, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { apiRequest } from "@/lib/queryClient";
+import { getSupabase } from "@/lib/supabase";
 import {
   type GlobalLanguage, GLOBAL_LANGUAGES, gt,
   getStoredGlobalLanguage, setStoredGlobalLanguage
@@ -82,7 +83,17 @@ export default function GlobalAuthPage({ onBack }: { onBack: () => void }) {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/auth/login", { email, password });
+      const supabase = await getSupabase();
+      const { data, error: sbError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (sbError) throw new Error(sbError.message);
+      if (!data.session?.access_token) throw new Error("No session returned");
+
+      const res = await apiRequest("POST", "/api/auth/supabase-login", {
+        access_token: data.session.access_token,
+      });
       return res.json();
     },
     onSuccess: (userData) => {
@@ -99,11 +110,22 @@ export default function GlobalAuthPage({ onBack }: { onBack: () => void }) {
 
   const registerMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/auth/register", {
-        email,
+      const supabase = await getSupabase();
+      const { data, error: sbError } = await supabase.auth.signUp({
+        email: email.trim(),
         password,
-        firstName: firstName || undefined,
-        lastName: lastName || undefined,
+        options: {
+          data: {
+            first_name: firstName || undefined,
+            last_name: lastName || undefined,
+          },
+        },
+      });
+      if (sbError) throw new Error(sbError.message);
+      if (!data.session?.access_token) throw new Error("Check your email to confirm your account");
+
+      const res = await apiRequest("POST", "/api/auth/supabase-login", {
+        access_token: data.session.access_token,
       });
       return res.json();
     },

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { User } from "@shared/models/auth";
+import { getSupabase } from "@/lib/supabase";
 
 type SafeUser = Omit<User, "passwordHash">;
 
@@ -30,6 +31,10 @@ export function useAuth() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      try {
+        const supabase = await getSupabase();
+        await supabase.auth.signOut();
+      } catch {}
       await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",

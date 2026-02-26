@@ -1,6 +1,7 @@
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import bcrypt from "bcryptjs";
+import { createClient } from "@supabase/supabase-js";
 import type { Express, RequestHandler, Request, Response } from "express";
 import { db } from "./db";
 import { users, type User } from "@shared/models/auth";
@@ -159,6 +160,110 @@ export function registerAuthRoutes(app: Express) {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Server xətası" });
+    }
+  });
+
+  app.get("/api/auth/supabase-config", (_req: Request, res: Response) => {
+    const anonKey = process.env.SUPABASE_ANON_KEY;
+    if (!anonKey) {
+      return res.status(500).json({ message: "Supabase not configured" });
+    }
+    const rawUrl = process.env.SUPABASE_URL || "";
+    const apiUrl = rawUrl.startsWith("http") && !rawUrl.includes("pooler") && !rawUrl.includes("postgresql")
+      ? rawUrl
+      : "https://pypvjnzlkmoikfzhuwbm.supabase.co";
+    res.json({ url: apiUrl, anonKey });
+  });
+
+  app.post("/api/auth/supabase-login", async (req: Request, res: Response) => {
+    try {
+      const { access_token } = req.body;
+      if (!access_token) {
+        return res.status(400).json({ message: "Missing access token" });
+      }
+
+      const supabaseKey = process.env.SUPABASE_ANON_KEY;
+      if (!supabaseKey) {
+        return res.status(500).json({ message: "Supabase not configured" });
+      }
+
+      const rawUrl = process.env.SUPABASE_URL || "";
+      const supabaseUrl = rawUrl.startsWith("http") && !rawUrl.includes("pooler") && !rawUrl.includes("postgresql")
+        ? rawUrl
+        : "https://pypvjnzlkmoikfzhuwbm.supabase.co";
+
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { data: { user: sbUser }, error } = await supabase.auth.getUser(access_token);
+      if (error || !sbUser) {
+        return res.status(401).json({ message: "Invalid Supabase token" });
+      }
+
+      const sbEmail = sbUser.email?.toLowerCase().trim();
+      if (!sbEmail) {
+        return res.status(400).json({ message: "No email in Supabase user" });
+      }
+
+      let [localUser] = await db.select().from(users).where(eq(users.email, sbEmail));
+      if (!localUser) {
+        const meta = sbUser.user_metadata || {};
+        [localUser] = await db.insert(users).values({
+          email: sbEmail,
+          passwordHash: "",
+          firstName: meta.first_name || meta.firstName || null,
+          lastName: meta.last_name || meta.lastName || null,
+        }).returning();
+      }
+
+      if (localUser.deletedAt) {
+        return res.status(403).json({ message: "Account deleted" });
+      }
+      if (localUser.isSuspended) {
+        return res.status(403).json({ message: "Account suspended" });
+      }
+
+      req.session.userId = localUser.id;
+
+      const { passwordHash: _, ...safeUser } = localUser;
+      res.json(safeUser);
+    } catch (error) {
+      console.error("[supabase-login] Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.get("/api/subscription/check", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId!;
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      if (!user) return res.status(401).json({ message: "Unauthorized" });
+
+      const email = user.email;
+      const apiKey = process.env.UNIFIED_API_KEY;
+      if (!apiKey) {
+        return res.json({ has_chat: true });
+      }
+
+      try {
+        const verifyRes = await fetch(
+          `https://sales.hirearya.com/api/subscription/verify?email=${encodeURIComponent(email)}`,
+          { headers: { "x-api-key": apiKey }, signal: AbortSignal.timeout(5000) }
+        );
+        if (verifyRes.ok) {
+          const data = await verifyRes.json();
+          return res.json({
+            has_chat: data.has_chat === true,
+            has_voice: data.has_voice === true,
+            has_sales: data.has_sales === true,
+          });
+        }
+      } catch (err: any) {
+        console.error("[subscription-check] Cross-service API error:", err?.message);
+      }
+
+      return res.json({ has_chat: true });
+    } catch (error) {
+      console.error("[subscription-check] Error:", error);
+      res.status(500).json({ message: "Server error" });
     }
   });
 }
