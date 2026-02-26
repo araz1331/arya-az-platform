@@ -9,11 +9,13 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye, Pencil, Loader2, Shield, MessageSquare, Lightbulb, Zap, FileText, PlugZap, Phone, BarChart3, User, CreditCard, CheckCircle2, Star, Send, Lock } from "lucide-react";
+import { Sparkles, Users, LogOut, ArrowLeft, ExternalLink, Globe, MessageCircle, Crown, Code, Copy, Check, Link2, TrendingUp, Clock, Eye, Pencil, Loader2, Shield, MessageSquare, Lightbulb, Zap, FileText, PlugZap, Phone, BarChart3, User, CreditCard, CheckCircle2, Star, Send, Lock, Rocket, Menu } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import AryaWidget from "@/components/arya-widget";
 import OwnerAssistant from "@/components/owner-assistant";
+import ProductSidebar from "@/components/product-sidebar";
+import UpgradeModal, { getBundleState } from "@/components/upgrade-modal";
 import type { Profile } from "@shared/schema";
 import {
   type GlobalLanguage, GLOBAL_LANGUAGES, gt,
@@ -797,10 +799,109 @@ function BillingPanel({ profile, t }: { profile: SmartProfileData | null | undef
   );
 }
 
+function MobileProductSwitcher({
+  hasChat, hasVoice, hasSales, bundleState, open, onToggle, onLockedClick, t
+}: {
+  hasChat: boolean; hasVoice: boolean; hasSales: boolean;
+  bundleState: string; open: boolean; onToggle: () => void;
+  onLockedClick: (product: "chat" | "voice" | "sales") => void;
+  t: (key: any) => string;
+}) {
+  const products = [
+    { key: "chat" as const, label: t("sidebarChat"), icon: MessageCircle, color: "text-blue-500", bg: "bg-blue-500/10", unlocked: hasChat, isCurrent: true },
+    { key: "voice" as const, label: t("sidebarVoice"), icon: Phone, color: "text-green-500", bg: "bg-green-500/10", unlocked: hasVoice, isCurrent: false },
+    { key: "sales" as const, label: t("sidebarSales"), icon: TrendingUp, color: "text-purple-500", bg: "bg-purple-500/10", unlocked: hasSales, isCurrent: false },
+  ];
+
+  const handleClick = async (product: typeof products[0]) => {
+    if (!product.unlocked) {
+      onLockedClick(product.key);
+      return;
+    }
+    if (product.isCurrent) {
+      onToggle();
+      return;
+    }
+    const urls: Record<string, string> = {
+      chat: "https://chat.hirearya.com/dashboard",
+      voice: "https://phonecall.hirearya.com/dashboard",
+      sales: "https://sales.hirearya.com/dashboard",
+    };
+    try {
+      const { getSupaClient } = await import("@/lib/supabase");
+      const supaClient = await getSupaClient();
+      const { data: { session } } = await supaClient.auth.getSession();
+      const tokenParam = session?.access_token ? `?sso_token=${encodeURIComponent(session.access_token)}` : "";
+      window.location.href = urls[product.key] + tokenParam;
+    } catch {
+      window.location.href = urls[product.key];
+    }
+  };
+
+  return (
+    <div className="lg:hidden relative">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onToggle}
+        data-testid="button-mobile-product-menu"
+      >
+        <Menu className="w-5 h-5" />
+      </Button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={onToggle} />
+          <div className="absolute right-0 top-full mt-1 z-50 bg-popover border rounded-lg shadow-lg p-2 w-56" data-testid="container-mobile-product-menu">
+            <div className="px-2 py-1 mb-1">
+              <span className="text-[10px] font-medium uppercase text-muted-foreground tracking-wider">
+                {t("sidebarProducts")}
+              </span>
+            </div>
+            {products.map((product) => {
+              const Icon = product.icon;
+              return (
+                <button
+                  key={product.key}
+                  onClick={() => handleClick(product)}
+                  className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors
+                    ${product.isCurrent ? "bg-primary/10 text-primary font-medium" : product.unlocked ? "hover:bg-muted text-foreground" : "text-muted-foreground opacity-60"}
+                  `}
+                  data-testid={`button-mobile-${product.key}`}
+                >
+                  <div className={`w-7 h-7 rounded-md ${product.bg} flex items-center justify-center shrink-0`}>
+                    <Icon className={`w-3.5 h-3.5 ${product.color}`} />
+                  </div>
+                  <span className="flex-1 text-left">{product.label}</span>
+                  {!product.unlocked && <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
+                  {product.isCurrent && <Badge variant="secondary" className="text-[9px] h-4 px-1.5">{t("sidebarCurrent")}</Badge>}
+                </button>
+              );
+            })}
+            {bundleState !== "ultimate" && (
+              <div className="border-t mt-1.5 pt-1.5">
+                <a href="https://sales.hirearya.com/#pricing" target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs border-primary/30 text-primary" data-testid="button-mobile-upgrade">
+                    <Crown className="w-3.5 h-3.5" />
+                    {bundleState === "bundle_a" ? t("sidebarAddSales") : t("sidebarUnlockSuite")}
+                  </Button>
+                </a>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onBack: () => void; isAdmin?: boolean; onAdminClick?: () => void }) {
   const { user: authUser, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("setup");
   const [lang, setLangState] = useState<GlobalLanguage>(getStoredGlobalLanguage());
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [lockedProduct, setLockedProduct] = useState<"chat" | "voice" | "sales" | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const setLang = useCallback((l: GlobalLanguage) => {
     setLangState(l);
@@ -824,6 +925,15 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
   });
 
   const hasChat = subscription?.has_chat !== false;
+  const hasVoice = subscription?.has_voice === true;
+  const hasSales = subscription?.has_sales === true;
+  const bundleState = getBundleState(hasChat, hasVoice, hasSales);
+
+  const handleLockedClick = useCallback((product: "chat" | "voice" | "sales") => {
+    setLockedProduct(product);
+    setUpgradeModalOpen(true);
+    setMobileMenuOpen(false);
+  }, []);
 
   const { toast } = useToast();
 
@@ -844,7 +954,29 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
   const hasProfile = profile && profile.onboardingComplete;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex">
+      <ProductSidebar
+        hasChat={hasChat}
+        hasVoice={hasVoice}
+        hasSales={hasSales}
+        bundleState={bundleState}
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onLockedClick={handleLockedClick}
+        userName={authUser?.firstName || authUser?.email || ""}
+        t={t}
+        onLogout={() => logout()}
+      />
+
+      <UpgradeModal
+        open={upgradeModalOpen}
+        onClose={() => setUpgradeModalOpen(false)}
+        lockedProduct={lockedProduct}
+        bundleState={bundleState}
+        t={t}
+      />
+
+      <div className="flex-1 min-w-0 flex flex-col">
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -862,6 +994,16 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <MobileProductSwitcher
+              hasChat={hasChat}
+              hasVoice={hasVoice}
+              hasSales={hasSales}
+              bundleState={bundleState}
+              open={mobileMenuOpen}
+              onToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onLockedClick={handleLockedClick}
+              t={t}
+            />
             {isAdmin && onAdminClick && (
               <Button
                 size="icon"
@@ -879,6 +1021,17 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
                 PRO
               </Badge>
             )}
+            {bundleState !== "ultimate" && bundleState !== "none" && (
+              <a href="https://sales.hirearya.com/#pricing" target="_blank" rel="noopener noreferrer" data-testid="link-header-upgrade">
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs border-primary/30 text-primary hover:bg-primary/5 hidden sm:flex">
+                  {bundleState === "bundle_a" ? (
+                    <><Crown className="w-3.5 h-3.5" />{t("sidebarAddSales")}</>
+                  ) : (
+                    <><Rocket className="w-3.5 h-3.5" />{t("sidebarUnlockSuite")}</>
+                  )}
+                </Button>
+              </a>
+            )}
             {authUser && (
               <div className="flex items-center gap-1.5">
                 <span className="text-sm text-muted-foreground hidden sm:inline" data-testid="text-dashboard-user">
@@ -888,6 +1041,7 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
                   size="icon"
                   variant="ghost"
                   onClick={() => logout()}
+                  className="lg:hidden"
                   data-testid="button-dashboard-logout"
                 >
                   <LogOut className="w-4 h-4" />
@@ -898,7 +1052,7 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6 relative">
+      <main className="max-w-3xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6 relative">
         {!hasChat && (
           <div className="absolute inset-0 z-40 bg-background/80 backdrop-blur-sm flex items-center justify-center" data-testid="overlay-product-locked">
             <Card className="p-8 max-w-md mx-4 text-center shadow-lg">
@@ -907,9 +1061,9 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
                   <Lock className="w-8 h-8 text-primary" />
                 </div>
               </div>
-              <h2 className="text-xl font-bold mb-2" data-testid="text-locked-title">Unlock Arya Chat</h2>
+              <h2 className="text-xl font-bold mb-2" data-testid="text-locked-title">{t("upgradeUnlockChat")}</h2>
               <p className="text-muted-foreground text-sm mb-6" data-testid="text-locked-desc">
-                Get access to AI chat, smart profiles, lead management, and all integrations.
+                {t("upgradeUnlockChatDesc")}
               </p>
               <a
                 href="https://sales.hirearya.com/#pricing"
@@ -919,11 +1073,11 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
               >
                 <Button className="w-full" size="lg">
                   <Crown className="w-4 h-4 mr-2" />
-                  Unlock Arya Chat — $29/mo
+                  {t("upgradeUnlockChatCta")}
                 </Button>
               </a>
               <p className="text-xs text-muted-foreground mt-3">
-                Already subscribed? Try logging out and back in.
+                {t("upgradeAlreadySubscribed")}
               </p>
             </Card>
           </div>
@@ -1129,6 +1283,7 @@ export default function GlobalDashboard({ onBack, isAdmin, onAdminClick }: { onB
           </TabsContent>
         </Tabs>
       </main>
+      </div>
     </div>
   );
 }
