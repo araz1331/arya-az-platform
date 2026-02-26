@@ -1,0 +1,13 @@
+Add Supabase Auth login/signup and feature gating for the Chat product.
+## Context
+This project is part of the HireArya multi-product ecosystem. A central Supabase project (URL: https://pypvjnzlkmoikfzhuwbm.supabase.co) manages user profiles with subscription flags: has_chat, has_voice, has_sales. The Sales project (sales.hirearya.com) already has:
+- A `profiles` table in Supabase with columns: id (UUID, references auth.users), email, has_chat, has_voice, has_sales, stripe_customer_id, created_at, updated_at
+- A DB trigger `on_auth_user_created` that auto-creates a profile row when a user signs up via Supabase Auth
+- A cross-service verification API: GET https://sales.hirearya.com/api/subscription/verify?email=USER_EMAIL with header x-api-key: <UNIFIED_API_KEY>
+## What to build
+1. **Add Supabase Auth** — Install @supabase/supabase-js. Create a Supabase client using env vars SUPABASE_URL and SUPABASE_ANON_KEY (not service role). Add login and signup pages/forms using supabase.auth.signInWithPassword() and supabase.auth.signUp(). Store the session and show user email in the UI. Add a logout button.
+2. **Check subscription after login** — After the user logs in, read their JWT's app_metadata for has_chat. If app_metadata doesn't have the flag, fall back to calling the cross-service API: GET https://sales.hirearya.com/api/subscription/verify?email=USER_EMAIL with header x-api-key set to the UNIFIED_API_KEY env var. This call should be made from the backend (not frontend) to keep the API key secret.
+3. **Feature gating** — If has_chat is false, show a "Product Locked" overlay on the main chat interface. The overlay should say "Unlock Arya Chat — $29/mo" with a link to https://sales.hirearya.com/#pricing. If has_chat is true, show the full chat interface normally.
+4. **Environment variables needed**: SUPABASE_URL (https://pypvjnzlkmoikfzhuwbm.supabase.co), SUPABASE_ANON_KEY, UNIFIED_API_KEY (for cross-service verification)
+## Test user
+dagik@yahoo.com / araz1331 — this user already exists in Supabase Auth with has_chat=true, so they should see the full chat interface after login.
